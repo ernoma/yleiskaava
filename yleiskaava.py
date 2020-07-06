@@ -21,9 +21,15 @@
  *                                                                         *
  ***************************************************************************/
 """
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt
+from PyQt5 import uic
+
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt, pyqtSlot
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
+from qgis.PyQt.QtWidgets import QAction, QWidget
+
+
+from qgis.core import (Qgis, QgsProject, QgsFeature, QgsField, QgsMessageLog, QgsMapLayer, QgsVectorLayer)
+# from qgis.core import (Qgis, QgsProject, QgsMapLayer, QgsFeature, QgsVectorLayer, QgsExpressionContextUtils, QgsMessageLog, QgsVectorDataProvider, QgsField, QgsVectorFileWriter)
 # Initialize Qt resources from file resources.py
 from .resources import *
 
@@ -31,6 +37,7 @@ from .resources import *
 from .yleiskaava_dockwidget import YleiskaavaDockWidget
 import os.path
 
+from .yleiskaava_dialog_copy_source_data_to_database import Ui_DialogCopySourceDataToDatabase
 
 class Yleiskaava:
     """QGIS Plugin Implementation."""
@@ -73,6 +80,9 @@ class Yleiskaava:
         self.pluginIsActive = False
         self.dockwidget = None
 
+        self.dialogCopySourceDataToDatabase = Ui_DialogCopySourceDataToDatabase()
+        self.dialogCopySourceDataToDatabaseWidget = QWidget()
+        self.dialogCopySourceDataToDatabase.setupUi(self.dialogCopySourceDataToDatabaseWidget)
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -223,6 +233,8 @@ class Yleiskaava:
                 # Create the dockwidget (after translation) and keep reference
                 self.dockwidget = YleiskaavaDockWidget()
 
+            self.setupYleiskaavaDockWidget()
+
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
 
@@ -230,3 +242,24 @@ class Yleiskaava:
             # TODO: fix to allow choice of dock location
             self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
+
+    def setupYleiskaavaDockWidget(self):
+        self.dockwidget.pushButtonCopySourceDataToDatabase.clicked.connect(self.showDialogCopySourceDataToDatabase)
+        self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.layerChanged.connect(self.handleMapLayerComboBoxSourceChanged)
+
+    def showDialogCopySourceDataToDatabase(self):
+        layers = QgsProject.instance().mapLayers()
+        self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.clear()
+        self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.addItems(sorted(layers))
+        self.dialogCopySourceDataToDatabaseWidget.show()
+        layer = self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.currentLayer()
+        if layer is not None:
+            QgsMessageLog.logMessage(layer.name(), 'Yleiskaava-työkalu', Qgis.Info)
+            self.updateUIBasedOnSourceLayer(layer)
+
+    def handleMapLayerComboBoxSourceChanged(self, layer):
+        QgsMessageLog.logMessage(layer.name(), 'Yleiskaava-työkalu', Qgis.Info)
+        self.updateUIBasedOnSourceLayer(layer)
+
+    def updateUIBasedOnSourceLayer(self, layer):
+        pass
