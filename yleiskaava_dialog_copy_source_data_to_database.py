@@ -11,12 +11,13 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_DialogCopySourceDataToDatabase(object):
     def setupUi(self, DialogCopySourceDataToDatabase):
         DialogCopySourceDataToDatabase.setObjectName("DialogCopySourceDataToDatabase")
-        DialogCopySourceDataToDatabase.resize(699, 441)
+        DialogCopySourceDataToDatabase.resize(728, 481)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(DialogCopySourceDataToDatabase.sizePolicy().hasHeightForWidth())
         DialogCopySourceDataToDatabase.setSizePolicy(sizePolicy)
+        DialogCopySourceDataToDatabase.setMinimumSize(QtCore.QSize(0, 0))
         self.verticalLayout = QtWidgets.QVBoxLayout(DialogCopySourceDataToDatabase)
         self.verticalLayout.setObjectName("verticalLayout")
         self.formLayout = QtWidgets.QFormLayout()
@@ -54,7 +55,7 @@ class Ui_DialogCopySourceDataToDatabase(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 685, 360))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 714, 400))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_3.setObjectName("verticalLayout_3")

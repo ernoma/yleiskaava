@@ -39,6 +39,9 @@
               <height>23</height>
              </size>
             </property>
+            <property name="text">
+             <string>localhost</string>
+            </property>
             <property name="qgisRelation" stdset="0">
              <string notr="true"/>
             </property>
@@ -62,7 +65,7 @@
             <property name="text">
              <string>5432</string>
             </property>
-            <property name="defaultValue">
+            <property name="defaultValue" stdset="0">
              <string/>
             </property>
             <property name="qgisRelation" stdset="0">
@@ -85,6 +88,9 @@
               <height>23</height>
              </size>
             </property>
+            <property name="text">
+             <string>avoin_yleiskaava_kehitys_2020_kesa</string>
+            </property>
             <property name="qgisRelation" stdset="0">
              <string notr="true"/>
             </property>
@@ -106,7 +112,7 @@
              </size>
             </property>
             <property name="text">
-             <string/>
+             <string>yk_tietokanta_kehittaja</string>
             </property>
             <property name="qgisRelation" stdset="0">
              <string notr="true"/>
@@ -127,6 +133,9 @@
               <width>0</width>
               <height>23</height>
              </size>
+            </property>
+            <property name="text">
+             <string>yk_tietokanta_kehittaja</string>
             </property>
            </widget>
           </item>
@@ -153,14 +162,14 @@
              </widget>
             </item>
             <item row="0" column="1">
-             <widget class="QgsFileWidget" name="configFileInput">
+             <widget class="QgsFileWidget" name="configFileInput" native="true">
               <property name="minimumSize">
                <size>
                 <width>200</width>
                 <height>23</height>
                </size>
               </property>
-              <property name="filter">
+              <property name="filter" stdset="0">
                <string>ini-tiedosto (*.ini)</string>
               </property>
              </widget>

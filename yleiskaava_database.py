@@ -1,6 +1,6 @@
 from PyQt5 import uic
 from PyQt5.QtCore import QSettings
-from qgis.core import (Qgis, QgsMessageLog)
+from qgis.core import (Qgis, QgsDataSourceUri, QgsMessageLog)
 from qgis.gui import QgsFileWidget
 
 import os.path
@@ -18,6 +18,18 @@ class YleiskaavaDatabase:
         self.settingsDialog = uic.loadUi(os.path.join(self.plugin_dir, 'db_settings.ui'))
 
         self.connParams = None
+
+    def createDbURI(self, schema, table_name, geomFieldName):
+        self.connParams = self.readConnectionParamsFromInput()
+
+        uri = QgsDataSourceUri()
+        uri.setConnection(self.connParams['host'],\
+            self.connParams['port'], self.connParams['database'],\
+            self.connParams['user'], self.connParams['password'])
+
+        uri.setDataSource(schema, table_name, geomFieldName)
+
+        return uri
 
     def createDbConnection(self):
         '''Creates a database connection and cursor based on connection params'''
