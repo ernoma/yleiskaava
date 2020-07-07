@@ -21,15 +21,12 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt5 import uic
 
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt, pyqtSlot
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QWidget
+from qgis.PyQt.QtWidgets import QAction, QWidget, QGridLayout, QLabel, QComboBox
 
 
-from qgis.core import (Qgis, QgsProject, QgsFeature, QgsField, QgsMessageLog, QgsMapLayer, QgsVectorLayer)
-# from qgis.core import (Qgis, QgsProject, QgsMapLayer, QgsFeature, QgsVectorLayer, QgsExpressionContextUtils, QgsMessageLog, QgsVectorDataProvider, QgsField, QgsVectorFileWriter)
 # Initialize Qt resources from file resources.py
 from .resources import *
 
@@ -37,7 +34,8 @@ from .resources import *
 from .yleiskaava_dockwidget import YleiskaavaDockWidget
 import os.path
 
-from .yleiskaava_dialog_copy_source_data_to_database import Ui_DialogCopySourceDataToDatabase
+from .yleiskaava_database import YleiskaavaDatabase
+from .yleiskaava_data_copy_source_to_target import DataCopySourceToTarget
 
 class Yleiskaava:
     """QGIS Plugin Implementation."""
@@ -80,9 +78,9 @@ class Yleiskaava:
         self.pluginIsActive = False
         self.dockwidget = None
 
-        self.dialogCopySourceDataToDatabase = Ui_DialogCopySourceDataToDatabase()
-        self.dialogCopySourceDataToDatabaseWidget = QWidget()
-        self.dialogCopySourceDataToDatabase.setupUi(self.dialogCopySourceDataToDatabaseWidget)
+        self.yleiskaavaDatabase = YleiskaavaDatabase(self.iface)
+
+        self.dataCopySourceToTarget = DataCopySourceToTarget(self.iface, self.yleiskaavaDatabase)
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -244,22 +242,8 @@ class Yleiskaava:
             self.dockwidget.show()
 
     def setupYleiskaavaDockWidget(self):
-        self.dockwidget.pushButtonCopySourceDataToDatabase.clicked.connect(self.showDialogCopySourceDataToDatabase)
-        self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.layerChanged.connect(self.handleMapLayerComboBoxSourceChanged)
+        self.dataCopySourceToTarget.setupDialogCopySourceDataToDatabase()
 
-    def showDialogCopySourceDataToDatabase(self):
-        layers = QgsProject.instance().mapLayers()
-        self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.clear()
-        self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.addItems(sorted(layers))
-        self.dialogCopySourceDataToDatabaseWidget.show()
-        layer = self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.currentLayer()
-        if layer is not None:
-            QgsMessageLog.logMessage(layer.name(), 'Yleiskaava-työkalu', Qgis.Info)
-            self.updateUIBasedOnSourceLayer(layer)
+        self.dockwidget.pushButtonSettings.clicked.connect(self.yleiskaavaDatabase.displaySettingsDialog)
 
-    def handleMapLayerComboBoxSourceChanged(self, layer):
-        QgsMessageLog.logMessage(layer.name(), 'Yleiskaava-työkalu', Qgis.Info)
-        self.updateUIBasedOnSourceLayer(layer)
-
-    def updateUIBasedOnSourceLayer(self, layer):
-        pass
+        self.dockwidget.pushButtonCopySourceDataToDatabase.clicked.connect(self.dataCopySourceToTarget.showDialogCopySourceDataToDatabase)
