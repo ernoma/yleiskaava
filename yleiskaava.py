@@ -246,7 +246,7 @@ class Yleiskaava:
 
         self.dockwidget.pushButtonSettings.clicked.connect(self.yleiskaavaDatabase.displaySettingsDialog)
 
-        self.dockwidget.pushButtonCopySourceDataToDatabase.clicked.connect(self.dataCopySourceToTarget.showDialogCopySourceDataToDatabase)
+        self.dockwidget.pushButtonCopySourceDataToDatabase.clicked.connect(self.dataCopySourceToTarget.openDialogCopySourceDataToDatabase)
 
         self.dockwidget.pushButtonHelp.clicked.connect(self.showHelp)
 

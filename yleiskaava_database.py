@@ -67,6 +67,13 @@ class YleiskaavaDatabase:
 
         return planLevelList
 
+    def getSchemaTableFields(self, name):
+        table_item = self.getTargetSchemaTableByName(name)
+        schema, table_name = name.split('.')
+        uri = self.createDbURI(schema, table_name, table_item["geomFieldName"])
+        layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        return layer.fields().toList()
+
     def createDbURI(self, schema, table_name, geomFieldName):
         self.connParams = self.readConnectionParamsFromInput()
 

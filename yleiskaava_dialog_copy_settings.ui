@@ -140,6 +140,13 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
+      <widget class="QPushButton" name="pushButtonCancel">
+       <property name="text">
+        <string>Peruuta</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -153,16 +160,16 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButtonCancel">
+      <widget class="QPushButton" name="pushButtonShowCopyActions">
        <property name="text">
-        <string>Peruuta</string>
+        <string>Näytä ajolla tehtävät muutokset</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButtonShowCopyActions">
+      <widget class="QPushButton" name="pushButtonPrevious">
        <property name="text">
-        <string>Näytä ajolla tehtävät muutokset</string>
+        <string>Edellinen</string>
        </property>
       </widget>
      </item>

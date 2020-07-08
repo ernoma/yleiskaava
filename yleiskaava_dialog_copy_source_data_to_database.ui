@@ -74,7 +74,7 @@
      <item>
       <widget class="QLabel" name="label_6">
        <property name="text">
-        <string>Kohdetaulu</string>
+        <string>Kohde skeema ja taulu</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -84,7 +84,7 @@
      <item>
       <widget class="QLabel" name="label_3">
        <property name="text">
-        <string>Kohdekenttä</string>
+        <string>Kohdetaulun kenttä</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -160,6 +160,13 @@
       <number>0</number>
      </property>
      <item>
+      <widget class="QPushButton" name="pushButtonCancel">
+       <property name="text">
+        <string>Peruuta</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -171,13 +178,6 @@
         </size>
        </property>
       </spacer>
-     </item>
-     <item>
-      <widget class="QPushButton" name="pushButtonCancel">
-       <property name="text">
-        <string>Peruuta</string>
-       </property>
-      </widget>
      </item>
      <item>
       <widget class="QPushButton" name="pushButtonNext">
