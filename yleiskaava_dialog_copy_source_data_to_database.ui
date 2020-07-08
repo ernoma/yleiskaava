@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>728</width>
-    <height>481</height>
+    <width>503</width>
+    <height>312</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Kopio lähdeaineistoa tietokantaan</string>
+   <string>Kopioi lähdeaineistoa tietokantaan (vaihe 1/3)</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -56,12 +56,18 @@
        <property name="text">
         <string>Lähdekenttä</string>
        </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
       </widget>
      </item>
      <item>
       <widget class="QLabel" name="label_7">
        <property name="text">
         <string>Lähdetietotyyppi</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
        </property>
       </widget>
      </item>
@@ -70,12 +76,18 @@
        <property name="text">
         <string>Kohdetaulu</string>
        </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
       </widget>
      </item>
      <item>
       <widget class="QLabel" name="label_3">
        <property name="text">
         <string>Kohdekenttä</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
        </property>
       </widget>
      </item>
@@ -97,8 +109,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>714</width>
-        <height>400</height>
+        <width>489</width>
+        <height>231</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">

@@ -3,13 +3,28 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Yleiskaava's documentation!
-============================================
+Tervetuloa Yleiskaava-työkalun dokumentaatioon!
+===============================================
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
+
+Toiminnot
+=========
+
+* Kopioi lähdeaineistoa tietokantaan
+
+
+Kopioi lähdeaineistoa tietokantaan
+..................................
+
+Kopiointi onnistuu vaiheittain:
+
+#. Valitse lähdekarttataso sekä kohdekaavakohdetaulu ja kohdekentät lähdekarttatason kentille. Klikkaa sitten Seuraava-painiketta.
+#. Valitse lähdekarttatason attribuuttitaulusta tietokantaan kopioitavat kohteet ja klikkaa sitten Seuraava-painiketta.
+#. Valitse tarvittaessa oletusarvot pakollisille kohdetaulujen kentille ja mahdollisesti muita kopiointiasetuksia, kuten tehdäänkö kaavamääräysotsikkoa vastaava kaavamääräys, jos sitä ei jo ole. Klikkaa sitten Aja-painiketta.
 
 Indices and tables
 ==================

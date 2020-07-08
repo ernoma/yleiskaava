@@ -22,8 +22,8 @@
  ***************************************************************************/
 """
 
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt, pyqtSlot
-from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt, QUrl
+from qgis.PyQt.QtGui import QIcon, QDesktopServices
 from qgis.PyQt.QtWidgets import QAction, QWidget, QGridLayout, QLabel, QComboBox
 
 
@@ -242,8 +242,19 @@ class Yleiskaava:
             self.dockwidget.show()
 
     def setupYleiskaavaDockWidget(self):
-        self.dataCopySourceToTarget.setupDialogCopySourceDataToDatabase()
+        self.dataCopySourceToTarget.setup()
 
         self.dockwidget.pushButtonSettings.clicked.connect(self.yleiskaavaDatabase.displaySettingsDialog)
 
         self.dockwidget.pushButtonCopySourceDataToDatabase.clicked.connect(self.dataCopySourceToTarget.showDialogCopySourceDataToDatabase)
+
+        self.dockwidget.pushButtonHelp.clicked.connect(self.showHelp)
+
+
+    def showHelp(self):
+        """Display application help to the user."""
+        help_file = 'file:///%s/help/index.html' % self.plugin_dir
+        # For testing path:
+        #QMessageBox.information(None, 'Help File', help_file)
+        # noinspection PyCallByClass,PyTypeChecker
+        QDesktopServices.openUrl(QUrl(help_file))

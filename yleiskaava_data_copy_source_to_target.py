@@ -1,13 +1,20 @@
 
-from qgis.PyQt.QtCore import QVariant
+from PyQt5 import uic
+
 from qgis.PyQt.QtWidgets import QWidget, QGridLayout, QLabel, QComboBox
 
-from qgis.core import (Qgis, QgsProject, QgsFeature, QgsField, QgsMessageLog, QgsMapLayer, QgsVectorLayer, QgsAuxiliaryLayer, QgsMapLayerProxyModel)
+from qgis.core import (
+    Qgis, QgsProject, QgsFeature, QgsField, QgsMessageLog, QgsMapLayer, QgsVectorLayer, QgsAuxiliaryLayer, QgsMapLayerProxyModel)
 
+import os.path
 from functools import partial
+from collections import Counter
 
 from .yleiskaava_database import YleiskaavaDatabase
 from .yleiskaava_dialog_copy_source_data_to_database import Ui_DialogCopySourceDataToDatabase
+from .yleiskaava_dialog_copy_settings import Ui_DialogCopySettings
+from .yleiskaava_utils import levenshteinRatioAndDistance, getStringTypeForFeatureField
+
 
 class DataCopySourceToTarget:
     
@@ -22,27 +29,37 @@ class DataCopySourceToTarget:
 
         self.yleiskaavaDatabase = yleiskaavaDatabase
 
+        self.plugin_dir = os.path.dirname(__file__)
+
         self.dialogCopySourceDataToDatabase = Ui_DialogCopySourceDataToDatabase()
         self.dialogCopySourceDataToDatabaseWidget = QWidget()
         self.dialogCopySourceDataToDatabase.setupUi(self.dialogCopySourceDataToDatabaseWidget)
 
-        self.tables_yleiskaava = [
-            {"name": "Valitse kohdetaulu", "geomFieldName": None},
-            {"name": "yk_yleiskaava.yleiskaava", "geomFieldName": "kaavan_ulkorajaus"},
-            {"name": "yk_yleiskaava.kaavaobjekti_alue", "geomFieldName": "geom"},
-            {"name": "yk_yleiskaava.kaavaobjekti_alue_taydentava", "geomFieldName": "geom"},
-            {"name": "yk_yleiskaava.kaavaobjekti_viiva", "geomFieldName": "geom"},
-            {"name": "yk_yleiskaava.kaavaobjekti_piste", "geomFieldName": "geom"}#,
-            # {"name": "yk_yleiskaava.yleismaarays", "geomFieldName": None},
-            # {"name": "yk_yleiskaava.kaavamaarays", "geomFieldName": None},
-            # {"name": "yk_kuvaustekniikka.teema", "geomFieldName": None},
-            # {"name": "yk_prosessi.lahtoaineisto", "geomFieldName": None},
-            # {"name": "yk_prosessi.dokumentti", "geomFieldName": None},
-        ]
+        self.dialogChooseFeatures = uic.loadUi(os.path.join(self.plugin_dir, 'yleiskaava_dialog_choose_features.ui'))
+
+        self.dialogCopySettings = Ui_DialogCopySettings()
+        self.dialogCopySettingsWidget = QWidget()
+        self.dialogCopySettings.setupUi(self.dialogCopySettingsWidget)
+
+    def setup(self):
+        self.setupDialogCopySourceDataToDatabase()
+        self.setupDialogChooseFeatures()
+        self.setupDialogCopySettings()
 
     def setupDialogCopySourceDataToDatabase(self):
-        self.dialogCopySourceDataToDatabase.pushButtonCancel.clicked.connect(self.dialogCopySourceDataToDatabaseWidget.hide)
+        self.dialogCopySourceDataToDatabase.pushButtonCancel.clicked.connect(self.cancelAndHideAllDialogs)
+
         self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.layerChanged.connect(self.handleMapLayerComboBoxSourceChanged)
+
+        self.dialogCopySourceDataToDatabase.pushButtonNext.clicked.connect(self.chooseSourceFeatures)
+
+    def setupDialogChooseFeatures(self):
+        self.dialogChooseFeatures.pushButtonCancel.clicked.connect(self.cancelAndHideAllDialogs)
+        self.dialogChooseFeatures.pushButtonNext.clicked.connect(self.chooseCopySettings)
+
+    def setupDialogCopySettings(self):
+        self.dialogCopySettings.pushButtonCancel.clicked.connect(self.cancelAndHideAllDialogs)
+        self.dialogCopySettings.pushButtonRun.clicked.connect(self.runCopySourceDataToDatabase)
 
     def showDialogCopySourceDataToDatabase(self):
         # layers = QgsProject.instance().mapLayers()
@@ -65,14 +82,15 @@ class DataCopySourceToTarget:
         self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.setFilters(QgsMapLayerProxyModel.VectorLayer)
 
         self.dialogCopySourceDataToDatabaseWidget.show()
-        layer = self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.currentLayer()
-        if layer is not None:
+        self.sourceLayer = self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.currentLayer()
+        if self.sourceLayer is not None:
             # QgsMessageLog.logMessage(layer.name(), 'Yleiskaava-työkalu', Qgis.Info)
-            self.updateUIBasedOnSourceLayer(layer)
+            self.updateUIBasedOnSourceLayer(self.sourceLayer)
 
     def handleMapLayerComboBoxSourceChanged(self, layer):
         # QgsMessageLog.logMessage(layer.name(), 'Yleiskaava-työkalu', Qgis.Info)
-        self.updateUIBasedOnSourceLayer(layer)
+        self.sourceLayer = layer
+        self.updateUIBasedOnSourceLayer(self.sourceLayer)
 
     def updateUIBasedOnSourceLayer(self, sourceLayer):
 
@@ -89,22 +107,27 @@ class DataCopySourceToTarget:
         self.targetFieldNameComboBoxes = []
 
         for index, field in enumerate(sourceLayer.fields().toList()):
-            sourceFieldnameLabel = QLabel(field.name())
-            sourceFieldtypeLabel = QLabel(self.getStringTypeForField(field))
-            
-            targetTableComboBox = QComboBox()
-            targetTableComboBox.addItems(sorted([item['name'] for item in self.tables_yleiskaava]))
-            self.targetTableComboBoxes.append(targetTableComboBox)
-            
-            targetFieldNameComboBox = QComboBox()
-            self.targetFieldNameComboBoxes.append(targetFieldNameComboBox)
-            
-            self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.addWidget(sourceFieldnameLabel, index, DataCopySourceToTarget.SOURCE_FIELD_NAME_INDEX, 1, 1)
-            self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.addWidget(sourceFieldtypeLabel, index, DataCopySourceToTarget.SOURCE_FIELD_TYPE_NAME_INDEX, 1, 1)
-            self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.addWidget(targetTableComboBox, index, DataCopySourceToTarget.TARGET_TABLE_NAME_INDEX, 1, 1)
-            self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.addWidget(targetFieldNameComboBox, index, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX, 1, 1)
+            if field.name() != 'id' and getStringTypeForFeatureField(field) != 'uuid':
+                sourceFieldnameLabel = QLabel(field.name())
+                sourceFieldtypeLabel = QLabel(getStringTypeForFeatureField(field))
+                
+                targetTableComboBox = QComboBox()
 
-            targetTableComboBox.currentTextChanged.connect(partial(self.handleTargetTableSelectChanged, index, targetTableComboBox, targetFieldNameComboBox))
+                targetTableNames = sorted(self.yleiskaavaDatabase.getTargetSchemaTableNamesShownInCopySourceToTargetUI())
+                targetTableNames.insert(0, "Valitse kohdetaulu")
+
+                targetTableComboBox.addItems(targetTableNames)
+                self.targetTableComboBoxes.append(targetTableComboBox)
+                
+                targetFieldNameComboBox = QComboBox()
+                self.targetFieldNameComboBoxes.append(targetFieldNameComboBox)
+                
+                self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.addWidget(sourceFieldnameLabel, index, DataCopySourceToTarget.SOURCE_FIELD_NAME_INDEX, 1, 1)
+                self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.addWidget(sourceFieldtypeLabel, index, DataCopySourceToTarget.SOURCE_FIELD_TYPE_NAME_INDEX, 1, 1)
+                self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.addWidget(targetTableComboBox, index, DataCopySourceToTarget.TARGET_TABLE_NAME_INDEX, 1, 1)
+                self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.addWidget(targetFieldNameComboBox, index, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX, 1, 1)
+
+                targetTableComboBox.currentTextChanged.connect(partial(self.handleTargetTableSelectChanged, index, targetTableComboBox, targetFieldNameComboBox))
 
     def handleTargetTableSelectChanged(self, rowIndex, targetTableComboBox, targetFieldNameComboBox):
         # QgsMessageLog.logMessage('handleTargetTableSelectChanged', 'Yleiskaava-työkalu', Qgis.Info)
@@ -112,14 +135,7 @@ class DataCopySourceToTarget:
         QgsMessageLog.logMessage('targetTableName: ' + targetTableName + ', rowIndex: ' + str(rowIndex), 'Yleiskaava-työkalu', Qgis.Info)
 
         if targetTableName != "Valitse kohdetaulu":
-            schema, table_name = targetTableName.split('.')
-
-            #query = "SELECT * FROM {} LIMIT 0".format(targetTableName)
-
-            table_item = next(item for item in self.tables_yleiskaava if item["name"] == targetTableName)
-            uri = self.yleiskaavaDatabase.createDbURI(schema, table_name, table_item["geomFieldName"])
-            
-            targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+            targetLayer = self.yleiskaavaDatabase.createLayerByTargetSchemaTableName(targetTableName)
 
             #colnames = [desc.name for desc in curs.description]
 
@@ -127,12 +143,10 @@ class DataCopySourceToTarget:
 
             for index, field in enumerate(targetLayer.fields().toList()):
                 targetFieldName = field.name()
-                targetFieldtypeName = self.getStringTypeForField(field)
+                targetFieldtypeName = getStringTypeForFeatureField(field)
                 targetFieldNames.append('' + targetFieldName + ' (' + targetFieldtypeName + ')')
+                #QgsMessageLog.logMessage(targetFieldNames[index], 'Yleiskaava-työkalu', Qgis.Info)
 
-            #for index, comboBox in enumerate(self.targetFieldNameComboBoxes):
-                #comboBox.addItems(colnames)
-            #    comboBox.
             targetFieldNameComboBox.clear()
             targetFieldNameComboBox.addItems(targetFieldNames)
 
@@ -160,22 +174,29 @@ class DataCopySourceToTarget:
 
     def selectBestFittingTargetField(self, sourceFieldName, sourceFieldTypeName, targetFields, targetFieldNameComboBox):
         
-        foundMatch = False
+        max_levenshtein_ratio = 0
 
         for index, field in enumerate(targetFields.toList()):
             targetFieldName = field.name()
-            targetFieldtypeName = self.getStringTypeForField(field)
+            targetFieldtypeName = getStringTypeForFeatureField(field)
+
+            levenshtein_ratio = levenshteinRatioAndDistance(sourceFieldName.lower(), targetFieldName)
 
             if sourceFieldName.lower() == targetFieldName and sourceFieldTypeName == targetFieldtypeName:
                 targetFieldNameComboBox.setCurrentIndex(index + 1)
                 QgsMessageLog.logMessage('foundMatch - sourceFieldName: ' + sourceFieldName + ', targetFieldName: ' + targetFieldName + ', targetFieldName index: ' + str(index + 1), 'Yleiskaava-työkalu', Qgis.Info)
                 break
-            elif sourceFieldName.lower() == targetFieldName: 
+            elif sourceFieldName.lower() == targetFieldName and sourceFieldName.lower() != 'id':
                 targetFieldNameComboBox.setCurrentIndex(index + 1)
                 QgsMessageLog.logMessage('foundMatch - sourceFieldName: ' + sourceFieldName + ', targetFieldName: ' + targetFieldName + ', targetFieldName index: ' + str(index + 1), 'Yleiskaava-työkalu', Qgis.Info)
                 break # should not be possible to have many cols with the same name
-            elif sourceFieldName.lower() in targetFieldName or targetFieldName in sourceFieldName.lower():
-                foundMatch = True
+            elif sourceFieldName.lower() != 'id' and targetFieldtypeName != 'uuid' and levenshtein_ratio > max_levenshtein_ratio and levenshtein_ratio > 0.5:
+                #QgsMessageLog.logMessage('Levenshtein_ratio : ' + str(levenshtein_ratio), 'Yleiskaava-työkalu', Qgis.Info)
+                max_levenshtein_ratio = levenshtein_ratio
+                targetFieldNameComboBox.setCurrentIndex(index + 1)
+                QgsMessageLog.logMessage('foundLevenshtein_ratioMatch - sourceFieldName: ' + sourceFieldName + ', targetFieldName: ' + targetFieldName + ', targetFieldName index: ' + str(index + 1), 'Yleiskaava-työkalu', Qgis.Info)
+            elif (sourceFieldName.lower() in targetFieldName or targetFieldName in sourceFieldName.lower()) and sourceFieldName.lower() != 'id' and targetFieldtypeName != 'uuid':
+                #foundMatch = True
                 targetFieldNameComboBox.setCurrentIndex(index + 1)
                 QgsMessageLog.logMessage('foundPartialNameMatch - sourceFieldName: ' + sourceFieldName + ', targetFieldName: ' + targetFieldName + ', targetFieldName index: ' + str(index + 1), 'Yleiskaava-työkalu', Qgis.Info)
             # elif sourceFieldTypeName == targetFieldtypeName and not foundMatch:
@@ -183,16 +204,55 @@ class DataCopySourceToTarget:
             #     targetFieldNameComboBox.setCurrentIndex(index + 1)
             #     QgsMessageLog.logMessage('foundTypeMatch - sourceFieldName: ' + sourceFieldName + ', targetFieldName: ' + targetFieldName + ', targetFieldName index: ' + str(index + 1), 'Yleiskaava-työkalu', Qgis.Info)
 
-    def getStringTypeForField(self, field):
-        if field.typeName() == 'uuid':
-            return 'uuid'
-        elif field.type() == QVariant.Int:
-            return 'Int'
-        elif field.type() == QVariant.String:
-            return 'String'
-        elif field.type() == QVariant.Double:
-            return 'Double'
-        elif field.type() == QVariant.Date:
-            return 'Date'
-        else:
-            return str(field.type())
+    def chooseSourceFeatures(self):
+        self.dialogCopySourceDataToDatabaseWidget.hide()
+        self.dialogChooseFeatures.show()
+        self.iface.showAttributeTable(self.sourceLayer)
+
+
+    def chooseCopySettings(self):
+        self.dialogChooseFeatures.hide()
+        self.showDialogCopySettings()
+
+    def showDialogCopySettings(self):
+        
+        # hae kaikki yleiskaavataulun yleiskaavojen nimet, täytä comboBoxSpatialPlanName ja valitse tyypillisin nimi
+        layer = self.yleiskaavaDatabase.createLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
+        features = layer.getFeatures()
+        planNames = []
+        for index, feature in enumerate(features):
+            planNames.append(feature['nimi'])
+
+        planNameCounter = Counter(planNames)
+
+        planNamesOrderedWithCount = planNameCounter.most_common()
+
+        planNamesOrdered = [item[0] for item in planNamesOrderedWithCount]
+
+        self.dialogCopySettings.comboBoxSpatialPlanName.clear()
+        if len(planNamesOrdered) > 0:
+            self.dialogCopySettings.comboBoxSpatialPlanName.addItems(sorted(planNamesOrdered))
+            self.dialogCopySettings.comboBoxSpatialPlanName.setCurrentText(planNamesOrdered[0])
+
+        # hae kaikki kaavatasot, täytä comboBoxLevelOfSpatialPlan niiden nimillä ja valitse sopiva yleiskaavataso
+        planLevelList = self.yleiskaavaDatabase.getYleiskaavaPlanLevelList()
+
+        planLevelNames = [item["koodi"] for item in planLevelList]
+
+        self.dialogCopySettings.comboBoxLevelOfSpatialPlan.addItems(sorted(planLevelNames))
+        self.dialogCopySettings.comboBoxLevelOfSpatialPlan.setCurrentText("paikallinen")
+
+        # TODO hae oletusarvot, jos mahdollista, käyttäjän jo tekemien valintojen muukaan, esim. yleiskaavan nro nimen mukaan
+
+
+
+        self.dialogCopySettingsWidget.show()
+
+    
+    def runCopySourceDataToDatabase(self):
+        pass
+
+    def cancelAndHideAllDialogs(self):
+        self.dialogCopySourceDataToDatabaseWidget.hide()
+        self.dialogChooseFeatures.hide()
+        self.dialogCopySettingsWidget.hide()

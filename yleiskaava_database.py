@@ -1,10 +1,10 @@
 from PyQt5 import uic
 from PyQt5.QtCore import QSettings
-from qgis.core import (Qgis, QgsDataSourceUri, QgsMessageLog)
+from qgis.core import (Qgis, QgsDataSourceUri, QgsVectorLayer, QgsMessageLog)
 from qgis.gui import QgsFileWidget
 
 import os.path
-import psycopg2
+#import psycopg2
 from configparser import ConfigParser
 
 class YleiskaavaDatabase:
@@ -19,6 +19,54 @@ class YleiskaavaDatabase:
 
         self.connParams = None
 
+        self.yleiskaava_target_tables = [
+            {"name": "yk_yleiskaava.yleiskaava", "geomFieldName": "kaavan_ulkorajaus", "showInCopySourceToTargetUI": False},
+            {"name": "yk_yleiskaava.kaavaobjekti_alue", "geomFieldName": "geom", "showInCopySourceToTargetUI": True},
+            {"name": "yk_yleiskaava.kaavaobjekti_alue_taydentava", "geomFieldName": "geom", "showInCopySourceToTargetUI": True},
+            {"name": "yk_yleiskaava.kaavaobjekti_viiva", "geomFieldName": "geom", "showInCopySourceToTargetUI": True},
+            {"name": "yk_yleiskaava.kaavaobjekti_piste", "geomFieldName": "geom", "showInCopySourceToTargetUI": True},
+            {"name": "yk_yleiskaava.yleismaarays", "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_yleiskaava.kaavamaarays", "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_kuvaustekniikka.teema", "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_prosessi.lahtoaineisto", "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_prosessi.dokumentti", "geomFieldName": None, "showInCopySourceToTargetUI": False},
+        ]
+
+    def getTargetSchemaTableNamesShownInCopySourceToTargetUI(self):
+        names = []
+        for item in self.yleiskaava_target_tables:
+            if item['showInCopySourceToTargetUI'] == True:
+                names.append(item['name'])
+        return names
+
+    def getTargetSchemaTableByName(self, name):
+        table_item = next((item for item in self.yleiskaava_target_tables if item["name"] == name), None)
+        return table_item
+
+    def createLayerByTargetSchemaTableName(self, name):
+        table_item = self.getTargetSchemaTableByName(name)
+        schema, table_name = name.split('.')
+        uri = self.createDbURI(schema, table_name, table_item["geomFieldName"])
+        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        #if targetLayer.isValid():
+        return targetLayer
+        #else:
+        #    return None
+
+    def getYleiskaavaPlanLevelList(self):
+        uri = self.createDbURI("yk_koodiluettelot", "kaavan_taso", None)
+        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+
+        features = targetLayer.getFeatures()
+        planLevelList = []
+        for index, feature in enumerate(features):
+            planLevelList.append({
+                "id": feature['id'],
+                "koodi": feature['koodi'],
+                "kuvaus": feature['kuvaus']})
+
+        return planLevelList
+
     def createDbURI(self, schema, table_name, geomFieldName):
         self.connParams = self.readConnectionParamsFromInput()
 
@@ -31,26 +79,26 @@ class YleiskaavaDatabase:
 
         return uri
 
-    def createDbConnection(self):
-        '''Creates a database connection and cursor based on connection params'''
+    # def createDbConnection(self):
+    #     '''Creates a database connection and cursor based on connection params'''
 
-        self.connParams = self.readConnectionParamsFromInput()
-        # QgsMessageLog.logMessage(self.connParams['host'], 'Yleiskaava-työkalu', Qgis.Info)
-        # QgsMessageLog.logMessage(self.connParams['port'], 'Yleiskaava-työkalu', Qgis.Info)
-        # QgsMessageLog.logMessage(self.connParams['database'], 'Yleiskaava-työkalu', Qgis.Info)
-        # QgsMessageLog.logMessage(self.connParams['user'], 'Yleiskaava-työkalu', Qgis.Info)
-        # QgsMessageLog.logMessage(self.connParams['password'], 'Yleiskaava-työkalu', Qgis.Info)
+    #     self.connParams = self.readConnectionParamsFromInput()
+    #     # QgsMessageLog.logMessage(self.connParams['host'], 'Yleiskaava-työkalu', Qgis.Info)
+    #     # QgsMessageLog.logMessage(self.connParams['port'], 'Yleiskaava-työkalu', Qgis.Info)
+    #     # QgsMessageLog.logMessage(self.connParams['database'], 'Yleiskaava-työkalu', Qgis.Info)
+    #     # QgsMessageLog.logMessage(self.connParams['user'], 'Yleiskaava-työkalu', Qgis.Info)
+    #     # QgsMessageLog.logMessage(self.connParams['password'], 'Yleiskaava-työkalu', Qgis.Info)
 
-        if '' in list(self.connParams.values()):
-            raise Exception('Virhe yhdistäessä tietokantaan: täytä puuttuvat yhteystiedot')
-        try:
-            conn = psycopg2.connect(host=self.connParams['host'],\
-                port=self.connParams['port'], database=self.connParams['database'],\
-                user=self.connParams['user'], password=self.connParams['password'],\
-                connect_timeout=3)
-            return conn
-        except Exception as e:
-            raise e
+    #     if '' in list(self.connParams.values()):
+    #         raise Exception('Virhe yhdistäessä tietokantaan: täytä puuttuvat yhteystiedot')
+    #     try:
+    #         conn = psycopg2.connect(host=self.connParams['host'],\
+    #             port=self.connParams['port'], database=self.connParams['database'],\
+    #             user=self.connParams['user'], password=self.connParams['password'],\
+    #             connect_timeout=3)
+    #         return conn
+    #     except Exception as e:
+    #         raise e
 
     def displaySettingsDialog(self):
             '''Sets up and displays the settings dialog'''

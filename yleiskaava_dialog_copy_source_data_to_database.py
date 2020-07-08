@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_DialogCopySourceDataToDatabase(object):
     def setupUi(self, DialogCopySourceDataToDatabase):
         DialogCopySourceDataToDatabase.setObjectName("DialogCopySourceDataToDatabase")
-        DialogCopySourceDataToDatabase.resize(728, 481)
+        DialogCopySourceDataToDatabase.resize(503, 312)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -34,15 +34,19 @@ class Ui_DialogCopySourceDataToDatabase(object):
         self.horizontalLayout.setContentsMargins(12, -1, 12, -1)
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.label_8 = QtWidgets.QLabel(DialogCopySourceDataToDatabase)
+        self.label_8.setAlignment(QtCore.Qt.AlignCenter)
         self.label_8.setObjectName("label_8")
         self.horizontalLayout.addWidget(self.label_8)
         self.label_7 = QtWidgets.QLabel(DialogCopySourceDataToDatabase)
+        self.label_7.setAlignment(QtCore.Qt.AlignCenter)
         self.label_7.setObjectName("label_7")
         self.horizontalLayout.addWidget(self.label_7)
         self.label_6 = QtWidgets.QLabel(DialogCopySourceDataToDatabase)
+        self.label_6.setAlignment(QtCore.Qt.AlignCenter)
         self.label_6.setObjectName("label_6")
         self.horizontalLayout.addWidget(self.label_6)
         self.label_3 = QtWidgets.QLabel(DialogCopySourceDataToDatabase)
+        self.label_3.setAlignment(QtCore.Qt.AlignCenter)
         self.label_3.setObjectName("label_3")
         self.horizontalLayout.addWidget(self.label_3)
         self.verticalLayout.addLayout(self.horizontalLayout)
@@ -55,7 +59,7 @@ class Ui_DialogCopySourceDataToDatabase(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 714, 400))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 489, 231))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
@@ -100,7 +104,7 @@ class Ui_DialogCopySourceDataToDatabase(object):
 
     def retranslateUi(self, DialogCopySourceDataToDatabase):
         _translate = QtCore.QCoreApplication.translate
-        DialogCopySourceDataToDatabase.setWindowTitle(_translate("DialogCopySourceDataToDatabase", "Kopio lähdeaineistoa tietokantaan"))
+        DialogCopySourceDataToDatabase.setWindowTitle(_translate("DialogCopySourceDataToDatabase", "Kopioi lähdeaineistoa tietokantaan (vaihe 1/3)"))
         self.labelSourceLayerComboBox.setText(_translate("DialogCopySourceDataToDatabase", "Valitse lähdekarttataso:"))
         self.label_8.setText(_translate("DialogCopySourceDataToDatabase", "Lähdekenttä"))
         self.label_7.setText(_translate("DialogCopySourceDataToDatabase", "Lähdetietotyyppi"))
