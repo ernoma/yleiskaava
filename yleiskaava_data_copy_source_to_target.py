@@ -317,7 +317,7 @@ class DataCopySourceToTarget:
         targetFieldName = field.name()
         targetFieldTypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
 
-        if targetFieldName != 'kayttotarkoitus_lyhenne' and targetFieldName != 'kansallinen_laillinen_sitovuus'  and targetFieldName != 'kohde_periytyy_muualta' and targetFieldName != 'pinta_ala_ha' and targetFieldName != 'pituus_km' and targetFieldName != 'rakennusoikeus_kem' and targetFieldName != 'rakennusoikeus_lkm':
+        if targetFieldName != 'id_yleiskaava' and targetFieldName != 'kayttotarkoitus_lyhenne' and targetFieldName != 'kansallinen_laillinen_sitovuus'  and targetFieldName != 'kohde_periytyy_muualta' and targetFieldName != 'pinta_ala_ha' and targetFieldName != 'pituus_km' and targetFieldName != 'rakennusoikeus_kem' and targetFieldName != 'rakennusoikeus_lkm' and targetFieldName != 'id_kaavakohteen_olemassaolo' and targetFieldName != 'id_kansallisen_kaavakohteen_olemassaolo':
 
             userFriendlyTableName = ''
 
@@ -357,7 +357,7 @@ class DataCopySourceToTarget:
             elif targetFieldName == 'muutos_lisatieto':
                 userFriendlyFieldName = 'Muutokseen liittyvä lisätieto'
             elif targetFieldName == 'aineisto_lisatieto':
-                userFriendlyFieldName = 'ohteen tuontiin liittyvä lisätieto'
+                userFriendlyFieldName = 'Kohteen tuontiin liittyvä lisätieto'
             elif targetFieldName == 'voimaantulopvm':
                 userFriendlyFieldName = 'Kohteen voimaantulopäivämäärä'
             elif targetFieldName == 'kumoamispvm':
@@ -370,14 +370,14 @@ class DataCopySourceToTarget:
             #     userFriendlyFieldName = 'Rakennusoikeus (kerrosneliömetriä)'
             # elif targetFieldName == 'rakennusoikeus_lkm':
             #     userFriendlyFieldName = 'Rakennusoikeus (lkm)'
-            elif targetFieldName == 'id_yleiskaava':
-                userFriendlyFieldName = 'Kohde kuuluu kaavaan'
+            # elif targetFieldName == 'id_yleiskaava':
+            #     userFriendlyFieldName = 'Kohde kuuluu kaavaan'
             elif targetFieldName == 'id_kansallinen_prosessin_vaihe':
                 userFriendlyFieldName = 'Kaavoitusprosessin vaihe (kansallinen)'
-            elif targetFieldName == 'id_kaavakohteen_olemassaolo':
-                userFriendlyFieldName = 'Jos kohteella useampi aluevaraus, niiden suhde (INSPIRE)'
-            elif targetFieldName == 'id_kansallisen_kaavakohteen_olemassaolo':
-                userFriendlyFieldName = 'Jos kohteella useampi aluevaraus, niiden suhde (kansallinen)'
+            # elif targetFieldName == 'id_kaavakohteen_olemassaolo':
+            #     userFriendlyFieldName = 'Jos kohteella useampi aluevaraus, niiden suhde (INSPIRE)'
+            # elif targetFieldName == 'id_kansallisen_kaavakohteen_olemassaolo':
+            #     userFriendlyFieldName = 'Jos kohteella useampi aluevaraus, niiden suhde (kansallinen)'
             elif targetFieldName == 'id_laillinen_sitovuus':
                 userFriendlyFieldName = 'Laillinen sitovuus (INSPIRE)'
             elif targetFieldName == 'id_prosessin_vaihe':
@@ -410,20 +410,12 @@ class DataCopySourceToTarget:
 
                 self.dialogCopySettings.gridLayoutDefaultFieldValues.addWidget(checkBox, self.gridLayoutDefaultFieldValuesCounter, DataCopySourceToTarget.DEFAULT_VALUES_GRID_INPUT_INDEX, 1, 1)
             elif targetFieldTypeName == 'uuid':
-                if targetFieldName == 'id_yleiskaava':
-                    pass
-                elif targetFieldName == 'id_kansallinen_prosessin_vaihe':
-                    pass
-                elif targetFieldName == 'id_kaavakohteen_olemassaolo':
-                    pass
-                elif targetFieldName == 'id_kansallisen_kaavakohteen_olemassaolo':
-                    pass
-                elif targetFieldName == 'id_laillinen_sitovuus':
-                    pass
-                elif targetFieldName == 'id_prosessin_vaihe':
-                    pass
-                elif targetFieldName == 'id_kaavoitusprosessin_tila':
-                    pass
+                values = self.yleiskaavaDatabase.getCodeListValuesForSchemaTable(targetFieldName)
+                values.insert(0, "")
+                comboBox = QComboBox()
+                comboBox.addItems(values)
+
+                self.dialogCopySettings.gridLayoutDefaultFieldValues.addWidget(comboBox, self.gridLayoutDefaultFieldValuesCounter, DataCopySourceToTarget.DEFAULT_VALUES_GRID_INPUT_INDEX, 1, 1)
 
             self.gridLayoutDefaultFieldValuesCounter += 1
 

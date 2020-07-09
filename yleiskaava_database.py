@@ -67,6 +67,24 @@ class YleiskaavaDatabase:
 
         return planLevelList
 
+    def getCodeListValuesForSchemaTable(self, id_name):
+        if id_name == 'id_kansallinen_prosessin_vaihe':
+            schema, table_name = "yk_koodiluettelot.kansallinen_prosessin_vaihe".split('.')
+        elif id_name == 'id_laillinen_sitovuus':
+            schema, table_name = "yk_koodiluettelot.laillinen_sitovuus".split('.')
+        elif id_name == 'id_prosessin_vaihe':
+            schema, table_name = "yk_koodiluettelot.prosessin_vaihe".split('.')
+        elif id_name == 'id_kaavoitusprosessin_tila':
+            schema, table_name = "yk_koodiluettelot.kaavoitusprosessin_tila".split('.')
+        uri = self.createDbURI(schema, table_name, None)
+        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        features = targetLayer.getFeatures()
+        values = None
+        if table_name == "kansallinen_prosessin_vaihe" or table_name == "prosessin_vaihe" or table_name == "kaavoitusprosessin_tila" or table_name == "laillinen_sitovuus":
+            values = [feature['koodi'] for feature in features]
+
+        return values
+
     def getSchemaTableFields(self, name):
         table_item = self.getTargetSchemaTableByName(name)
         schema, table_name = name.split('.')
