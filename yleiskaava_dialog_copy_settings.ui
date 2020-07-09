@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>469</height>
+    <width>467</width>
+    <height>458</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -41,30 +41,57 @@
        </widget>
       </item>
       <item>
+       <widget class="QCheckBox" name="checkBoxLinkToSpatialPlan">
+        <property name="text">
+         <string>Yhdistä kaavakohteet yleiskaavaan</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QGroupBox" name="groupBox_2">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
         <property name="title">
          <string>Pakolliset tiedot</string>
         </property>
-        <layout class="QFormLayout" name="formLayout">
+        <layout class="QGridLayout" name="gridLayout">
          <item row="0" column="0">
           <widget class="QLabel" name="label">
            <property name="text">
-            <string>Yleiskaavan nimi:</string>
+            <string>Kohteeet kuuluvat kaavaan:</string>
            </property>
           </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="label_2">
-           <property name="text">
-            <string>Kaavan taso:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QComboBox" name="comboBoxLevelOfSpatialPlan"/>
          </item>
          <item row="0" column="1">
-          <widget class="QComboBox" name="comboBoxSpatialPlanName"/>
+          <widget class="QComboBox" name="comboBoxSpatialPlanName">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="editable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0" colspan="2">
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>Kaavan taso (INSPIRE-luokitus), pakollinen (kunnallinen = koko kuntaa koskeva, paikallinen = esim. osayleiskaava):</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0" colspan="2">
+          <widget class="QComboBox" name="comboBoxLevelOfSpatialPlan">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="editable">
+            <bool>false</bool>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
@@ -115,8 +142,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>358</width>
-              <height>259</height>
+              <width>425</width>
+              <height>216</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -135,6 +162,7 @@
      <zorder>checkBoxCreateRegulations</zorder>
      <zorder>groupBox_3</zorder>
      <zorder>checkBoxFillLandUseClassificationWithRegulation</zorder>
+     <zorder>checkBoxLinkToSpatialPlan</zorder>
     </widget>
    </item>
    <item>

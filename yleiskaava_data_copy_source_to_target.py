@@ -1,10 +1,12 @@
 
 from PyQt5 import uic
 
-from qgis.PyQt.QtWidgets import QWidget, QGridLayout, QLabel, QComboBox
+from qgis.PyQt.QtWidgets import QWidget, QGridLayout, QLabel, QComboBox, QCheckBox
 
 from qgis.core import (
     Qgis, QgsProject, QgsFeature, QgsField, QgsMessageLog, QgsMapLayer, QgsVectorLayer, QgsAuxiliaryLayer, QgsMapLayerProxyModel)
+
+from qgis.gui import QgsFieldValuesLineEdit, QgsDateTimeEdit
 
 import os.path
 from functools import partial
@@ -22,6 +24,9 @@ class DataCopySourceToTarget:
     SOURCE_FIELD_TYPE_NAME_INDEX = 1
     TARGET_TABLE_NAME_INDEX = 2
     TARGET_TABLE_FIELD_NAME_INDEX = 3
+
+    DEFAULT_VALUES_GRID_LABEL_INDEX = 0
+    DEFAULT_VALUES_GRID_INPUT_INDEX = 1
 
     def __init__(self, iface, yleiskaavaDatabase):
         
@@ -148,8 +153,8 @@ class DataCopySourceToTarget:
 
             for index, field in enumerate(self.targetLayer.fields().toList()):
                 targetFieldName = field.name()
-                targetFieldtypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
-                targetFieldNames.append('' + targetFieldName + ' (' + targetFieldtypeName + ')')
+                targetFieldTypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
+                targetFieldNames.append('' + targetFieldName + ' (' + targetFieldTypeName + ')')
                 #QgsMessageLog.logMessage(targetFieldNames[index], 'Yleiskaava-työkalu', Qgis.Info)
 
             targetFieldNameComboBox.clear()
@@ -183,11 +188,11 @@ class DataCopySourceToTarget:
 
         for index, field in enumerate(targetFields.toList()):
             targetFieldName = field.name()
-            targetFieldtypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
+            targetFieldTypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
 
             levenshtein_ratio = self.yleiskaavaUtils.levenshteinRatioAndDistance(sourceFieldName.lower(), targetFieldName)
 
-            if sourceFieldName.lower() == targetFieldName and sourceFieldTypeName == targetFieldtypeName:
+            if sourceFieldName.lower() == targetFieldName and sourceFieldTypeName == targetFieldTypeName:
                 targetFieldNameComboBox.setCurrentIndex(index + 1)
                 QgsMessageLog.logMessage('foundMatch - sourceFieldName: ' + sourceFieldName + ', targetFieldName: ' + targetFieldName + ', targetFieldName index: ' + str(index + 1), 'Yleiskaava-työkalu', Qgis.Info)
                 break
@@ -195,16 +200,16 @@ class DataCopySourceToTarget:
                 targetFieldNameComboBox.setCurrentIndex(index + 1)
                 QgsMessageLog.logMessage('foundMatch - sourceFieldName: ' + sourceFieldName + ', targetFieldName: ' + targetFieldName + ', targetFieldName index: ' + str(index + 1), 'Yleiskaava-työkalu', Qgis.Info)
                 break # should not be possible to have many cols with the same name
-            elif sourceFieldName.lower() != 'id' and targetFieldtypeName != 'uuid' and levenshtein_ratio > max_levenshtein_ratio and levenshtein_ratio > 0.5:
+            elif sourceFieldName.lower() != 'id' and targetFieldTypeName != 'uuid' and levenshtein_ratio > max_levenshtein_ratio and levenshtein_ratio > 0.5:
                 #QgsMessageLog.logMessage('Levenshtein_ratio : ' + str(levenshtein_ratio), 'Yleiskaava-työkalu', Qgis.Info)
                 max_levenshtein_ratio = levenshtein_ratio
                 targetFieldNameComboBox.setCurrentIndex(index + 1)
                 QgsMessageLog.logMessage('foundLevenshtein_ratioMatch - sourceFieldName: ' + sourceFieldName + ', targetFieldName: ' + targetFieldName + ', targetFieldName index: ' + str(index + 1), 'Yleiskaava-työkalu', Qgis.Info)
-            elif (sourceFieldName.lower() in targetFieldName or targetFieldName in sourceFieldName.lower()) and sourceFieldName.lower() != 'id' and targetFieldtypeName != 'uuid':
+            elif (sourceFieldName.lower() in targetFieldName or targetFieldName in sourceFieldName.lower()) and sourceFieldName.lower() != 'id' and targetFieldTypeName != 'uuid':
                 #foundMatch = True
                 targetFieldNameComboBox.setCurrentIndex(index + 1)
                 QgsMessageLog.logMessage('foundPartialNameMatch - sourceFieldName: ' + sourceFieldName + ', targetFieldName: ' + targetFieldName + ', targetFieldName index: ' + str(index + 1), 'Yleiskaava-työkalu', Qgis.Info)
-            # elif sourceFieldTypeName == targetFieldtypeName and not foundMatch:
+            # elif sourceFieldTypeName == targetFieldTypeName and not foundMatch:
             #     foundMatch = True
             #     targetFieldNameComboBox.setCurrentIndex(index + 1)
             #     QgsMessageLog.logMessage('foundTypeMatch - sourceFieldName: ' + sourceFieldName + ', targetFieldName: ' + targetFieldName + ', targetFieldName index: ' + str(index + 1), 'Yleiskaava-työkalu', Qgis.Info)
@@ -248,6 +253,8 @@ class DataCopySourceToTarget:
 
         planLevelNames = [item["koodi"] for item in planLevelList]
 
+        # TODO kun käyttäjä vaihtaa yleiskaavan, niin vaihda automaattisesti kaavataso (tarvittaessa)
+
         self.dialogCopySettings.comboBoxLevelOfSpatialPlan.addItems(sorted(planLevelNames))
         self.dialogCopySettings.comboBoxLevelOfSpatialPlan.setCurrentText("paikallinen")
 
@@ -260,30 +267,34 @@ class DataCopySourceToTarget:
         self.yleiskaavaUtils.emptyGridLayout(self.dialogCopySettings.gridLayoutDefaultFieldValues)
         self.gridLayoutDefaultFieldValuesCounter = 0
 
-        spatialPlanFields = self.yleiskaavaDatabase.getSchemaTableFields("yk_yleiskaava.yleiskaava")
+        # spatialPlanLayer = self.yleiskaavaDatabase.createLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
+        spatialTargetTableLayer = self.yleiskaavaDatabase.createLayerByTargetSchemaTableName(self.targetSchemaTableName)
+        # regulationLayer =  self.yleiskaavaDatabase.createLayerByTargetSchemaTableName("yk_yleiskaava.kaavamaarays")
+
+        # spatialPlanFields = self.yleiskaavaDatabase.getSchemaTableFields("yk_yleiskaava.yleiskaava")
         spatialTargetTableFields = self.yleiskaavaDatabase.getSchemaTableFields(self.targetSchemaTableName)
-        regulationFields = self.yleiskaavaDatabase.getSchemaTableFields("yk_yleiskaava.kaavamaarays")
+        # regulationFields = self.yleiskaavaDatabase.getSchemaTableFields("yk_yleiskaava.kaavamaarays")
 
-        spatialPlanFieldsToGetDefaults = []
+        # spatialPlanFieldsToGetDefaults = []
         spatialTargetTableFieldsToGetDefaults = []
-        regulationFieldsToGetDefaults = []
+        # regulationFieldsToGetDefaults = []
 
-        self.chosenTargetFieldNames = self.getChosenTargetFieldNames()
+        #self.chosenTargetFieldNames = self.getChosenTargetFieldNames()
 
-        for field in spatialPlanFields:
-            if field.name() != "id" and field.name() != "nimi" and field.name() != "id_kaavan_taso":
-                spatialPlanFieldsToGetDefaults.append(field)
-                self.showFieldInSettingsDialogDefaults("yk_yleiskaava.yleiskaava", field)
+        # for index, field in enumerate(spatialPlanFields):
+        #     if field.name() != "id" and field.name() != "nimi" and field.name() != "id_kaavan_taso":
+        #         spatialPlanFieldsToGetDefaults.append(field)
+        #         self.showFieldInSettingsDialogDefaults("yk_yleiskaava.yleiskaava", spatialPlanLayer, index, field)
 
-        for field in spatialTargetTableFields:
+        for index, field in enumerate(spatialTargetTableFields):
             if field.name() != "id": # and field.name() not in self.chosenTargetFieldNames:
                 spatialTargetTableFieldsToGetDefaults.append(field)
-                self.showFieldInSettingsDialogDefaults(self.targetSchemaTableName, field)
+                self.showFieldInSettingsDialogDefaults(self.targetSchemaTableName, spatialTargetTableLayer, index, field)
 
-        for field in regulationFields:
-            if field.name() != "id" and field.name() != "kaavamaarays_otsikko":
-                regulationFieldsToGetDefaults.append(field)
-                self.showFieldInSettingsDialogDefaults("yk_yleiskaava.kaavamaarays", field)
+        # for index, field in enumerate(regulationFields):
+        #     if field.name() != "id" and field.name() != "kaavamaarays_otsikko":
+        #         regulationFieldsToGetDefaults.append(field)
+        #         self.showFieldInSettingsDialogDefaults("yk_yleiskaava.kaavamaarays", regulationLayer, index, field)
 
         self.dialogCopySettingsWidget.show()
 
@@ -299,16 +310,122 @@ class DataCopySourceToTarget:
                 index += 1
         return names
 
-    def showFieldInSettingsDialogDefaults(self, schemaTableName, field):
+    def showFieldInSettingsDialogDefaults(self, schemaTableName, layer, fieldIndex, field):
         # targetSchemaTableLabel = QLabel(schemaTableName)
         # targetFieldLabel = QLabel(field.name())
+
         targetFieldName = field.name()
-        targetFieldtypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
-        # targetFieldLabel = QLabel('' + targetFieldName + ' (' + targetFieldtypeName + ')')
-        targetSchemaTableFieldLabel = QLabel(schemaTableName + '.' + targetFieldName + ' (' + targetFieldtypeName + ')')
-        self.dialogCopySettings.gridLayoutDefaultFieldValues.addWidget(targetSchemaTableFieldLabel, self.gridLayoutDefaultFieldValuesCounter, 0, 1, 1)
-        # self.dialogCopySettings.gridLayoutDefaultFieldValues.addWidget(targetFieldLabel, self.gridLayoutDefaultFieldValuesCounter, 1, 1, 1)
-        self.gridLayoutDefaultFieldValuesCounter += 1
+        targetFieldTypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
+
+        if targetFieldName != 'kayttotarkoitus_lyhenne' and targetFieldName != 'kansallinen_laillinen_sitovuus'  and targetFieldName != 'kohde_periytyy_muualta' and targetFieldName != 'pinta_ala_ha' and targetFieldName != 'pituus_km' and targetFieldName != 'rakennusoikeus_kem' and targetFieldName != 'rakennusoikeus_lkm':
+
+            userFriendlyTableName = ''
+
+            if schemaTableName == 'yk_yleiskaava.kaavaobjekti_alue':
+                userFriendlyTableName = 'Aluevaraukset'
+            elif schemaTableName == 'yk_yleiskaava.kaavaobjekti_alue_taydentava':
+                userFriendlyTableName = 'Täydentävät aluekohteet'
+            elif schemaTableName == 'yk_yleiskaava.kaavaobjekti_viiva':
+                userFriendlyTableName = 'Viivamaiset kaavakohteet'
+            elif schemaTableName == 'yk_yleiskaava.kaavaobjekti_piste':
+                userFriendlyTableName = 'Pistemäiset kaavakohteet'
+
+            userFriendlyFieldName = ''
+
+            if targetFieldName == 'muokkaaja':
+                userFriendlyFieldName = 'Muokkaaja'
+            elif targetFieldName == 'kaavamaaraysotsikko': # TODO näytä käyttöliittymässä vain, jos ei lähdeaineistosta 
+                userFriendlyFieldName = 'Kaavamääräysotsikko'
+            # elif targetFieldName == 'kayttotarkoitus_lyhenne':
+            #     userFriendlyFieldName = 'Käyttötarkoituksen lyhenne (esim. A, C)'
+            elif targetFieldName == 'nro':
+                userFriendlyFieldName = 'Kohteen numero'
+            elif targetFieldName == 'paikan_nimi':
+                userFriendlyFieldName = 'Paikan nimi'
+            elif targetFieldName == 'katuosoite':
+                userFriendlyFieldName = 'Katuosoite'
+            elif targetFieldName == 'karttamerkinta_teksti':
+                userFriendlyFieldName = 'Karttamerkintä (visualisoinnin tuki)'
+            # elif targetFieldName == 'pinta_ala_ha':
+            #     userFriendlyFieldName = 'Pinta-ala (ha)'
+            elif targetFieldName == 'luokittelu':
+                userFriendlyFieldName = 'Luokittelu (vapaavalintainen)'
+            elif targetFieldName == 'lisatieto':
+                userFriendlyFieldName = 'Lisätietoa kohteesta'
+            elif targetFieldName == 'lisatieto2':
+                userFriendlyFieldName = 'Lisätietoa kohteesta (2)'
+            elif targetFieldName == 'muutos_lisatieto':
+                userFriendlyFieldName = 'Muutokseen liittyvä lisätieto'
+            elif targetFieldName == 'aineisto_lisatieto':
+                userFriendlyFieldName = 'ohteen tuontiin liittyvä lisätieto'
+            elif targetFieldName == 'voimaantulopvm':
+                userFriendlyFieldName = 'Kohteen voimaantulopäivämäärä'
+            elif targetFieldName == 'kumoamispvm':
+                userFriendlyFieldName = 'Kohteen mahdollinen kumoamispäivämäärä'
+            elif targetFieldName == 'version_alkamispvm':
+                userFriendlyFieldName = 'Kohteen luomispäivämäärä'
+            elif targetFieldName == 'version_loppumispvm':
+                userFriendlyFieldName = 'Kohteen loppumispäivämäärä (milloin poistettu kaavasta)'
+            # elif targetFieldName == 'rakennusoikeus_kem':
+            #     userFriendlyFieldName = 'Rakennusoikeus (kerrosneliömetriä)'
+            # elif targetFieldName == 'rakennusoikeus_lkm':
+            #     userFriendlyFieldName = 'Rakennusoikeus (lkm)'
+            elif targetFieldName == 'id_yleiskaava':
+                userFriendlyFieldName = 'Kohde kuuluu kaavaan'
+            elif targetFieldName == 'id_kansallinen_prosessin_vaihe':
+                userFriendlyFieldName = 'Kaavoitusprosessin vaihe (kansallinen)'
+            elif targetFieldName == 'id_kaavakohteen_olemassaolo':
+                userFriendlyFieldName = 'Jos kohteella useampi aluevaraus, niiden suhde (INSPIRE)'
+            elif targetFieldName == 'id_kansallisen_kaavakohteen_olemassaolo':
+                userFriendlyFieldName = 'Jos kohteella useampi aluevaraus, niiden suhde (kansallinen)'
+            elif targetFieldName == 'id_laillinen_sitovuus':
+                userFriendlyFieldName = 'Laillinen sitovuus (INSPIRE)'
+            elif targetFieldName == 'id_prosessin_vaihe':
+                userFriendlyFieldName = 'Prosessin vaihe (INSPIRE)'
+            elif targetFieldName == 'id_kaavoitusprosessin_tila':
+                userFriendlyFieldName = 'Kaavoitusprosessin tila'
+            else:
+                userFriendlyFieldName = targetFieldName
+
+            # targetFieldLabel = QLabel('' + targetFieldName + ' (' + targetFieldTypeName + ')')
+            # targetSchemaTableFieldLabel = QLabel(schemaTableName + '.' + targetFieldName + ' (' + targetFieldTypeName + ')')
+            targetSchemaTableFieldLabel = QLabel(userFriendlyTableName + ' - ' + userFriendlyFieldName)
+            self.dialogCopySettings.gridLayoutDefaultFieldValues.addWidget(targetSchemaTableFieldLabel, self.gridLayoutDefaultFieldValuesCounter, DataCopySourceToTarget.DEFAULT_VALUES_GRID_LABEL_INDEX, 1, 1)
+            # self.dialogCopySettings.gridLayoutDefaultFieldValues.addWidget(targetFieldLabel, self.gridLayoutDefaultFieldValuesCounter, 1, 1, 1)
+
+            if targetFieldTypeName == 'String' or targetFieldTypeName == 'Int' or targetFieldTypeName == 'Double':
+                lineEdit = QgsFieldValuesLineEdit()
+                lineEdit.setLayer(layer)
+                lineEdit.setAttributeIndex(fieldIndex)
+
+                self.dialogCopySettings.gridLayoutDefaultFieldValues.addWidget(lineEdit, self.gridLayoutDefaultFieldValuesCounter, DataCopySourceToTarget.DEFAULT_VALUES_GRID_INPUT_INDEX, 1, 1)
+            elif targetFieldTypeName == 'Date':
+                dateEdit = QgsDateTimeEdit()
+                dateEdit.setAllowNull(True)
+                dateEdit.clear()
+
+                self.dialogCopySettings.gridLayoutDefaultFieldValues.addWidget(dateEdit, self.gridLayoutDefaultFieldValuesCounter, DataCopySourceToTarget.DEFAULT_VALUES_GRID_INPUT_INDEX, 1, 1)
+            elif targetFieldTypeName == 'Bool':
+                checkBox = QCheckBox("Kyllä / ei")
+
+                self.dialogCopySettings.gridLayoutDefaultFieldValues.addWidget(checkBox, self.gridLayoutDefaultFieldValuesCounter, DataCopySourceToTarget.DEFAULT_VALUES_GRID_INPUT_INDEX, 1, 1)
+            elif targetFieldTypeName == 'uuid':
+                if targetFieldName == 'id_yleiskaava':
+                    pass
+                elif targetFieldName == 'id_kansallinen_prosessin_vaihe':
+                    pass
+                elif targetFieldName == 'id_kaavakohteen_olemassaolo':
+                    pass
+                elif targetFieldName == 'id_kansallisen_kaavakohteen_olemassaolo':
+                    pass
+                elif targetFieldName == 'id_laillinen_sitovuus':
+                    pass
+                elif targetFieldName == 'id_prosessin_vaihe':
+                    pass
+                elif targetFieldName == 'id_kaavoitusprosessin_tila':
+                    pass
+
+            self.gridLayoutDefaultFieldValuesCounter += 1
 
 
     def runCopySourceDataToDatabase(self):
