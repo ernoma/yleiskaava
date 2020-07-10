@@ -255,6 +255,9 @@ class DataCopySourceToTarget:
 
     def chooseSourceFeatures(self):
         # TODO varmista, että self.targetSchemaTableName != None ja tarvittaessa ilmoita käyttäjälle
+
+        # TODO jos "Luo tarvittaessa uudet kaavamääräykset" / "Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan" eivät relevantteja lähdeaineiston täysmäysten perusteella, niin näytä ko. elementit dialogissa disabloituna ja ilman valintaa
+
         self.dialogCopySourceDataToDatabaseWidget.hide()
         self.dialogCopySettings.hide()
         self.dialogChooseFeatures.show()
@@ -406,10 +409,12 @@ class DataCopySourceToTarget:
 
         self.copySourceFeaturesToTargetLayer()
 
+        # TODO päivitä lopuksi työtilan karttatasot, jotka liittyvät T1:n ajoon
+
 
     def copySourceFeaturesToTargetLayer(self):
 
-        self.targetLayer.startEditing()
+        # self.targetLayer.startEditing()
 
         sourceCRS = self.sourceLayer.crs()
         targetCRS = self.targetLayer.crs()
@@ -430,39 +435,61 @@ class DataCopySourceToTarget:
                 transformedSourceGeom = sourceGeom
 
             targetLayerFeature = QgsFeature()
-            targetLayerFeature.setAttribute("uuid", str(uuid.uuid4()))
+            targetLayerFeature.setAttribute("id", str(uuid.uuid4()))
             targetLayerFeature.setGeometry(transformedSourceGeom)
 
             self.setTargetFeatureValues(sourceFeature, targetLayerFeature)
 
-            self.handleRegulationInSourceToTargetCopy()
+            self.handleRegulationInSourceToTargetCopy(sourceFeature, targetLayerFeature)
 
             # TODO yleiskaavaan yhdistäminen, jos asetus "Yhdistä kaavakohteet yleiskaavaan"
 
-            self.handleSpatialPlanRelationInSourceToTargetCopy()
+            self.handleSpatialPlanRelationInSourceToTargetCopy(sourceFeature, targetLayerFeature)
 
             targetLayerFeatures.append(targetLayerFeature)
         
+        # provider = self.targetLayer.dataProvider()
         # provider.addFeatures(targetLayerFeatures)
-        # layer.commitChanges()
+        # self.targetLayer.commitChanges()
 
 
-    def handleRegulationInSourceToTargetCopy(self):
-            # TODO kaavamääräys ja huomioi asetukset "Luo tarvittaessa uudet kaavamääräykset" ja "Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan"
-            # TODO huomioi, että kaavamääräys voi tulla lähteen käyttötarkoituksen kautta (muokkaa myös asetus-dialogia, jotta ko. asia on mahdollista)
+    def handleRegulationInSourceToTargetCopy(self, sourceFeature, targetFeature):
+        # TODO huomioi asetukset "Luo tarvittaessa uudet kaavamääräykset" ja "Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan" ja tee tarvittaessa linkki olemassa olevaan tai uuteen kaavamääräykseen 
+        # TODO huomioi, että kaavamääräys voi tulla lähteen käyttötarkoituksen kautta (muokkaa myös asetus-dialogia, jotta ko. asia on mahdollista)
+
+        fieldMatches = self.getSourceTargetFieldMatches()
+        fieldMatchTargetNames = [fieldMatch["target"] for fieldMatch in fieldMatches]
+
+        if "kaavamaaraysotsikko" in fieldMatchTargetNames:
+            sourceRegulationName = self.getSourceFeatureValueForSourceTargetFieldMatch(fieldMatches, sourceFeature, "kaavamaaraysotsikko")
+            
+            regulationList = self.yleiskaavaDatabase.getSpecificRegulations()
+            regulationNames = [regulation["kaavamaarays_otsikko"] for regulation in regulationList]
+
+            if not sourceRegulationName.isNull() and sourceRegulationName != "" and sourceRegulationName in regulationNames:
+                self.yleiskaavaDatabase.createFeatureRegulationRelation(self.targetSchemaTableName, targetFeature.attribute["id"], sourceRegulationName)
+            elif sourceRegulationName != "": # uusi otsikko & kaavamääräys (tai muuten virhe otsikon oikeinkirjoituksessa, tms)
+                self.yleiskaavaDatabase.createSpecificRegulationAndFeatureRegulationRelation(self.targetSchemaTableName, targetFeature.attribute["id"], sourceRegulationName)
+        elif "kayttotarkoitus_lyhenne" in fieldMatchTargetNames:
+            pass
+
+    def getSourceFeatureValueForSourceTargetFieldMatch(self, fieldMatches, sourceFeature, targetFieldName):
+        value = None
+
+        for fieldMatch in fieldMatches:
+            if targetFieldName == fieldMatch["target"]:
+                value = sourceFeature.attribute(fieldMatch["source"])
+                break
+        return value
 
 
-    def handleSpatialPlanRelationInSourceToTargetCopy(self):
+    def handleSpatialPlanRelationInSourceToTargetCopy(self, sourceFeature, targetFeature):
         pass
 
 
     def setTargetFeatureValues(sourceFeature, targetFeature):
-        #self.yleiskaavaDatabase.getTargetTableFields(self.targetSchemaTableName)
 
         fieldMatches = self.getSourceTargetFieldMatches()
-        # for fieldMatch in fieldMatches:
-        #     targetLayerFeature.setAttribute(fieldMatch["target"], sourceFeature.attribute(fieldMatch["source"]))
-
         fieldMatchTargetNames = [fieldMatch["target"] for fieldMatch in fieldMatches]
 
         defaultFieldNameValueTuples = self.getDefaultFieldNameValueTuples()

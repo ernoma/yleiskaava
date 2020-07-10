@@ -6,6 +6,7 @@ from qgis.gui import QgsFileWidget
 import os.path
 #import psycopg2
 from configparser import ConfigParser
+import uuid
 
 class YleiskaavaDatabase:
 
@@ -95,6 +96,49 @@ class YleiskaavaDatabase:
                 "kuvaus": feature['kuvaus']})
 
         return planLevelList
+
+    def getSpecificRegulations(self):
+        uri = self.createDbURI("yk_yleiskaava", "kaavamaarays", None)
+        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+
+        features = targetLayer.getFeatures()
+        regulationList = []
+        for index, feature in enumerate(features):
+            regulationList.append({
+                "id": feature['id'],
+                "kaavamaarays_otsikko": feature['kaavamaarays_otsikko'],
+                "maaraysteksti": feature['maaraysteksti']})
+
+        return regulationList
+
+    def createFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationName):
+        schema, table_name = targetSchemaTableName.split('.')
+
+        regulationList = self.getSpecificRegulations()
+
+        regulationID = None
+        for regulation in regulationList:
+            if regulation["kaavamaarays_otsikko"] == sourceRegulationName:
+                regulationID = regulation["id"]
+                break
+
+        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_kaavamaarays_yhteys", None)
+        relationLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+
+        relationLayerFeature = QgsFeature()
+        relationLayerFeature.setAttribute("id", str(uuid.uuid4()))
+        relationLayerFeature.setAttribute("id_" + table_name, targetFeatureID)
+        relationLayerFeature.setAttribute("id_kaavamaarays", regulationID)
+
+        relationLayer.startEditing()
+        provider = relationLayer.dataProvider()
+        provider.addFeature(relationLayerFeature)
+        relationLayer.commitChanges()
+
+        return regulationID
+
+    def createSpecificRegulationAndFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationName):
+        pass
 
     def getCodeListValuesForSchemaTable(self, id_name):
         if id_name == 'id_kansallinen_prosessin_vaihe':
