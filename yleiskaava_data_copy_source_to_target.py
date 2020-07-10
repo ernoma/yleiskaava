@@ -1,6 +1,6 @@
 
 from PyQt5 import uic
-
+from qgis.PyQt.QtCore import QTimer, Qt, QSize
 from qgis.PyQt.QtWidgets import QWidget, QGridLayout, QLabel, QComboBox, QCheckBox
 
 from qgis.core import (
@@ -14,7 +14,7 @@ from collections import Counter
 
 from .yleiskaava_database import YleiskaavaDatabase
 from .yleiskaava_dialog_copy_source_data_to_database import Ui_DialogCopySourceDataToDatabase
-from .yleiskaava_dialog_copy_settings import Ui_DialogCopySettings
+#from .yleiskaava_dialog_copy_settings import Ui_DialogCopySettings
 from .yleiskaava_utils import YleiskaavaUtils
 
 
@@ -27,6 +27,12 @@ class DataCopySourceToTarget:
 
     DEFAULT_VALUES_GRID_LABEL_INDEX = 0
     DEFAULT_VALUES_GRID_INPUT_INDEX = 1
+
+    SETTINGS_DIALOG_MIN_WIDTH = 1068
+    SETTINGS_DIALOG_MIN_HEIGHT = 1182
+
+    COPY_SOURCE_DATA_DIALOG_MIN_WIDTH = 1006
+    COPY_SOURCE_DATA_DIALOG_MIN_HEIGHT = 624
 
     def __init__(self, iface, yleiskaavaDatabase):
         
@@ -43,9 +49,8 @@ class DataCopySourceToTarget:
 
         self.dialogChooseFeatures = uic.loadUi(os.path.join(self.plugin_dir, 'yleiskaava_dialog_choose_features.ui'))
 
-        self.dialogCopySettings = Ui_DialogCopySettings()
-        self.dialogCopySettingsWidget = QWidget()
-        self.dialogCopySettings.setupUi(self.dialogCopySettingsWidget)
+        self.dialogCopySettings = uic.loadUi(os.path.join(self.plugin_dir, 'yleiskaava_dialog_copy_settings.ui'))
+        self.dialogCopySettings.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
 
         self.targetSchemaTableName = None
         self.targetLayer = None
@@ -89,7 +94,7 @@ class DataCopySourceToTarget:
         # #self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.addItems(sorted(vectorLayers))
 
         self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.setFilters(QgsMapLayerProxyModel.VectorLayer)
-
+        self.dialogCopySourceDataToDatabaseWidget.resize(QSize(DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_WIDTH, DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_HEIGHT))
         self.dialogCopySourceDataToDatabaseWidget.show()
         self.sourceLayer = self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.currentLayer()
         if self.sourceLayer is not None:
@@ -99,7 +104,8 @@ class DataCopySourceToTarget:
     def showDialogCopySourceDataToDatabase(self):
         #self.dialogCopySourceDataToDatabaseWidget.hide()
         self.dialogChooseFeatures.hide()
-        self.dialogCopySettingsWidget.hide()
+        self.dialogCopySettings.hide()
+        self.dialogCopySourceDataToDatabaseWidget.resize(QSize(DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_WIDTH, DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_HEIGHT))
         self.dialogCopySourceDataToDatabaseWidget.show()
 
     def handleMapLayerComboBoxSourceChanged(self, layer):
@@ -217,7 +223,7 @@ class DataCopySourceToTarget:
     def chooseSourceFeatures(self):
         # TODO varmista, että self.targetSchemaTableName != None ja tarvittaessa ilmoita käyttäjälle
         self.dialogCopySourceDataToDatabaseWidget.hide()
-        self.dialogCopySettingsWidget.hide()
+        self.dialogCopySettings.hide()
         self.dialogChooseFeatures.show()
         self.iface.showAttributeTable(self.sourceLayer)
 
@@ -296,7 +302,9 @@ class DataCopySourceToTarget:
         #         regulationFieldsToGetDefaults.append(field)
         #         self.showFieldInSettingsDialogDefaults("yk_yleiskaava.kaavamaarays", regulationLayer, index, field)
 
-        self.dialogCopySettingsWidget.show()
+        self.dialogCopySettings.resize(QSize(DataCopySourceToTarget.SETTINGS_DIALOG_MIN_WIDTH, DataCopySourceToTarget.SETTINGS_DIALOG_MIN_HEIGHT))
+        self.dialogCopySettings.show()
+        
 
     def getChosenTargetFieldNames(self):
         # TODO hae valittujen kohdekenttien nimet dialogin gridistä
@@ -426,4 +434,4 @@ class DataCopySourceToTarget:
     def cancelAndHideAllDialogs(self):
         self.dialogCopySourceDataToDatabaseWidget.hide()
         self.dialogChooseFeatures.hide()
-        self.dialogCopySettingsWidget.hide()
+        self.dialogCopySettings.hide()
