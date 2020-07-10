@@ -20,16 +20,45 @@ class YleiskaavaDatabase:
         self.connParams = None
 
         self.yleiskaava_target_tables = [
-            {"name": "yk_yleiskaava.yleiskaava", "geomFieldName": "kaavan_ulkorajaus", "showInCopySourceToTargetUI": False},
-            {"name": "yk_yleiskaava.kaavaobjekti_alue", "geomFieldName": "geom", "showInCopySourceToTargetUI": True},
-            {"name": "yk_yleiskaava.kaavaobjekti_alue_taydentava", "geomFieldName": "geom", "showInCopySourceToTargetUI": True},
-            {"name": "yk_yleiskaava.kaavaobjekti_viiva", "geomFieldName": "geom", "showInCopySourceToTargetUI": True},
-            {"name": "yk_yleiskaava.kaavaobjekti_piste", "geomFieldName": "geom", "showInCopySourceToTargetUI": True},
-            {"name": "yk_yleiskaava.yleismaarays", "geomFieldName": None, "showInCopySourceToTargetUI": False},
-            {"name": "yk_yleiskaava.kaavamaarays", "geomFieldName": None, "showInCopySourceToTargetUI": False},
-            {"name": "yk_kuvaustekniikka.teema", "geomFieldName": None, "showInCopySourceToTargetUI": False},
-            {"name": "yk_prosessi.lahtoaineisto", "geomFieldName": None, "showInCopySourceToTargetUI": False},
-            {"name": "yk_prosessi.dokumentti", "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_yleiskaava.yleiskaava", "userFriendlyTableName": 'Yleiskaava', "geomFieldName": "kaavan_ulkorajaus", "showInCopySourceToTargetUI": False},
+            {"name": "yk_yleiskaava.kaavaobjekti_alue", "userFriendlyTableName": 'Aluevaraukset', "geomFieldName": "geom", "showInCopySourceToTargetUI": True},
+            {"name": "yk_yleiskaava.kaavaobjekti_alue_taydentava", "userFriendlyTableName": 'Täydentävät aluekohteet', "geomFieldName": "geom", "showInCopySourceToTargetUI": True},
+            {"name": "yk_yleiskaava.kaavaobjekti_viiva", "userFriendlyTableName": 'Viivamaiset kaavakohteet', "geomFieldName": "geom", "showInCopySourceToTargetUI": True},
+            {"name": "yk_yleiskaava.kaavaobjekti_piste", "userFriendlyTableName": 'Pistemäiset kaavakohteet', "geomFieldName": "geom", "showInCopySourceToTargetUI": True},
+            {"name": "yk_yleiskaava.yleismaarays", "userFriendlyTableName": 'Yleismääräykset, "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_yleiskaava.kaavamaarays", "userFriendlyTableName": 'Kaavamääräykset', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_kuvaustekniikka.teema", "userFriendlyTableName": 'Teemat', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_prosessi.lahtoaineisto", "userFriendlyTableName": 'Lähtöaineisto', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_prosessi.dokumentti", "userFriendlyTableName": 'Kaavaan liittyvät dokumentit', "geomFieldName": None, "showInCopySourceToTargetUI": False}
+        ]
+
+        self.yleiskaava_spatial_target_fields = [
+            { "name": "muokkaaja", "userFriendlyName": "Muokkaaja", "type": "String" },
+            { "name": "kaavamaaraysotsikko", "userFriendlyName": "Kaavamääräysotsikko", "type": "String" },
+            { "name": "kayttotarkoitus_lyhenne", "userFriendlyName": "Käyttötarkoituksen lyhenne (esim. A, C)", "type": "String" },
+            { "name": "nro", "userFriendlyName": "Kohteen numero", "type": "String" },
+            { "name": "paikan_nimi", "userFriendlyName": "Paikan nimi", "type": "String" },
+            { "name": "katuosoite", "userFriendlyName": "Katuosoite", "type": "String" },
+            { "name": "karttamerkinta_teksti", "userFriendlyName": "Karttamerkintä (visualisoinnin tuki)", "type": "String" },
+            { "name": "pinta_ala_ha", "userFriendlyName": "Pinta-ala (ha)", "type": "Double" },
+            { "name": "luokittelu", "userFriendlyName": "Luokittelu (vapaavalintainen)", "type": "String" },
+            { "name": "lisatieto", "userFriendlyName": "Lisätietoa kohteesta", "type": "String" },
+            { "name": "lisatieto2", "userFriendlyName": "Lisätietoa kohteesta (2)", "type": "String" },
+            { "name": "muutos_lisatieto", "userFriendlyName": "Muutokseen liittyvä lisätieto", "type": "String" },
+            { "name": "aineisto_lisatieto", "userFriendlyName": "Kohteen tuontiin liittyvä lisätieto", "type": "String" },
+            { "name": "voimaantulopvm", "userFriendlyName": "Kohteen voimaantulopäivämäärä", "type": "Date" },
+            { "name": "kumoamispvm", "userFriendlyName": "Kohteen mahdollinen kumoamispäivämäärä", "type": "Date" },
+            { "name": "version_alkamispvm", "userFriendlyName": "Kohteen luomispäivämäärä", "type": "Date" },
+            { "name": "version_loppumispvm", "userFriendlyName": "Kohteen loppumispäivämäärä (milloin poistettu kaavasta)", "type": "Date" },
+            { "name": "rakennusoikeus_kem", "userFriendlyName": "Rakennusoikeus (kerrosneliömetriä)", "type": "String" },
+            { "name": "rakennusoikeus_lkm", "userFriendlyName": "Rakennusoikeus (lkm)", "type": "String" },
+            { "name": "id_yleiskaava", "userFriendlyName": "Kohde kuuluu kaavaan", "type": "uuid" },
+            { "name": "id_kansallinen_prosessin_vaihe", "userFriendlyName": "Kaavoitusprosessin vaihe (kansallinen)", "type": "uuid" },
+            { "name": "id_kaavakohteen_olemassaolo", "userFriendlyName": "Jos kohteella useampi aluevaraus, niiden suhde (INSPIRE)", "type": "uuid" },
+            { "name": "id_kansallisen_kaavakohteen_olemassaolo", "userFriendlyName": "Jos kohteella useampi aluevaraus, niiden suhde (kansallinen)", "type": "uuid" },
+            { "name": "id_laillinen_sitovuus", "userFriendlyName": "Laillinen sitovuus (INSPIRE)", "type": "uuid" },
+            { "name": "id_prosessin_vaihe", "userFriendlyName": "Prosessin vaihe (INSPIRE)", "type": "uuid" },
+            { "name": "id_kaavoitusprosessin_tila", "userFriendlyName": "Kaavoitusprosessin tila", "type": "uuid" }
         ]
 
     def getTargetSchemaTableNamesShownInCopySourceToTargetUI(self):
@@ -195,3 +224,58 @@ class YleiskaavaDatabase:
         params['user'] = self.settingsDialog.dbUser.value()
         params['password'] = self.settingsDialog.dbPass.text()
         return params
+
+    def getUserFriendlyschemaTableName(self, schemaTableName):
+        userFriendlyTableName = schemaTableName
+
+        for table in self.yleiskaava_target_tables:
+            if table["name"] = schemaTableName
+                userFriendlyTableName = table["userFriendlyTableName"]
+                break
+
+        return userFriendlyTableName
+
+
+    def getTableNameForUserFriendlyschemaTableName(self, userFriendlyTableName):
+        schemaTableName = userFriendlyTableName
+
+        for table in self.yleiskaava_target_tables:
+            if table["userFriendlyTableName"] = userFriendlyTableName
+                schemaTableName = table["name"]
+                break
+
+        return schemaTableName
+
+
+    def getUserFriendlytargetFieldName(self, targetFieldName):
+        userFriendlyFieldName = targetFieldName
+
+        for field in self.yleiskaava_spatial_target_fields:
+            if field["name"] == targetFieldName:
+                userFriendlyFieldName = field["userFriendlyName"]
+                break
+
+        return userFriendlyFieldName
+
+
+    def getFieldNameForUserFriendlytargetFieldName(self, userFriendlyFieldName):
+        targetFieldName = userFriendlyFieldName
+
+        for field in self.yleiskaava_spatial_target_fields:
+            if field["userFriendlyName"] = userFriendlyFieldName
+                targetFieldName = field["name"]
+                break
+
+        return targetFieldName
+
+
+    def getTypeOftargetField(self, targetFieldName):
+
+        targetFieldType = None
+
+        for field in self.yleiskaava_spatial_target_fields:
+            if field["name"] = targetFieldName
+                targetFieldType = field["type"]
+                break
+
+        return targetFieldType

@@ -4,13 +4,14 @@ from qgis.PyQt.QtCore import QTimer, Qt, QSize
 from qgis.PyQt.QtWidgets import QWidget, QGridLayout, QLabel, QComboBox, QCheckBox
 
 from qgis.core import (
-    Qgis, QgsProject, QgsFeature, QgsField, QgsMessageLog, QgsMapLayer, QgsVectorLayer, QgsAuxiliaryLayer, QgsMapLayerProxyModel)
+    Qgis, QgsProject, QgsFeature, QgsField, QgsMessageLog, QgsMapLayer, QgsVectorLayer, QgsAuxiliaryLayer, QgsMapLayerProxyModel, QgsGeometry, QgsCoordinateReferenceSystem, QgsCoordinateTransform)
 
 from qgis.gui import QgsFieldValuesLineEdit, QgsDateTimeEdit
 
 import os.path
 from functools import partial
 from collections import Counter
+import uuid
 
 from .yleiskaava_database import YleiskaavaDatabase
 from .yleiskaava_dialog_copy_source_data_to_database import Ui_DialogCopySourceDataToDatabase
@@ -34,6 +35,7 @@ class DataCopySourceToTarget:
     COPY_SOURCE_DATA_DIALOG_MIN_WIDTH = 1006
     COPY_SOURCE_DATA_DIALOG_MIN_HEIGHT = 624
 
+
     def __init__(self, iface, yleiskaavaDatabase):
         
         self.iface = iface
@@ -52,28 +54,46 @@ class DataCopySourceToTarget:
         self.dialogCopySettings = uic.loadUi(os.path.join(self.plugin_dir, 'yleiskaava_dialog_copy_settings.ui'))
         self.dialogCopySettings.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
 
+        self.sourceLayer = None
+
         self.targetSchemaTableName = None
         self.targetLayer = None
+
+        self.targetTableComboBoxes = []
+        self.targetFieldNameComboBoxes = []
+
+        self.gridLayoutDefaultFieldValuesCounter = 0
+
 
     def setup(self):
         self.setupDialogCopySourceDataToDatabase()
         self.setupDialogChooseFeatures()
         self.setupDialogCopySettings()
 
+
     def setupDialogCopySourceDataToDatabase(self):
         self.dialogCopySourceDataToDatabase.pushButtonCancel.clicked.connect(self.cancelAndHideAllDialogs)
         self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.layerChanged.connect(self.handleMapLayerComboBoxSourceChanged)
         self.dialogCopySourceDataToDatabase.pushButtonNext.clicked.connect(self.chooseSourceFeatures)
+
 
     def setupDialogChooseFeatures(self):
         self.dialogChooseFeatures.pushButtonCancel.clicked.connect(self.cancelAndHideAllDialogs)
         self.dialogChooseFeatures.pushButtonPrevious.clicked.connect(self.showDialogCopySourceDataToDatabase)
         self.dialogChooseFeatures.pushButtonNext.clicked.connect(self.chooseCopySettings)
 
+
     def setupDialogCopySettings(self):
         self.dialogCopySettings.pushButtonCancel.clicked.connect(self.cancelAndHideAllDialogs)
         self.dialogCopySettings.pushButtonPrevious.clicked.connect(self.chooseSourceFeatures)
         self.dialogCopySettings.pushButtonRun.clicked.connect(self.runCopySourceDataToDatabase)
+
+
+    def cancelAndHideAllDialogs(self):
+        self.dialogCopySourceDataToDatabaseWidget.hide()
+        self.dialogChooseFeatures.hide()
+        self.dialogCopySettings.hide()
+
 
     def openDialogCopySourceDataToDatabase(self):
         # layers = QgsProject.instance().mapLayers()
@@ -93,13 +113,14 @@ class DataCopySourceToTarget:
         # self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.clear()
         # #self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.addItems(sorted(vectorLayers))
 
-        self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.setFilters(QgsMapLayerProxyModel.VectorLayer)
+        self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.setFilters(QgsMapLayerProxyModel.HasGeometry)
         self.dialogCopySourceDataToDatabaseWidget.resize(QSize(DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_WIDTH, DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_HEIGHT))
         self.dialogCopySourceDataToDatabaseWidget.show()
         self.sourceLayer = self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.currentLayer()
         if self.sourceLayer is not None:
             # QgsMessageLog.logMessage(layer.name(), 'Yleiskaava-työkalu', Qgis.Info)
             self.updateUIBasedOnSourceLayer(self.sourceLayer)
+
 
     def showDialogCopySourceDataToDatabase(self):
         #self.dialogCopySourceDataToDatabaseWidget.hide()
@@ -108,10 +129,12 @@ class DataCopySourceToTarget:
         self.dialogCopySourceDataToDatabaseWidget.resize(QSize(DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_WIDTH, DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_HEIGHT))
         self.dialogCopySourceDataToDatabaseWidget.show()
 
+
     def handleMapLayerComboBoxSourceChanged(self, layer):
         # QgsMessageLog.logMessage(layer.name(), 'Yleiskaava-työkalu', Qgis.Info)
         self.sourceLayer = layer
         self.updateUIBasedOnSourceLayer(self.sourceLayer)
+
 
     def updateUIBasedOnSourceLayer(self, sourceLayer):
 
@@ -145,7 +168,13 @@ class DataCopySourceToTarget:
 
                 targetTableComboBox.currentTextChanged.connect(partial(self.handleTargetTableSelectChanged, index, targetTableComboBox, targetFieldNameComboBox))
 
+
     def handleTargetTableSelectChanged(self, rowIndex, targetTableComboBox, targetFieldNameComboBox):
+
+        # TODO: anna valita vain geometrialtaan lähdetason kanssa yhteensopiva kohdetaso
+
+        # TODO: varmista, että kukin kohdekenttä on mahdollista valita vain kerran
+
         # QgsMessageLog.logMessage('handleTargetTableSelectChanged', 'Yleiskaava-työkalu', Qgis.Info)
         self.targetSchemaTableName = targetTableComboBox.currentText()
         QgsMessageLog.logMessage('targetTableName: ' + self.targetSchemaTableName + ', rowIndex: ' + str(rowIndex), 'Yleiskaava-työkalu', Qgis.Info)
@@ -154,6 +183,8 @@ class DataCopySourceToTarget:
             self.targetLayer = self.yleiskaavaDatabase.createLayerByTargetSchemaTableName(self.targetSchemaTableName)
 
             #colnames = [desc.name for desc in curs.description]
+
+            # TODO näytä kohdekentissä vain lähdekentän kanssa tyypiltään yhteensopivat kentät
 
             targetFieldNames = ['']
 
@@ -188,6 +219,7 @@ class DataCopySourceToTarget:
         else:
             targetFieldNameComboBox.clear()
 
+
     def selectBestFittingTargetField(self, sourceFieldName, sourceFieldTypeName, targetFields, targetFieldNameComboBox):
         
         max_levenshtein_ratio = 0
@@ -220,6 +252,7 @@ class DataCopySourceToTarget:
             #     targetFieldNameComboBox.setCurrentIndex(index + 1)
             #     QgsMessageLog.logMessage('foundTypeMatch - sourceFieldName: ' + sourceFieldName + ', targetFieldName: ' + targetFieldName + ', targetFieldName index: ' + str(index + 1), 'Yleiskaava-työkalu', Qgis.Info)
 
+
     def chooseSourceFeatures(self):
         # TODO varmista, että self.targetSchemaTableName != None ja tarvittaessa ilmoita käyttäjälle
         self.dialogCopySourceDataToDatabaseWidget.hide()
@@ -233,6 +266,7 @@ class DataCopySourceToTarget:
         self.dialogCopySourceDataToDatabaseWidget.hide()
         self.dialogChooseFeatures.hide()
         self.showDialogCopySettings()
+
 
     def showDialogCopySettings(self):
         
@@ -318,6 +352,7 @@ class DataCopySourceToTarget:
                 index += 1
         return names
 
+
     def showFieldInSettingsDialogDefaults(self, schemaTableName, layer, fieldIndex, field):
         # targetSchemaTableLabel = QLabel(schemaTableName)
         # targetFieldLabel = QLabel(field.name())
@@ -327,73 +362,8 @@ class DataCopySourceToTarget:
 
         if targetFieldName != 'id_yleiskaava' and targetFieldName != 'kayttotarkoitus_lyhenne' and targetFieldName != 'kansallinen_laillinen_sitovuus'  and targetFieldName != 'kohde_periytyy_muualta' and targetFieldName != 'pinta_ala_ha' and targetFieldName != 'pituus_km' and targetFieldName != 'rakennusoikeus_kem' and targetFieldName != 'rakennusoikeus_lkm' and targetFieldName != 'id_kaavakohteen_olemassaolo' and targetFieldName != 'id_kansallisen_kaavakohteen_olemassaolo':
 
-            userFriendlyTableName = ''
-
-            if schemaTableName == 'yk_yleiskaava.kaavaobjekti_alue':
-                userFriendlyTableName = 'Aluevaraukset'
-            elif schemaTableName == 'yk_yleiskaava.kaavaobjekti_alue_taydentava':
-                userFriendlyTableName = 'Täydentävät aluekohteet'
-            elif schemaTableName == 'yk_yleiskaava.kaavaobjekti_viiva':
-                userFriendlyTableName = 'Viivamaiset kaavakohteet'
-            elif schemaTableName == 'yk_yleiskaava.kaavaobjekti_piste':
-                userFriendlyTableName = 'Pistemäiset kaavakohteet'
-
-            userFriendlyFieldName = ''
-
-            if targetFieldName == 'muokkaaja':
-                userFriendlyFieldName = 'Muokkaaja'
-            elif targetFieldName == 'kaavamaaraysotsikko': # TODO näytä käyttöliittymässä vain, jos ei lähdeaineistosta 
-                userFriendlyFieldName = 'Kaavamääräysotsikko'
-            # elif targetFieldName == 'kayttotarkoitus_lyhenne':
-            #     userFriendlyFieldName = 'Käyttötarkoituksen lyhenne (esim. A, C)'
-            elif targetFieldName == 'nro':
-                userFriendlyFieldName = 'Kohteen numero'
-            elif targetFieldName == 'paikan_nimi':
-                userFriendlyFieldName = 'Paikan nimi'
-            elif targetFieldName == 'katuosoite':
-                userFriendlyFieldName = 'Katuosoite'
-            elif targetFieldName == 'karttamerkinta_teksti':
-                userFriendlyFieldName = 'Karttamerkintä (visualisoinnin tuki)'
-            # elif targetFieldName == 'pinta_ala_ha':
-            #     userFriendlyFieldName = 'Pinta-ala (ha)'
-            elif targetFieldName == 'luokittelu':
-                userFriendlyFieldName = 'Luokittelu (vapaavalintainen)'
-            elif targetFieldName == 'lisatieto':
-                userFriendlyFieldName = 'Lisätietoa kohteesta'
-            elif targetFieldName == 'lisatieto2':
-                userFriendlyFieldName = 'Lisätietoa kohteesta (2)'
-            elif targetFieldName == 'muutos_lisatieto':
-                userFriendlyFieldName = 'Muutokseen liittyvä lisätieto'
-            elif targetFieldName == 'aineisto_lisatieto':
-                userFriendlyFieldName = 'Kohteen tuontiin liittyvä lisätieto'
-            elif targetFieldName == 'voimaantulopvm':
-                userFriendlyFieldName = 'Kohteen voimaantulopäivämäärä'
-            elif targetFieldName == 'kumoamispvm':
-                userFriendlyFieldName = 'Kohteen mahdollinen kumoamispäivämäärä'
-            elif targetFieldName == 'version_alkamispvm':
-                userFriendlyFieldName = 'Kohteen luomispäivämäärä'
-            elif targetFieldName == 'version_loppumispvm':
-                userFriendlyFieldName = 'Kohteen loppumispäivämäärä (milloin poistettu kaavasta)'
-            # elif targetFieldName == 'rakennusoikeus_kem':
-            #     userFriendlyFieldName = 'Rakennusoikeus (kerrosneliömetriä)'
-            # elif targetFieldName == 'rakennusoikeus_lkm':
-            #     userFriendlyFieldName = 'Rakennusoikeus (lkm)'
-            # elif targetFieldName == 'id_yleiskaava':
-            #     userFriendlyFieldName = 'Kohde kuuluu kaavaan'
-            elif targetFieldName == 'id_kansallinen_prosessin_vaihe':
-                userFriendlyFieldName = 'Kaavoitusprosessin vaihe (kansallinen)'
-            # elif targetFieldName == 'id_kaavakohteen_olemassaolo':
-            #     userFriendlyFieldName = 'Jos kohteella useampi aluevaraus, niiden suhde (INSPIRE)'
-            # elif targetFieldName == 'id_kansallisen_kaavakohteen_olemassaolo':
-            #     userFriendlyFieldName = 'Jos kohteella useampi aluevaraus, niiden suhde (kansallinen)'
-            elif targetFieldName == 'id_laillinen_sitovuus':
-                userFriendlyFieldName = 'Laillinen sitovuus (INSPIRE)'
-            elif targetFieldName == 'id_prosessin_vaihe':
-                userFriendlyFieldName = 'Prosessin vaihe (INSPIRE)'
-            elif targetFieldName == 'id_kaavoitusprosessin_tila':
-                userFriendlyFieldName = 'Kaavoitusprosessin tila'
-            else:
-                userFriendlyFieldName = targetFieldName
+            userFriendlyTableName = self.yleiskaavaDatabase.getUserFriendlyschemaTableName(schemaTableName)
+            userFriendlyFieldName = self.yleiskaavaDatabase.getUserFriendlytargetFieldName(targetFieldName)
 
             # targetFieldLabel = QLabel('' + targetFieldName + ' (' + targetFieldTypeName + ')')
             # targetSchemaTableFieldLabel = QLabel(schemaTableName + '.' + targetFieldName + ' (' + targetFieldTypeName + ')')
@@ -414,9 +384,12 @@ class DataCopySourceToTarget:
 
                 self.dialogCopySettings.gridLayoutDefaultFieldValues.addWidget(dateEdit, self.gridLayoutDefaultFieldValuesCounter, DataCopySourceToTarget.DEFAULT_VALUES_GRID_INPUT_INDEX, 1, 1)
             elif targetFieldTypeName == 'Bool':
-                checkBox = QCheckBox("Kyllä / ei")
+                comboBox = QComboBox()
+                values = ["", "Kyllä", "Ei"]
+                comboBox.addItems(values)
+                #checkBox = QCheckBox("Kyllä / ei")
 
-                self.dialogCopySettings.gridLayoutDefaultFieldValues.addWidget(checkBox, self.gridLayoutDefaultFieldValuesCounter, DataCopySourceToTarget.DEFAULT_VALUES_GRID_INPUT_INDEX, 1, 1)
+                self.dialogCopySettings.gridLayoutDefaultFieldValues.addWidget(comboBox, self.gridLayoutDefaultFieldValuesCounter, DataCopySourceToTarget.DEFAULT_VALUES_GRID_INPUT_INDEX, 1, 1)
             elif targetFieldTypeName == 'uuid':
                 values = self.yleiskaavaDatabase.getCodeListValuesForSchemaTable(targetFieldName)
                 values.insert(0, "")
@@ -429,9 +402,159 @@ class DataCopySourceToTarget:
 
 
     def runCopySourceDataToDatabase(self):
+        # TODO Lisää lähdeaineiston valittujen rivien tiedot kohdetauluun ja huomioi myös oletusarvot, puuttuvat arvot, yhteydet yleiskaava-, kaavamääräys- ja koodi-tauluihin sekä tarvittaessa tee uudet kaavamääräykset
+
+        self.copySourceFeaturesToTargetLayer()
+
+
+    def copySourceFeaturesToTargetLayer(self):
+
+        self.targetLayer.startEditing()
+
+        sourceCRS = self.sourceLayer.crs()
+        targetCRS = self.targetLayer.crs()
+        transform = None
+        if sourceCRS != targetCRS:
+            transform = QgsCoordinateTransform(source_crs, dest_crs, QgsProject.instance())
+
+        sourceFeatures = self.sourceLayer.getSelectedFeatures()
+
+        targetLayerFeatures = []
+
+        for sourceFeature in sourceFeatures:
+            sourceGeom = sourceFeature.geometry()
+
+            if not sourceGeom.isNull() and transform is not None:
+                transformedSourceGeom = sourceGeom.transform(transform)
+            else:
+                transformedSourceGeom = sourceGeom
+
+            targetLayerFeature = QgsFeature()
+            targetLayerFeature.setAttribute("uuid", str(uuid.uuid4()))
+            targetLayerFeature.setGeometry(transformedSourceGeom)
+
+            self.setTargetFeatureValues(sourceFeature, targetLayerFeature)
+
+            self.handleRegulationInSourceToTargetCopy()
+
+            # TODO yleiskaavaan yhdistäminen, jos asetus "Yhdistä kaavakohteet yleiskaavaan"
+
+            self.handleSpatialPlanRelationInSourceToTargetCopy()
+
+            targetLayerFeatures.append(targetLayerFeature)
+        
+        # provider.addFeatures(targetLayerFeatures)
+        # layer.commitChanges()
+
+
+    def handleRegulationInSourceToTargetCopy(self):
+            # TODO kaavamääräys ja huomioi asetukset "Luo tarvittaessa uudet kaavamääräykset" ja "Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan"
+            # TODO huomioi, että kaavamääräys voi tulla lähteen käyttötarkoituksen kautta (muokkaa myös asetus-dialogia, jotta ko. asia on mahdollista)
+
+
+    def handleSpatialPlanRelationInSourceToTargetCopy(self):
         pass
 
-    def cancelAndHideAllDialogs(self):
-        self.dialogCopySourceDataToDatabaseWidget.hide()
-        self.dialogChooseFeatures.hide()
-        self.dialogCopySettings.hide()
+
+    def setTargetFeatureValues(sourceFeature, targetFeature):
+        #self.yleiskaavaDatabase.getTargetTableFields(self.targetSchemaTableName)
+
+        fieldMatches = self.getSourceTargetFieldMatches()
+        # for fieldMatch in fieldMatches:
+        #     targetLayerFeature.setAttribute(fieldMatch["target"], sourceFeature.attribute(fieldMatch["source"]))
+
+        fieldMatchTargetNames = [fieldMatch["target"] for fieldMatch in fieldMatches]
+
+        defaultFieldNameValueTuples = self.getDefaultFieldNameValueTuples()
+
+        for defaultFieldNameValueTuple in defaultFieldNameValueTuples:
+            if defaultFieldNameValueTuple["name"] in fieldMatchTargetNames: # Jos käyttäjä täsmännyt lähdekentän ja lähdekentässä on arvo, niin käytä sitä, muuten oletusarvoa, jos käyttäjä antanut sen
+                sourceAttribute = None
+                for fieldMatch in fieldMatches:
+                    if defaultFieldNameValueTuple["name"] == fieldMatch["target"]:
+                        sourceAttribute = sourceFeature.attribute(foundFieldMatch["source"])
+                        break
+                if not sourceAttribute.isNull():
+                    targetLayerFeature.setAttribute(fieldMatch["target"], sourceAttribute)
+                elif defaultFieldNameValueTuple["value"] is not None:
+                    targetLayerFeature.setAttribute(fieldMatch["target"], defaultValue)
+            elif defaultFieldNameValueTuple["value"] is not None:
+                targetLayerFeature.setAttribute(fieldMatch["target"], defaultValue)
+    
+
+    def getDefaultFieldNameValueTuples(self):
+        defaultFieldNameValueTuples = []
+
+        for i in range(self.dialogCopySettings.gridLayoutDefaultFieldValues.rowCount()):
+            widget = self.dialogCopySettings.gridLayoutDefaultFieldValues.itemAtPosition(i, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX).widget()
+            text = widget.text()
+
+            userFriendlyTableName = text.split('-')[0][:-1]
+            userFriendlytargetFieldName = text.split('-')[1][:1]
+
+            targetSchemaTableName = self.yleiskaavaDatabase.getTableNameForUserFriendlyschemaTableName( userFriendlyTableName)
+            targetFieldName = self.yleiskaavaDatabase.getFieldNameForUserFriendlytargetFieldName(userFriendlytargetFieldName)
+
+            targetFieldType = self.yleiskaavaDatabase.getTypeOftargetField(targetFieldName)
+
+            value = self.getValueOfWidgetForTYpe(widget, targetFieldType)
+
+            targetFieldValueTypeWidgetTriple = { "name": targetFieldName, "value": value } #"type": targetFieldType, "widget": widget }
+            defaultFieldNameValueTuples.append(targetFieldValueTypeWidgetTriple)
+
+        return defaultFieldNameValueTuples
+
+    def getValueOfWidgetForTYpe(self, widget, targetFieldType):
+        if targetFieldType == "String": # QgsFieldValuesLineEdit
+            text = widget.text()
+            if text == "":
+                return None
+            else:
+                return text
+        elif targetFieldType == "Int": # QgsFieldValuesLineEdit
+            text = widget.text()
+            if text == "":
+                return None
+            else:
+                return int(text)
+        elif targetFieldType == "Double": # QgsFieldValuesLineEdit
+           text = widget.text()
+            if text == "":
+                return None
+            else:
+                return float(text)
+        elif targetFieldType == "Date": # QgsDateTimeEdit
+            dateValue = widget.date()
+            if dateValue.isNull():
+                return None
+            else:
+                return dateValue
+        elif targetFieldType == "Bool": # QComboBox
+            text = widget.text()
+            if text == "":
+                return None
+            elif text == "Ei":
+                return False
+            else: # Kyllä
+                return True
+        else: #elif targetFieldType == "uuid": # QCommboBox
+            text = widget.currentText()
+            if text == "":
+                return None
+            else:
+                return text
+
+
+    def getSourceTargetFieldMatches(self):
+        fieldMatches = []
+
+        for i in range(self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.rowCount()):
+            sourceFieldName = self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.itemAtPosition(i, DataCopySourceToTarget.SOURCE_FIELD_NAME_INDEX).widget().text()
+            targetFieldName = self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.itemAtPosition(i, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX).widget().text().split(' ')[0]
+
+            if targetFieldName != "":
+                fieldMatches.append({"source": sourceFieldName, "target": targetFieldName})
+            
+            return fieldMatches
+
+
