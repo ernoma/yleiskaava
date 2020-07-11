@@ -1,6 +1,6 @@
 from PyQt5 import uic
 from PyQt5.QtCore import QSettings
-from qgis.core import (Qgis, QgsDataSourceUri, QgsVectorLayer, QgsMessageLog)
+from qgis.core import (Qgis, QgsDataSourceUri, QgsVectorLayer, QgsWkbTypes, QgsMessageLog)
 from qgis.gui import QgsFileWidget
 
 import os.path
@@ -21,11 +21,11 @@ class YleiskaavaDatabase:
         self.connParams = None
 
         self.yleiskaava_target_tables = [
-            {"name": "yk_yleiskaava.yleiskaava", "userFriendlyTableName": 'Yleiskaava', "geomFieldName": "kaavan_ulkorajaus", "showInCopySourceToTargetUI": False},
-            {"name": "yk_yleiskaava.kaavaobjekti_alue", "userFriendlyTableName": 'Aluevaraukset', "geomFieldName": "geom", "showInCopySourceToTargetUI": True},
-            {"name": "yk_yleiskaava.kaavaobjekti_alue_taydentava", "userFriendlyTableName": 'Täydentävät aluekohteet', "geomFieldName": "geom", "showInCopySourceToTargetUI": True},
-            {"name": "yk_yleiskaava.kaavaobjekti_viiva", "userFriendlyTableName": 'Viivamaiset kaavakohteet', "geomFieldName": "geom", "showInCopySourceToTargetUI": True},
-            {"name": "yk_yleiskaava.kaavaobjekti_piste", "userFriendlyTableName": 'Pistemäiset kaavakohteet', "geomFieldName": "geom", "showInCopySourceToTargetUI": True},
+            {"name": "yk_yleiskaava.yleiskaava", "userFriendlyTableName": 'Yleiskaava', "geomFieldName": "kaavan_ulkorajaus", "geometryType": QgsWkbTypes.PolygonGeometry, "showInCopySourceToTargetUI": False},
+            {"name": "yk_yleiskaava.kaavaobjekti_alue", "userFriendlyTableName": 'Aluevaraukset', "geomFieldName": "geom", "geometryType": QgsWkbTypes.PolygonGeometry, "showInCopySourceToTargetUI": True},
+            {"name": "yk_yleiskaava.kaavaobjekti_alue_taydentava", "userFriendlyTableName": 'Täydentävät aluekohteet', "geomFieldName": "geom", "geometryType": QgsWkbTypes.PolygonGeometry, "showInCopySourceToTargetUI": True},
+            {"name": "yk_yleiskaava.kaavaobjekti_viiva", "userFriendlyTableName": 'Viivamaiset kaavakohteet', "geomFieldName": "geom", "geometryType": QgsWkbTypes.LineGeometry, "showInCopySourceToTargetUI": True},
+            {"name": "yk_yleiskaava.kaavaobjekti_piste", "userFriendlyTableName": 'Pistemäiset kaavakohteet', "geomFieldName": "geom", "geometryType": QgsWkbTypes.PointGeometry, "showInCopySourceToTargetUI": True},
             {"name": "yk_yleiskaava.yleismaarays", "userFriendlyTableName": 'Yleismääräykset', "geomFieldName": None, "showInCopySourceToTargetUI": False},
             {"name": "yk_yleiskaava.kaavamaarays", "userFriendlyTableName": 'Kaavamääräykset', "geomFieldName": None, "showInCopySourceToTargetUI": False},
             {"name": "yk_kuvaustekniikka.teema", "userFriendlyTableName": 'Teemat', "geomFieldName": None, "showInCopySourceToTargetUI": False},
@@ -63,10 +63,10 @@ class YleiskaavaDatabase:
         ]
 
 
-    def getTargetSchemaTableNamesShownInCopySourceToTargetUI(self):
+    def getTargetSchemaTableNamesShownInCopySourceToTargetUI(self, geometry_type):
         names = []
         for item in self.yleiskaava_target_tables:
-            if item['showInCopySourceToTargetUI'] == True:
+            if item['showInCopySourceToTargetUI'] == True and item["geometryType"] == geometry_type:
                 names.append(item['userFriendlyTableName'])
         return names
 

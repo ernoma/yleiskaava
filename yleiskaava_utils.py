@@ -87,6 +87,8 @@ class YleiskaavaUtils:
             return 'uuid'
         elif field.type() == QVariant.Int:
             return 'Int'
+        elif field.type() == QVariant.LongLong:
+            return 'LongLong'
         elif field.type() == QVariant.String:
             return 'String'
         elif field.type() == QVariant.Double:
@@ -97,6 +99,32 @@ class YleiskaavaUtils:
             return 'Bool'
         else:
             return str(field.type())
+
+
+    def compatibleTypes(self, sourceFieldTypeName, targetFieldTypeName):
+        if sourceFieldTypeName == targetFieldTypeName:
+            return True
+        elif (sourceFieldTypeName == 'Int' or sourceFieldTypeName == 'LongLong') and targetFieldTypeName == 'Double':
+            return True
+        elif sourceFieldTypeName == 'Bool' and (targetFieldTypeName == 'Int' or targetFieldTypeName == 'LongLong'):
+            return True
+        elif targetFieldTypeName == 'String':
+            return True
+
+
+    def getAttributeValueInCompatibleType(self, targetFieldTypeName, sourceFieldTypeName, sourceAttribute):
+        if targetFieldTypeName == sourceFieldTypeName:
+            return sourceAttribute
+        else:
+            if (sourceFieldTypeName == 'Int' or sourceFieldTypeName == 'LongLong') and targetFieldTypeName == 'Double':
+                return sourceAttribute.toFloat()
+            elif sourceFieldTypeName == 'Bool' and (targetFieldTypeName == 'Int' or targetFieldTypeName == 'LongLong'):
+                return sourceAttribute.toInt()
+            elif targetFieldTypeName == 'String':
+                return sourceAttribute.toString()
+            else:
+                # TODO raise exception
+                return sourceAttribute
 
     def emptyGridLayout(self, gridLayout):
         for i in reversed(range(gridLayout.count())): 
