@@ -64,6 +64,7 @@ class DataCopySourceToTarget:
 
         self.gridLayoutDefaultFieldValuesCounter = 0
 
+        self.planNumber = None
 
     def setup(self):
         self.setupDialogCopySourceDataToDatabase()
@@ -153,7 +154,7 @@ class DataCopySourceToTarget:
                 targetTableComboBox = QComboBox()
 
                 targetTableNames = sorted(self.yleiskaavaDatabase.getTargetSchemaTableNamesShownInCopySourceToTargetUI())
-                targetTableNames.insert(0, "Valitse kohdetaulu")
+                targetTableNames.insert(0, "Valitse kohdekarttataso")
 
                 targetTableComboBox.addItems(targetTableNames)
                 self.targetTableComboBoxes.append(targetTableComboBox)
@@ -176,10 +177,10 @@ class DataCopySourceToTarget:
         # TODO: varmista, että kukin kohdekenttä on mahdollista valita vain kerran
 
         # QgsMessageLog.logMessage('handleTargetTableSelectChanged', 'Yleiskaava-työkalu', Qgis.Info)
-        self.targetSchemaTableName = targetTableComboBox.currentText()
+        self.targetSchemaTableName = self.yleiskaavaDatabase.getTargetSchemaTableNameForUserFriendlyTableName(targetTableComboBox.currentText())
         QgsMessageLog.logMessage('targetTableName: ' + self.targetSchemaTableName + ', rowIndex: ' + str(rowIndex), 'Yleiskaava-työkalu', Qgis.Info)
 
-        if self.targetSchemaTableName != "Valitse kohdetaulu":
+        if self.targetSchemaTableName != "Valitse kohdekarttataso":
             self.targetLayer = self.yleiskaavaDatabase.createLayerByTargetSchemaTableName(self.targetSchemaTableName)
 
             #colnames = [desc.name for desc in curs.description]
@@ -206,9 +207,9 @@ class DataCopySourceToTarget:
             # Helpfully guess values for other widgets
             #
             for index, tempTargetTableComboBox in enumerate(self.targetTableComboBoxes):
-                tempTargetTableName = tempTargetTableComboBox.currentText()
-                #if tempTargetTableName == "Valitse kohdetaulu":
-                tempTargetTableComboBox.setCurrentText(self.targetSchemaTableName)
+                #tempTargetTableName = tempTargetTableComboBox.currentText()
+                #if tempTargetTableName == "Valitse kohdekarttataso":
+                tempTargetTableComboBox.setCurrentText(self.yleiskaavaDatabase.getUserFriendlyTableNameForTargetSchemaTableName(self.targetSchemaTableName))
                 # self.targetFieldNameComboBoxes[index].clear()
                 # self.targetFieldNameComboBoxes[index].addItems(targetFieldNames)
 
@@ -256,7 +257,8 @@ class DataCopySourceToTarget:
     def chooseSourceFeatures(self):
         # TODO varmista, että self.targetSchemaTableName != None ja tarvittaessa ilmoita käyttäjälle
 
-        # TODO jos "Luo tarvittaessa uudet kaavamääräykset" / "Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan" eivät relevantteja lähdeaineiston täysmäysten perusteella, niin näytä ko. elementit dialogissa disabloituna ja ilman valintaa
+        # TODO jos "Luo tarvittaessa uudet kaavamääräykset" / "Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan tai päinvastoin" eivät relevantteja lähdeaineiston täysmäysten perusteella, niin näytä ko. elementit dialogissa disabloituna ja ilman valintaa
+        # TODO Huomioi, että jos käyttötarkoitus ja kaavamääräys molemmat lähdekohde-matchissä tai ei kumpaakaan, niin ei ruksia asetusdialogissa "Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan tai päinvastoin"-kohtaan
 
         self.dialogCopySourceDataToDatabaseWidget.hide()
         self.dialogCopySettings.hide()
@@ -273,33 +275,7 @@ class DataCopySourceToTarget:
 
     def showDialogCopySettings(self):
         
-        # hae kaikki yleiskaavataulun yleiskaavojen nimet, täytä comboBoxSpatialPlanName ja valitse tyypillisin nimi
-        layer = self.yleiskaavaDatabase.createLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
-        features = layer.getFeatures()
-        planNames = []
-        for index, feature in enumerate(features):
-            planNames.append(feature['nimi'])
-
-        planNameCounter = Counter(planNames)
-
-        planNamesOrderedWithCount = planNameCounter.most_common()
-
-        planNamesOrdered = [item[0] for item in planNamesOrderedWithCount]
-
-        self.dialogCopySettings.comboBoxSpatialPlanName.clear()
-        if len(planNamesOrdered) > 0:
-            self.dialogCopySettings.comboBoxSpatialPlanName.addItems(sorted(planNamesOrdered))
-            self.dialogCopySettings.comboBoxSpatialPlanName.setCurrentText(planNamesOrdered[0])
-
-        # hae kaikki kaavatasot, täytä comboBoxLevelOfSpatialPlan niiden nimillä ja valitse sopiva yleiskaavataso
-        planLevelList = self.yleiskaavaDatabase.getYleiskaavaPlanLevelList()
-
-        planLevelNames = [item["koodi"] for item in planLevelList]
-
-        # TODO kun käyttäjä vaihtaa yleiskaavan, niin vaihda automaattisesti kaavataso (tarvittaessa)
-
-        self.dialogCopySettings.comboBoxLevelOfSpatialPlan.addItems(sorted(planLevelNames))
-        self.dialogCopySettings.comboBoxLevelOfSpatialPlan.setCurrentText("paikallinen")
+        self.initializeDialogCopySettingsPlanPart()
 
         # 
         # TODO esitä dialogissa sellaiset kohdekentät, joilla ei ole vielä arvoa tauluissa
@@ -342,6 +318,62 @@ class DataCopySourceToTarget:
         self.dialogCopySettings.resize(QSize(DataCopySourceToTarget.SETTINGS_DIALOG_MIN_WIDTH, DataCopySourceToTarget.SETTINGS_DIALOG_MIN_HEIGHT))
         self.dialogCopySettings.show()
         
+
+    def initializeDialogCopySettingsPlanPart(self):
+
+        # hae kaikki yleiskaavataulun yleiskaavojen nimet, täytä comboBoxSpatialPlanName ja valitse tyypillisin nimi
+        plans = self.yleiskaavaDatabase.getSpatialPlans()
+
+        planNames = [plan["nimi"] for plan in plans]
+
+        planNameCounter = Counter(planNames)
+        planNamesOrderedWithCount = planNameCounter.most_common()
+        planNamesOrdered = [item[0] for item in planNamesOrderedWithCount]
+
+        self.dialogCopySettings.comboBoxSpatialPlanName.clear()
+        if len(planNamesOrdered) > 0:
+            self.dialogCopySettings.comboBoxSpatialPlanName.addItems(sorted(planNamesOrdered))
+            self.dialogCopySettings.comboBoxSpatialPlanName.setCurrentText(planNamesOrdered[0])
+
+        # hae kaikki kaavatasot, täytä comboBoxLevelOfSpatialPlan niiden nimillä ja valitse sopiva yleiskaavataso
+        planLevelList = self.yleiskaavaDatabase.getYleiskaavaPlanLevelList()
+        planLevelNames = [item["koodi"] for item in planLevelList]
+
+        # TODO kun käyttäjä vaihtaa yleiskaavan, niin vaihda automaattisesti kaavataso (tarvittaessa)
+        self.dialogCopySettings.comboBoxLevelOfSpatialPlan.addItems(sorted(planLevelNames))
+        if len(planNamesOrdered) > 0:
+            self.dialogCopySettings.comboBoxLevelOfSpatialPlan.setCurrentText(self.yleiskaavaDatabase.getYleiskaavaPlanLevelCodeWithPlanName(self.dialogCopySettings.comboBoxSpatialPlanName.currentText()))
+
+        self.dialogCopySettings.comboBoxSpatialPlanName.currentTextChanged.connect(self.comboBoxSpatialPlanNameCurrentTextChanged)
+        #self.dialogCopySettings.comboBoxSpatialPlanName.currentTextChanged.connect(self.comboBoxSpatialPlanName)
+
+        # disabloi ja ruksi pois self.dialogCopySettings.checkBoxLinkToSpatialPlan, jos ei kaavoja
+        if len(planNames) == 0:
+            self.dialogCopySettings.checkBoxLinkToSpatialPlan.setChecked(False)
+            self.dialogCopySettings.checkBoxLinkToSpatialPlan.setEnabled(False)
+            self.dialogCopySettings.comboBoxSpatialPlanName.setEnabled(False)
+            #self.dialogCopySettings.comboBoxLevelOfSpatialPlan.setEnabled(False)
+        else:
+            self.dialogCopySettings.checkBoxLinkToSpatialPlan.setChecked(True)
+            self.dialogCopySettings.checkBoxLinkToSpatialPlan.setEnabled(True)
+            self.dialogCopySettings.comboBoxSpatialPlanName.setEnabled(True)
+            #self.dialogCopySettings.comboBoxLevelOfSpatialPlan.setEnabled(True)
+
+        # lisää signaali self.dialogCopySettings.checkBoxLinkToSpatialPlan checked muutokselle 
+        self.dialogCopySettings.checkBoxLinkToSpatialPlan.stateChanged.connect(self.checkBoxLinkToSpatialPlanStateChanged)
+
+
+    #def comboBoxLevelOfSpatialPlanCurrentTextChanged(self):
+    def comboBoxSpatialPlanNameCurrentTextChanged(self):
+        self.dialogCopySettings.comboBoxLevelOfSpatialPlan.setCurrentText(self.yleiskaavaDatabase.getYleiskaavaPlanLevelCodeWithPlanName(self.dialogCopySettings.comboBoxSpatialPlanName.currentText()))
+
+
+    def checkBoxLinkToSpatialPlanStateChanged(self):
+        if self.dialogCopySettings.checkBoxLinkToSpatialPlan.isChecked():
+            self.dialogCopySettings.comboBoxSpatialPlanName.setEnabled(True)
+        else:
+            self.dialogCopySettings.comboBoxSpatialPlanName.setEnabled(False)
+
 
     def getChosenTargetFieldNames(self):
         # TODO hae valittujen kohdekenttien nimet dialogin gridistä
@@ -442,9 +474,7 @@ class DataCopySourceToTarget:
 
             self.handleRegulationInSourceToTargetCopy(sourceFeature, targetLayerFeature)
 
-            # TODO yleiskaavaan yhdistäminen, jos asetus "Yhdistä kaavakohteet yleiskaavaan"
-
-            self.handleSpatialPlanRelationInSourceToTargetCopy(sourceFeature, targetLayerFeature)
+            self.handleSpatialPlanRelationInSourceToTargetCopy(targetLayerFeature)
 
             targetLayerFeatures.append(targetLayerFeature)
         
@@ -454,27 +484,69 @@ class DataCopySourceToTarget:
 
 
     def handleRegulationInSourceToTargetCopy(self, sourceFeature, targetFeature):
-        # TODO huomioi asetukset "Luo tarvittaessa uudet kaavamääräykset" ja "Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan" ja tee tarvittaessa linkki olemassa olevaan tai uuteen kaavamääräykseen 
-        # TODO huomioi, että kaavamääräys voi tulla lähteen käyttötarkoituksen kautta (muokkaa myös asetus-dialogia, jotta ko. asia on mahdollista)
+        # Tee tarvittaessa linkki olemassa olevaan tai uuteen kaavamääräykseen. Huomioi asetukset "Luo tarvittaessa uudet kaavamääräykset" ja "Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan tai päinvastoin"
+        # Huomioi, että kaavamääräys voi tulla lähteen käyttötarkoituksen kautta (muokkaa myös asetus-dialogia, jotta ko. asia on mahdollista)
+        # muuttaa lähdekaavamääräyksen isoihin kirjaimiin, jos ei ole valmiiksi
+        # TODO huomioi, että kaavamääräys ja/tai käyttötarkoitus ovat voineet tulla oletusarvojen kautta
 
         fieldMatches = self.getSourceTargetFieldMatches()
         fieldMatchTargetNames = [fieldMatch["target"] for fieldMatch in fieldMatches]
 
         if "kaavamaaraysotsikko" in fieldMatchTargetNames:
-            sourceRegulationName = self.getSourceFeatureValueForSourceTargetFieldMatch(fieldMatches, sourceFeature, "kaavamaaraysotsikko")
-            
-            regulationList = self.yleiskaavaDatabase.getSpecificRegulations()
-            regulationNames = [regulation["kaavamaarays_otsikko"] for regulation in regulationList]
+            sourceRegulationName = self.getSourceFeatureValueForSourceTargetFieldMatch(fieldMatches, sourceFeature, "kaavamaaraysotsikko").toupper()
 
-            if not sourceRegulationName.isNull() and sourceRegulationName != "" and sourceRegulationName in regulationNames:
-                self.yleiskaavaDatabase.createFeatureRegulationRelation(self.targetSchemaTableName, targetFeature.attribute["id"], sourceRegulationName)
-            elif sourceRegulationName != "": # uusi otsikko & kaavamääräys (tai muuten virhe otsikon oikeinkirjoituksessa, tms)
-                self.yleiskaavaDatabase.createSpecificRegulationAndFeatureRegulationRelation(self.targetSchemaTableName, targetFeature.attribute["id"], sourceRegulationName)
+            if sourceRegulationName != "":
+                regulationList = self.yleiskaavaDatabase.getSpecificRegulations(upperCase=True)
+                regulationNames = [regulation["kaavamaarays_otsikko"] for regulation in regulationList]
+
+                if sourceRegulationName in regulationNames:
+                    self.yleiskaavaDatabase.createFeatureRegulationRelation(self.targetSchemaTableName, targetFeature.attribute["id"], sourceRegulationName)
+                elif self.shouldCreateNewRegulation(): # uusi otsikko & kaavamääräys (tai muuten virhe otsikon oikeinkirjoituksessa, tms)
+                    self.yleiskaavaDatabase.createSpecificRegulationAndFeatureRegulationRelation(self.targetSchemaTableName, targetFeature.attribute["id"], sourceRegulationName)
+
+                if self.shouldFillLandUseClassificationWithRegulation():
+                    self.fillLandUseClassificationWithRegulation(sourceRegulationName, targetFeature)
+
         elif "kayttotarkoitus_lyhenne" in fieldMatchTargetNames:
-            pass
+            sourceLandUseClassificationName = self.getSourceFeatureValueForSourceTargetFieldMatch(fieldMatches, sourceFeature, "kayttotarkoitus_lyhenne").toupper()
+
+            if sourceLandUseClassificationName != "":
+
+                regulationName = self.yleiskaavaUtils.getRegulationNameForLandUseClassification(self.planNumber, targetSchemaTableName, sourceLandUseClassificationName)
+
+                regulationList = self.yleiskaavaDatabase.getSpecificRegulations(upperCase=True)
+                regulationNames = [regulation["kaavamaarays_otsikko"] for regulation in regulationList]
+
+                if regulationName in regulationNames:
+                    self.yleiskaavaDatabase.createFeatureRegulationRelation(self.targetSchemaTableName, targetFeature.attribute["id"], regulationName)
+                elif self.shouldCreateNewRegulation(): # uusi otsikko & kaavamääräys (tai muuten virhe otsikon oikeinkirjoituksessa, tms)
+                    self.yleiskaavaDatabase.createSpecificRegulationAndFeatureRegulationRelation(self.targetSchemaTableName, targetFeature.attribute["id"], regulationName)
+
+                if self.shouldFillLandUseClassificationWithRegulation():
+                    self.fillRegulationWithLandUseClassification(sourceLandUseClassificationName, targetFeature)
+
+
+    def fillRegulationWithLandUseClassification(self, landUseClassificationName, targetFeature):
+        regulationName = self.yleiskaavaUtils.getRegulationNameForLandUseClassification(self.planNumber, targetSchemaTableName, sourceLandUseClassificationName)
+
+        targetFeature.setAttribute("kaavamaaraysotsikko", regulationName)
+
+    
+    def fillLandUseClassificationWithRegulation(self, sourceRegulationName, targetFeature):
+        landUseClassificationName = self.yleiskaavaUtils.getLandUseClassificationNameForRegulation(self.planNumber, targetSchemaTableName, sourceRegulationName)
+
+        targetFeature.setAttribute("kayttotarkoitus_lyhenne", landUseClassificationName)
+
+
+    def shouldCreateNewRegulation(self):
+        return self.dialogCopySourceDataToDatabase.checkBoxCreateRegulations.isChecked()
+
+
+    def shouldFillLandUseClassificationWithRegulation(self):
+        return self.dialogCopySourceDataToDatabase.checkBoxFillLandUseClassificationWithRegulation.isChecked()
 
     def getSourceFeatureValueForSourceTargetFieldMatch(self, fieldMatches, sourceFeature, targetFieldName):
-        value = None
+        value = ""
 
         for fieldMatch in fieldMatches:
             if targetFieldName == fieldMatch["target"]:
@@ -483,8 +555,13 @@ class DataCopySourceToTarget:
         return value
 
 
-    def handleSpatialPlanRelationInSourceToTargetCopy(self, sourceFeature, targetFeature):
-        pass
+    def handleSpatialPlanRelationInSourceToTargetCopy(self, targetFeature):
+        # yleiskaavaan yhdistäminen, jos asetus "Yhdistä kaavakohteet yleiskaavaan"
+
+        if self.dialogCopySettings.checkBoxLinkToSpatialPlan.isChecked():
+            spatialPlanID = self.yleiskaavaDatabase.getSpatialPlanIDForPlanName(self.dialogCopySettings.comboBoxSpatialPlanName.currentText())
+            if spatialPlanID != None:
+                targetFeature.settAttribute("id_yleiskaava", spatialPlanID)
 
 
     def setTargetFeatureValues(sourceFeature, targetFeature):
@@ -531,6 +608,7 @@ class DataCopySourceToTarget:
 
         return defaultFieldNameValueTuples
 
+
     def getValueOfWidgetForTYpe(self, widget, targetFieldType):
         if targetFieldType == "String": # QgsFieldValuesLineEdit
             text = widget.text()
@@ -545,7 +623,7 @@ class DataCopySourceToTarget:
             else:
                 return int(text)
         elif targetFieldType == "Double": # QgsFieldValuesLineEdit
-           text = widget.text()
+            text = widget.text()
             if text == "":
                 return None
             else:

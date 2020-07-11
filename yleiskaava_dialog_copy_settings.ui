@@ -57,7 +57,7 @@
       <item>
        <widget class="QCheckBox" name="checkBoxFillLandUseClassificationWithRegulation">
         <property name="text">
-         <string>Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan</string>
+         <string>Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan tai päinvastoin (koittaa huomioida mahd. lyhenteen)</string>
         </property>
         <property name="checked">
          <bool>true</bool>
@@ -86,7 +86,7 @@
          <item row="0" column="0">
           <widget class="QLabel" name="label">
            <property name="text">
-            <string>Kohteeet kuuluvat kaavaan:</string>
+            <string>Kohteet kuuluvat kaavaan:</string>
            </property>
           </widget>
          </item>
@@ -137,7 +137,7 @@
            <item>
             <widget class="QLabel" name="label_3">
              <property name="text">
-              <string>Kohdetaulu ja kenttä</string>
+              <string>Kohdekarttaso (kaavaobjekti) ja kenttä</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignCenter</set>

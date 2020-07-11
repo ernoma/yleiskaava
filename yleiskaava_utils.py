@@ -3,8 +3,26 @@ from qgis.PyQt.QtCore import QVariant
 
 class YleiskaavaUtils:
 
+    LAND_USE_CLASSIFICATION_ABBREVIATIONS = [
+        { "plan_numbers": ["yk049"], "name": "ASUMISEN ALUE", "abbreviation": "A" },
+        { "plan_numbers": ["yk049"], "name": "ASUMISEN JA VIRKISTYKSEN SEKOITTUNUT ALUE", "abbreviation": "A/V" },
+        { "plan_numbers": ["yk049"], "name": "KESKUSPUISTOVERKOSTO", "abbreviation": "V" },
+        { "plan_numbers": ["yk050"], "name": "VIRKISTYSALUE", "abbreviation": "V" },
+        { "plan_numbers": ["yk049"], "name": "KESKUSTATOIMINTOJEN ALUE", "abbreviation": "C" },
+        { "plan_numbers": ["yk049"], "name": "KESKUSTATOIMINTOJEN JA VIRKISTYKSEN SEKOITTUNUT ALUE", "abbreviation": "C/V" },
+        { "plan_numbers": ["yk049"], "name": "LOMA-ASUNTOALUE", "abbreviation": "RA" },
+        { "plan_numbers": ["yk049", "yk050"], "name": "LUONNONSUOJELUALUE TAI -KOHDE", "abbreviation": "SL" },
+        { "plan_numbers": ["yk049"], "name": "PALVELUJEN JA TYÖPAIKKOJEN SEKOITTUNUT ALUE TAI KOHDE", "abbreviation": "P/T" },
+        { "plan_numbers": ["yk049"], "name": "PUOLUSTUSVOIMIEN ALUE", "abbreviation": "EP" },
+        { "plan_numbers": ["yk049"], "name": "TEOLLISUUS- JA TUOTANTOTOIMINTOJEN ALUE", "abbreviation": "T" },
+        { "plan_numbers": ["yk049"], "name": "TEOLLISUUS- JA TUOTANTOTOIMINTOJEN ALUE, JOLLA YMPÄRISTÖ ASETTAA TOIMINNAN LAADULLE ERITYISIÄ VAATIMUKSIA", "abbreviation": "TY" },
+        { "plan_numbers": ["yk049", "yk050"], "name": "VESIALUE", "abbreviation": "W" },
+        { "plan_numbers": ["yk049"], "name": "YHTEISÖJEN LOMA-ASUNTOALUE", "abbreviation": "R" }
+    ]
+
     def __init__(self):
         pass
+        
 
     # 
     # From Francisco Javier Carrera Arias,
@@ -87,3 +105,41 @@ class YleiskaavaUtils:
             gridLayout.removeWidget(widgetToRemove)
             # remove it from the gui
             widgetToRemove.setParent(None)
+
+
+    def getLandUseClassificationNameForRegulation(self, planNumber, schemaTableName, regulationName):
+        landUseName = regulationName
+
+        if schemaTableName == 'yk_yleiskaava.kaavaobjekti_alue':
+            landUseClassificationAbbrs = self.getLandUseClassificationAbbreviationsForPlan(planNumber)
+
+            for landUseClassificationAbbr in landUseClassificationAbbrs:
+                if landUseClassificationAbbr["name"] == regulationName.upper():
+                    landUseName = landUseClassificationAbbr["abbreviation"]
+                    break
+
+        return landUseName
+
+
+    def getRegulationNameForLandUseClassification(self, planNumber, schemaTableName, landUseClassification):
+        regulationName = landUseClassification
+
+        if schemaTableName == 'yk_yleiskaava.kaavaobjekti_alue':
+            landUseClassificationAbbrs = self.getLandUseClassificationAbbreviationsForPlan(planNumber)
+            
+            for landUseClassificationAbbr in landUseClassificationAbbrs:
+                if landUseClassificationAbbr["abbreviation"] == landUseClassification.upper():
+                    regulationName = landUseClassificationAbbr["name"]
+                    break
+
+        return regulationName
+
+
+    def getLandUseClassificationAbbreviationsForPlan(self, planNumber):
+        landUseClassificationAbbrs = []
+        
+        for landUseClassificationAbbr in YleiskaavaUtils.LAND_USE_CLASSIFICATION_ABBREVIATIONS:
+            if planNumber in landUseClassification["plan_numbers"]:
+                landUseClassificationAbbrs.append(landUseClassificationAbbr)
+
+        return landUseClassificationAbbrs

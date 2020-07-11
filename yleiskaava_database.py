@@ -26,7 +26,7 @@ class YleiskaavaDatabase:
             {"name": "yk_yleiskaava.kaavaobjekti_alue_taydentava", "userFriendlyTableName": 'Täydentävät aluekohteet', "geomFieldName": "geom", "showInCopySourceToTargetUI": True},
             {"name": "yk_yleiskaava.kaavaobjekti_viiva", "userFriendlyTableName": 'Viivamaiset kaavakohteet', "geomFieldName": "geom", "showInCopySourceToTargetUI": True},
             {"name": "yk_yleiskaava.kaavaobjekti_piste", "userFriendlyTableName": 'Pistemäiset kaavakohteet', "geomFieldName": "geom", "showInCopySourceToTargetUI": True},
-            {"name": "yk_yleiskaava.yleismaarays", "userFriendlyTableName": 'Yleismääräykset, "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_yleiskaava.yleismaarays", "userFriendlyTableName": 'Yleismääräykset', "geomFieldName": None, "showInCopySourceToTargetUI": False},
             {"name": "yk_yleiskaava.kaavamaarays", "userFriendlyTableName": 'Kaavamääräykset', "geomFieldName": None, "showInCopySourceToTargetUI": False},
             {"name": "yk_kuvaustekniikka.teema", "userFriendlyTableName": 'Teemat', "geomFieldName": None, "showInCopySourceToTargetUI": False},
             {"name": "yk_prosessi.lahtoaineisto", "userFriendlyTableName": 'Lähtöaineisto', "geomFieldName": None, "showInCopySourceToTargetUI": False},
@@ -62,16 +62,39 @@ class YleiskaavaDatabase:
             { "name": "id_kaavoitusprosessin_tila", "userFriendlyName": "Kaavoitusprosessin tila", "type": "uuid" }
         ]
 
+
     def getTargetSchemaTableNamesShownInCopySourceToTargetUI(self):
         names = []
         for item in self.yleiskaava_target_tables:
             if item['showInCopySourceToTargetUI'] == True:
-                names.append(item['name'])
+                names.append(item['userFriendlyTableName'])
         return names
+
+
+    def getUserFriendlyTableNameForTargetSchemaTableName(self, name):
+        userFriendlyTableName = None
+        for item in self.yleiskaava_target_tables:
+            if item['showInCopySourceToTargetUI'] == True and item['name'] == name:
+                userFriendlyTableName = item['userFriendlyTableName']
+                break
+
+        return userFriendlyTableName
+
+
+    def getTargetSchemaTableNameForUserFriendlyTableName(self, userFriendlyTableName):
+        name = None
+        for item in self.yleiskaava_target_tables:
+            if item['showInCopySourceToTargetUI'] == True and item['userFriendlyTableName'] == userFriendlyTableName:
+                name = item['name']
+                break
+
+        return name
+                
 
     def getTargetSchemaTableByName(self, name):
         table_item = next((item for item in self.yleiskaava_target_tables if item["name"] == name), None)
         return table_item
+
 
     def createLayerByTargetSchemaTableName(self, name):
         table_item = self.getTargetSchemaTableByName(name)
@@ -82,6 +105,55 @@ class YleiskaavaDatabase:
         return targetLayer
         #else:
         #    return None
+
+
+    def getSpatialPlans(self):
+        layer = self.createLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
+        features = layer.getFeatures()
+
+        plans = []
+        for index, feature in enumerate(features):
+            planLevelCode = None
+            if feature['id_kaavan_taso'] is not None:
+                planLevelCode = self.getYleiskaavaPlanLevelCode(feature['id_kaavan_taso'])
+
+            plans.append({
+                "id": feature['id'],
+                "nimi": feature['nimi'],
+                "nro": feature['nro'],
+                "kaavan_taso_koodi": planLevelCode
+                })
+
+        return plans
+
+
+    def getYleiskaavaPlanLevelCodeWithPlanName(self, planName):
+        planLevelCode = None
+
+        layer = self.createLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
+        features = layer.getFeatures()
+
+        plans = []
+        for index, feature in enumerate(features):
+            if feature['nimi'] == planName:
+                if feature['id_kaavan_taso'] is not None:
+                    planLevelCode = self.getYleiskaavaPlanLevelCode(feature['id_kaavan_taso'])
+                break
+
+        return planLevelCode
+
+
+    def getYleiskaavaPlanLevelCode(self, idPlanLevel):
+        planLevelCode = None
+
+        planLevelList = self.getYleiskaavaPlanLevelList()
+        for planLevel in planLevelList:
+            if planLevel["id"] == idPlanLevel:
+                planLevelCode = planLevel ["koodi"]
+                break
+
+        return planLevelCode
+
 
     def getYleiskaavaPlanLevelList(self):
         uri = self.createDbURI("yk_koodiluettelot", "kaavan_taso", None)
@@ -97,31 +169,53 @@ class YleiskaavaDatabase:
 
         return planLevelList
 
-    def getSpecificRegulations(self):
+
+    def getSpatialPlanIDForPlanName(self, planName):
+        planID = None
+
+        layer = self.createLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
+        features = layer.getFeatures()
+
+        plans = []
+        for index, feature in enumerate(features):
+            if feature['nimi'] == planName:
+                planID = feature['id']
+                break
+
+        return planID
+
+
+    def getSpecificRegulations(self, upperCase):
         uri = self.createDbURI("yk_yleiskaava", "kaavamaarays", None)
         targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
 
         features = targetLayer.getFeatures()
         regulationList = []
         for index, feature in enumerate(features):
+            kaavamaarays_otsikko = feature['kaavamaarays_otsikko']
+            maaraysteksti = feature['maaraysteksti']
+
+            if upperCase:
+                kaavamaarays_otsikko = kaavamaarays_otsikko.toupper()
+                maaraysteksti = maaraysteksti.toupper()
+
             regulationList.append({
                 "id": feature['id'],
-                "kaavamaarays_otsikko": feature['kaavamaarays_otsikko'],
-                "maaraysteksti": feature['maaraysteksti']})
+                "kaavamaarays_otsikko": kaavamaarays_otsikko,
+                "maaraysteksti": maaraysteksti})
 
         return regulationList
+
 
     def createFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationName):
         schema, table_name = targetSchemaTableName.split('.')
 
-        regulationList = self.getSpecificRegulations()
+        regulationID = self.findRegulationID(regulationName)
 
-        regulationID = None
-        for regulation in regulationList:
-            if regulation["kaavamaarays_otsikko"] == sourceRegulationName:
-                regulationID = regulation["id"]
-                break
+        self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulationID)
 
+
+    def createFeatureRegulationRelationWithRegulationID(self, targetSchemaTableName, targetFeatureID, regulationID):
         uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_kaavamaarays_yhteys", None)
         relationLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
 
@@ -135,10 +229,35 @@ class YleiskaavaDatabase:
         provider.addFeature(relationLayerFeature)
         relationLayer.commitChanges()
 
+
+    def findRegulationID(self, regulationName):
+        regulationList = self.getSpecificRegulations(upperCase=True)
+
+        regulationID = None
+        for regulation in regulationList:
+            if regulation["kaavamaarays_otsikko"] == regulationName.toupper():
+                regulationID = regulation["id"]
+                break
+
         return regulationID
 
+
     def createSpecificRegulationAndFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationName):
-        pass
+        uri = self.createDbURI("yk_yleiskaava", "kaavamaarays", None)
+        regulationLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+
+        regulationID = str(uuid.uuid4())
+
+        regulationFeature = QgsFeature()
+        regulationFeature.setAttribute("id", regulationID)
+        regulationFeature.setAttribute("kaavamaarays_otsikko", regulationName)
+        regulationLayer.startEditing()
+        provider = regulationLayer.dataProvider()
+        provider.addFeature(relationLayerFeature)
+        regulationLayer.commitChanges()
+
+        self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulationID)
+
 
     def getCodeListValuesForSchemaTable(self, id_name):
         if id_name == 'id_kansallinen_prosessin_vaihe':
@@ -158,12 +277,14 @@ class YleiskaavaDatabase:
 
         return values
 
+
     def getSchemaTableFields(self, name):
         table_item = self.getTargetSchemaTableByName(name)
         schema, table_name = name.split('.')
         uri = self.createDbURI(schema, table_name, table_item["geomFieldName"])
         layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
         return layer.fields().toList()
+
 
     def createDbURI(self, schema, table_name, geomFieldName):
         self.connParams = self.readConnectionParamsFromInput()
@@ -176,6 +297,7 @@ class YleiskaavaDatabase:
         uri.setDataSource(schema, table_name, geomFieldName)
 
         return uri
+
 
     # def createDbConnection(self):
     #     '''Creates a database connection and cursor based on connection params'''
@@ -210,6 +332,7 @@ class YleiskaavaDatabase:
             #if result:
             #    self.connParams = self.readConnectionParamsFromInput()
 
+
     def setConnectionParamsFromFile(self):
         '''Reads connection parameters from file and sets them to the input fields'''
         filePath = self.settingsDialog.configFileInput.filePath()
@@ -223,6 +346,7 @@ class YleiskaavaDatabase:
 
         self.setConnectionParamsFromInput(dbParams)
         self.connParams = self.readConnectionParamsFromInput()
+
 
     def parseConfigFile(self, filePath):
         '''Reads configuration file and returns parameters as a dict'''
@@ -251,6 +375,7 @@ class YleiskaavaDatabase:
 
         return dbParams
 
+
     def setConnectionParamsFromInput(self, params):
         '''Sets connection parameters to input fields'''
         self.settingsDialog.dbHost.setValue(params['host'])
@@ -258,6 +383,7 @@ class YleiskaavaDatabase:
         self.settingsDialog.dbName.setValue(params['database'])
         self.settingsDialog.dbUser.setValue(params['user'])
         self.settingsDialog.dbPass.setText(params['password'])
+
 
     def readConnectionParamsFromInput(self):
         '''Reads connection parameters from user input and returns a dictionary'''
@@ -269,11 +395,12 @@ class YleiskaavaDatabase:
         params['password'] = self.settingsDialog.dbPass.text()
         return params
 
+
     def getUserFriendlyschemaTableName(self, schemaTableName):
         userFriendlyTableName = schemaTableName
 
         for table in self.yleiskaava_target_tables:
-            if table["name"] = schemaTableName
+            if table["name"] == schemaTableName:
                 userFriendlyTableName = table["userFriendlyTableName"]
                 break
 
@@ -284,7 +411,7 @@ class YleiskaavaDatabase:
         schemaTableName = userFriendlyTableName
 
         for table in self.yleiskaava_target_tables:
-            if table["userFriendlyTableName"] = userFriendlyTableName
+            if table["userFriendlyTableName"] == userFriendlyTableName:
                 schemaTableName = table["name"]
                 break
 
@@ -306,7 +433,7 @@ class YleiskaavaDatabase:
         targetFieldName = userFriendlyFieldName
 
         for field in self.yleiskaava_spatial_target_fields:
-            if field["userFriendlyName"] = userFriendlyFieldName
+            if field["userFriendlyName"] == userFriendlyFieldName:
                 targetFieldName = field["name"]
                 break
 
@@ -318,8 +445,9 @@ class YleiskaavaDatabase:
         targetFieldType = None
 
         for field in self.yleiskaava_spatial_target_fields:
-            if field["name"] = targetFieldName
+            if field["name"] == targetFieldName:
                 targetFieldType = field["type"]
                 break
 
         return targetFieldType
+

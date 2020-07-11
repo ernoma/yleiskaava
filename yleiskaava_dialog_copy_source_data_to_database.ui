@@ -74,7 +74,7 @@
      <item>
       <widget class="QLabel" name="label_6">
        <property name="text">
-        <string>Kohde skeema ja taulu</string>
+        <string>Kohdekarttataso (kaavaobjekti)</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -84,7 +84,7 @@
      <item>
       <widget class="QLabel" name="label_3">
        <property name="text">
-        <string>Kohdetaulun kenttä</string>
+        <string>Kohdekarttatason kenttä</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
