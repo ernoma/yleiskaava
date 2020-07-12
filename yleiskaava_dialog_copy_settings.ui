@@ -167,13 +167,6 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButtonShowCopyActions">
-       <property name="text">
-        <string>Näytä ajolla tehtävät muutokset</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QPushButton" name="pushButtonPrevious">
        <property name="text">
         <string>Edellinen</string>

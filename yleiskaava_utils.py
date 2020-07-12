@@ -101,7 +101,7 @@ class YleiskaavaUtils:
         if field.type() == QVariant.Bool:
             return 'Bool'
         else:
-            QgsMessageLog.logMessage('getAttributeValueInCompatibleType tuntematon tyyppi', 'Yleiskaava-työkalu', Qgis.Critical)
+            QgsMessageLog.logMessage('getStringTypeForFeatureField tuntematon tyyppi', 'Yleiskaava-työkalu', Qgis.Critical)
             return str(field.type())
 
 
@@ -127,9 +127,8 @@ class YleiskaavaUtils:
             elif targetFieldTypeName == 'String':
                 return sourceAttribute.toString()
             else:
-                # TODO raise exception
                 QgsMessageLog.logMessage('getAttributeValueInCompatibleType tuntematon tyyppimuunnos', 'Yleiskaava-työkalu', Qgis.Critical)
-                return sourceAttribute
+                return None
 
 
     # def emptyGridLayout(self, gridLayout):
@@ -177,3 +176,10 @@ class YleiskaavaUtils:
                 landUseClassificationAbbrs.append(landUseClassificationAbbr)
 
         return landUseClassificationAbbrs
+
+
+class COPY_ERROR_REASONS:
+    
+    SELECTED_FEATURE_COUNT_IS_ZERO = 1
+    TARGET_TABLE_NOT_SELECTED = 2
+    TARGET_FIELD_SELECTED_MULTIPLE_TIMES = 3

@@ -21,16 +21,16 @@ class YleiskaavaDatabase:
         self.connParams = None
 
         self.yleiskaava_target_tables = [
-            {"name": "yk_yleiskaava.yleiskaava", "userFriendlyTableName": 'Yleiskaava', "geomFieldName": "kaavan_ulkorajaus", "geometryType": QgsWkbTypes.PolygonGeometry, "showInCopySourceToTargetUI": False},
+            {"name": "yk_yleiskaava.yleiskaava", "userFriendlyTableName": 'Yleiskaavan ulkorajaus (yleiskaava)', "geomFieldName": "kaavan_ulkorajaus", "geometryType": QgsWkbTypes.PolygonGeometry, "showInCopySourceToTargetUI": False},
             {"name": "yk_yleiskaava.kaavaobjekti_alue", "userFriendlyTableName": 'Aluevaraukset', "geomFieldName": "geom", "geometryType": QgsWkbTypes.PolygonGeometry, "showInCopySourceToTargetUI": True},
-            {"name": "yk_yleiskaava.kaavaobjekti_alue_taydentava", "userFriendlyTableName": 'Täydentävät aluekohteet', "geomFieldName": "geom", "geometryType": QgsWkbTypes.PolygonGeometry, "showInCopySourceToTargetUI": True},
+            {"name": "yk_yleiskaava.kaavaobjekti_alue_taydentava", "userFriendlyTableName": 'Täydentävät aluekohteet (osa-alueet)', "geomFieldName": "geom", "geometryType": QgsWkbTypes.PolygonGeometry, "showInCopySourceToTargetUI": True},
             {"name": "yk_yleiskaava.kaavaobjekti_viiva", "userFriendlyTableName": 'Viivamaiset kaavakohteet', "geomFieldName": "geom", "geometryType": QgsWkbTypes.LineGeometry, "showInCopySourceToTargetUI": True},
             {"name": "yk_yleiskaava.kaavaobjekti_piste", "userFriendlyTableName": 'Pistemäiset kaavakohteet', "geomFieldName": "geom", "geometryType": QgsWkbTypes.PointGeometry, "showInCopySourceToTargetUI": True},
-            {"name": "yk_yleiskaava.yleismaarays", "userFriendlyTableName": 'Yleismääräykset', "geomFieldName": None, "showInCopySourceToTargetUI": False},
-            {"name": "yk_yleiskaava.kaavamaarays", "userFriendlyTableName": 'Kaavamääräykset', "geomFieldName": None, "showInCopySourceToTargetUI": False},
-            {"name": "yk_kuvaustekniikka.teema", "userFriendlyTableName": 'Teemat', "geomFieldName": None, "showInCopySourceToTargetUI": False},
-            {"name": "yk_prosessi.lahtoaineisto", "userFriendlyTableName": 'Lähtöaineisto', "geomFieldName": None, "showInCopySourceToTargetUI": False},
-            {"name": "yk_prosessi.dokumentti", "userFriendlyTableName": 'Kaavaan liittyvät dokumentit', "geomFieldName": None, "showInCopySourceToTargetUI": False}
+            {"name": "yk_yleiskaava.yleismaarays", "userFriendlyTableName": 'yleismääräykset', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_yleiskaava.kaavamaarays", "userFriendlyTableName": 'kaavamääräykset', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_kuvaustekniikka.teema", "userFriendlyTableName": 'teemat', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_prosessi.lahtoaineisto", "userFriendlyTableName": 'lahtoaineisto', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_prosessi.dokumentti", "userFriendlyTableName": 'kaavaan liittyvät dokumentit', "geomFieldName": None, "showInCopySourceToTargetUI": False}
         ]
 
         self.yleiskaava_spatial_target_fields = [
@@ -63,6 +63,10 @@ class YleiskaavaDatabase:
         ]
 
 
+    def getUserFriendlyTargetSchemaTableNames(self):
+        return [item["userFriendlyName"] for item in self.yleiskaava_target_tables]
+
+        
     def getTargetSchemaTableNamesShownInCopySourceToTargetUI(self, geometry_type):
         names = []
         for item in self.yleiskaava_target_tables:
@@ -141,7 +145,7 @@ class YleiskaavaDatabase:
                 break
 
         return planNumber
-        
+
 
     def getYleiskaavaPlanLevelCodeWithPlanName(self, planName):
         planLevelCode = None
