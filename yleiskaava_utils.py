@@ -147,7 +147,7 @@ class YleiskaavaUtils:
             landUseClassificationAbbrs = self.getLandUseClassificationAbbreviationsForPlan(planNumber)
 
             for landUseClassificationAbbr in landUseClassificationAbbrs:
-                if landUseClassificationAbbr["name"] == regulationName.upper():
+                if landUseClassificationAbbr["name"] == regulationName:
                     landUseName = landUseClassificationAbbr["abbreviation"]
                     break
 
@@ -161,7 +161,7 @@ class YleiskaavaUtils:
             landUseClassificationAbbrs = self.getLandUseClassificationAbbreviationsForPlan(planNumber)
             
             for landUseClassificationAbbr in landUseClassificationAbbrs:
-                if landUseClassificationAbbr["abbreviation"] == landUseClassification.upper():
+                if landUseClassificationAbbr["abbreviation"] == landUseClassification:
                     regulationName = landUseClassificationAbbr["name"]
                     break
 
@@ -179,7 +179,6 @@ class YleiskaavaUtils:
 
 
 class COPY_ERROR_REASONS:
-    
     SELECTED_FEATURE_COUNT_IS_ZERO = 1
     TARGET_TABLE_NOT_SELECTED = 2
     TARGET_FIELD_SELECTED_MULTIPLE_TIMES = 3

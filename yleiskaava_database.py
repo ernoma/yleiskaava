@@ -1,6 +1,6 @@
-from PyQt5 import uic
-from PyQt5.QtCore import QSettings
-from qgis.core import (Qgis, QgsDataSourceUri, QgsVectorLayer, QgsWkbTypes, QgsMessageLog)
+from qgis.PyQt import uic
+from qgis.PyQt.QtCore import QSettings, QVariant
+from qgis.core import (Qgis, QgsDataSourceUri, QgsVectorLayer, QgsFeature, QgsWkbTypes, QgsMessageLog)
 from qgis.gui import QgsFileWidget
 
 import os.path
@@ -64,9 +64,9 @@ class YleiskaavaDatabase:
 
 
     def getUserFriendlyTargetSchemaTableNames(self):
-        return [item["userFriendlyName"] for item in self.yleiskaava_target_tables]
+        return [item["userFriendlyTableName"] for item in self.yleiskaava_target_tables]
 
-        
+
     def getTargetSchemaTableNamesShownInCopySourceToTargetUI(self, geometry_type):
         names = []
         for item in self.yleiskaava_target_tables:
@@ -205,31 +205,26 @@ class YleiskaavaDatabase:
         return planID
 
 
-    def getSpecificRegulations(self, upperCase):
+    def getSpecificRegulations(self):
         uri = self.createDbURI("yk_yleiskaava", "kaavamaarays", None)
         targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
 
         features = targetLayer.getFeatures()
         regulationList = []
         for index, feature in enumerate(features):
-            kaavamaarays_otsikko = feature['kaavamaarays_otsikko']
-            maaraysteksti = feature['maaraysteksti']
-
-            if upperCase:
-                kaavamaarays_otsikko = kaavamaarays_otsikko.toupper()
-                maaraysteksti = maaraysteksti.toupper()
+            kaavamaarays_otsikko = feature.attribute("kaavamaarays_otsikko")
+            #maaraysteksti = feature['maaraysteksti']
 
             regulationList.append({
                 "id": feature['id'],
-                "kaavamaarays_otsikko": kaavamaarays_otsikko,
-                "maaraysteksti": maaraysteksti})
+                "kaavamaarays_otsikko": kaavamaarays_otsikko
+                #"maaraysteksti": maaraysteksti
+                })
 
         return regulationList
 
 
     def createFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationName):
-        schema, table_name = targetSchemaTableName.split('.')
-
         regulationID = self.findRegulationID(regulationName)
 
         self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulationID)
@@ -239,7 +234,10 @@ class YleiskaavaDatabase:
         uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_kaavamaarays_yhteys", None)
         relationLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
 
+        schema, table_name = targetSchemaTableName.split('.')
+
         relationLayerFeature = QgsFeature()
+        relationLayerFeature.setFields(relationLayer.fields())
         relationLayerFeature.setAttribute("id", str(uuid.uuid4()))
         relationLayerFeature.setAttribute("id_" + table_name, targetFeatureID)
         relationLayerFeature.setAttribute("id_kaavamaarays", regulationID)
@@ -251,11 +249,11 @@ class YleiskaavaDatabase:
 
 
     def findRegulationID(self, regulationName):
-        regulationList = self.getSpecificRegulations(upperCase=True)
+        regulationList = self.getSpecificRegulations()
 
         regulationID = None
         for regulation in regulationList:
-            if regulation["kaavamaarays_otsikko"] == regulationName.toupper():
+            if regulation["kaavamaarays_otsikko"] == regulationName:
                 regulationID = regulation["id"]
                 break
 
@@ -269,6 +267,7 @@ class YleiskaavaDatabase:
         regulationID = str(uuid.uuid4())
 
         regulationFeature = QgsFeature()
+        regulationFeature.setFields(regulationLayer.fields())
         regulationFeature.setAttribute("id", regulationID)
         regulationFeature.setAttribute("kaavamaarays_otsikko", regulationName)
         regulationLayer.startEditing()
