@@ -1,6 +1,9 @@
 
 from qgis.PyQt.QtCore import QVariant
 
+from qgis.core import (QgsMessageLog)
+
+
 class YleiskaavaUtils:
 
     LAND_USE_CLASSIFICATION_ABBREVIATIONS = [
@@ -98,6 +101,7 @@ class YleiskaavaUtils:
         if field.type() == QVariant.Bool:
             return 'Bool'
         else:
+            QgsMessageLog.logMessage('getAttributeValueInCompatibleType tuntematon tyyppi', 'Yleiskaava-työkalu', Qgis.Critical)
             return str(field.type())
 
 
@@ -124,16 +128,17 @@ class YleiskaavaUtils:
                 return sourceAttribute.toString()
             else:
                 # TODO raise exception
+                QgsMessageLog.logMessage('getAttributeValueInCompatibleType tuntematon tyyppimuunnos', 'Yleiskaava-työkalu', Qgis.Critical)
                 return sourceAttribute
 
 
-    def emptyGridLayout(self, gridLayout):
-        for i in reversed(range(gridLayout.count())): 
-            widgetToRemove = gridLayout.itemAt(i).widget()
-            # remove it from the layout list
-            gridLayout.removeWidget(widgetToRemove)
-            # remove it from the gui
-            widgetToRemove.setParent(None)
+    # def emptyGridLayout(self, gridLayout):
+    #     for i in reversed(range(gridLayout.count())): 
+    #         widgetToRemove = gridLayout.itemAt(i).widget()
+    #         # remove it from the layout list
+    #         gridLayout.removeWidget(widgetToRemove)
+    #         # remove it from the gui
+    #         widgetToRemove.setParent(None)
 
 
     def getLandUseClassificationNameForRegulation(self, planNumber, schemaTableName, regulationName):
