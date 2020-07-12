@@ -126,6 +126,7 @@ class YleiskaavaUtils:
                 # TODO raise exception
                 return sourceAttribute
 
+
     def emptyGridLayout(self, gridLayout):
         for i in reversed(range(gridLayout.count())): 
             widgetToRemove = gridLayout.itemAt(i).widget()

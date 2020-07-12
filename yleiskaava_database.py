@@ -127,6 +127,22 @@ class YleiskaavaDatabase:
         return plans
 
 
+    def getPlanNumberForName(self, planName):
+        planNumber = None
+
+        layer = self.createLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
+        features = layer.getFeatures()
+
+        plans = []
+        for index, feature in enumerate(features):
+            if feature['nimi'] == planName:
+                if feature['nro'] is not None:
+                    planNumber = feature['nro']
+                break
+
+        return planNumber
+        
+
     def getYleiskaavaPlanLevelCodeWithPlanName(self, planName):
         planLevelCode = None
 

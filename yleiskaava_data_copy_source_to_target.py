@@ -66,6 +66,7 @@ class DataCopySourceToTarget:
 
         self.planNumber = None
 
+
     def setup(self):
         self.setupDialogCopySourceDataToDatabase()
         self.setupDialogChooseFeatures()
@@ -174,8 +175,6 @@ class DataCopySourceToTarget:
 
     def handleTargetTableSelectChanged(self, rowIndex, sourceFieldTypeName, targetTableComboBox, targetFieldNameComboBox):
 
-        # TODO: varmista, että kukin kohdekenttä on mahdollista valita vain kerran
-
         # QgsMessageLog.logMessage('handleTargetTableSelectChanged', 'Yleiskaava-työkalu', Qgis.Info)
         self.targetSchemaTableName = self.yleiskaavaDatabase.getTargetSchemaTableNameForUserFriendlyTableName(targetTableComboBox.currentText())
         QgsMessageLog.logMessage('targetTableName: ' + self.targetSchemaTableName + ', rowIndex: ' + str(rowIndex), 'Yleiskaava-työkalu', Qgis.Info)
@@ -260,11 +259,56 @@ class DataCopySourceToTarget:
             #     QgsMessageLog.logMessage('foundTypeMatch - sourceFieldName: ' + sourceFieldName + ', targetFieldName: ' + targetFieldName + ', targetFieldName index: ' + str(index + 1), 'Yleiskaava-työkalu', Qgis.Info)
 
 
-    def chooseSourceFeatures(self):
-        # TODO varmista, että self.targetSchemaTableName != None ja tarvittaessa ilmoita käyttäjälle
+    def checkThatCopyCanBeDone(self):
+        # TODO
 
-        # TODO jos "Luo tarvittaessa uudet kaavamääräykset" / "Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan tai päinvastoin" eivät relevantteja lähdeaineiston täysmäysten perusteella, niin näytä ko. elementit dialogissa disabloituna ja ilman valintaa
-        # TODO Huomioi, että jos käyttötarkoitus ja kaavamääräys molemmat lähdekohde-matchissä tai ei kumpaakaan, niin ei ruksia asetusdialogissa "Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan tai päinvastoin"-kohtaan
+        # varmista, että self.targetSchemaTableName != None ja tarvittaessa ilmoita käyttäjälle
+        if self.targetTableNotSelected():
+            pass
+
+        # varmista, että kukin kohdekenttä on mahdollista valita vain kerran
+        fieldName = self.getTargetFieldSelectedMoreThanOneTime()
+        if fieldName != None:
+            pass
+
+    
+    def targetTableNotSelected(self):
+        if self.targetSchemaTableName == None:
+            return True
+        else:
+            return False
+
+
+    def getTargetFieldSelectedMoreThanOneTime(self):
+        targetFieldNames = []
+
+        for i in range(self.getGridLayoutSourceTargetMatchRowCount()):
+            QgsMessageLog.logMessage("rowCount: " + str(self.getGridLayoutSourceTargetMatchRowCount()) + ", i: " + str(i), 'Yleiskaava-työkalu', Qgis.Info)
+
+            targetFieldName = None
+            targetFieldTypeName = None
+            text = self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.itemAtPosition(i, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX).widget().currentText()
+            if text != '':
+                targetFieldName, targetFieldTypeName = text.split(' ')
+                targetFieldTypeName = targetFieldTypeName[1:-1]
+
+            if targetFieldName in targetFieldNames:
+                return targetFieldName
+            else:
+                targetFieldNames.append(targetFieldName)
+
+        return None
+
+
+    def chooseSourceFeatures(self):
+        # varmista, että self.targetSchemaTableName != None ja tarvittaessa ilmoita käyttäjälle
+        if self.targetTableNotSelected():
+            self.iface.messageBar().pushMessage('Kopioinnin kohdekarttatasoa ei valittu', Qgis.Warning, duration=10)
+
+        # varmista, että kukin kohdekenttä on mahdollista valita vain kerran
+        fieldName = self.getTargetFieldSelectedMoreThanOneTime()
+        if fieldName != None:
+            self.iface.messageBar().pushMessage('Sama kohdekenttä valittu usealla lähdekentälle: ' + fieldName, Qgis.Warning, duration=10)
 
         self.dialogCopySourceDataToDatabaseWidget.hide()
         self.dialogCopySettings.hide()
@@ -280,7 +324,24 @@ class DataCopySourceToTarget:
 
 
     def showDialogCopySettings(self):
-        
+
+        # jos "Luo tarvittaessa uudet kaavamääräykset" / "Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan tai päinvastoin" eivät relevantteja lähdeaineiston täysmäysten perusteella, niin näytä ko. elementit dialogissa disabloituna ja ilman valintaa
+        if not self.targetFieldsHaveRegulation() and not self.targetFieldsHaveLandUseClassification():
+            self.dialogCopySettings.checkBoxCreateRegulations.setChecked(False)
+            self.dialogCopySettings.checkBoxCreateRegulations.setEnabled(False)
+        else:
+            self.dialogCopySettings.checkBoxCreateRegulations.setChecked(True)
+            self.dialogCopySettings.checkBoxCreateRegulations.setEnabled(True)
+        # Huomioi, että jos käyttötarkoitus ja kaavamääräys molemmat lähdekohde-matchissä tai ei kumpaakaan, niin ei ruksia asetusdialogissa "Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan tai päinvastoin"-kohtaan
+        if (not self.targetFieldsHaveRegulation() and not self.targetFieldsHaveLandUseClassification()) or (self.targetFieldsHaveRegulation() and self.targetFieldsHaveLandUseClassification()):
+            self.dialogCopySettings.checkBoxFillLandUseClassificationWithRegulation.setChecked(False)
+            self.dialogCopySettings.checkBoxFillLandUseClassificationWithRegulation.setEnabled(False)
+        else:
+            self.dialogCopySettings.checkBoxFillLandUseClassificationWithRegulation.setChecked(True)
+            self.dialogCopySettings.checkBoxFillLandUseClassificationWithRegulation.setEnabled(True)
+            
+
+
         self.initializeDialogCopySettingsPlanPart()
 
         # 
@@ -382,15 +443,12 @@ class DataCopySourceToTarget:
 
 
     def getChosenTargetFieldNames(self):
-        # TODO hae valittujen kohdekenttien nimet dialogin gridistä
+        # hae valittujen kohdekenttien nimet dialogin gridistä
         names = []
-        index = 0
-        for field in self.sourceLayer.fields().toList():
-            if field.name() != 'id' and self.yleiskaavaUtils.getStringTypeForFeatureField(field) != 'uuid':
-                name = self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.itemAtPosition(index, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX).widget().currentText()
-                if len(name) > 0:
-                    names.append(name.split(' ')[0]) # Remove type and append
-                index += 1
+        for i in range(self.getGridLayoutSourceTargetMatchRowCount()):
+            name = self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.itemAtPosition(i, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX).widget().currentText()
+            if len(name) > 0:
+                names.append(name.split(' ')[0]) # Remove type and append
         return names
 
 
@@ -412,7 +470,7 @@ class DataCopySourceToTarget:
             self.dialogCopySettings.gridLayoutDefaultFieldValues.addWidget(targetSchemaTableFieldLabel, self.gridLayoutDefaultFieldValuesCounter, DataCopySourceToTarget.DEFAULT_VALUES_GRID_LABEL_INDEX, 1, 1)
             # self.dialogCopySettings.gridLayoutDefaultFieldValues.addWidget(targetFieldLabel, self.gridLayoutDefaultFieldValuesCounter, 1, 1, 1)
 
-            if targetFieldTypeName == 'String' or targetFieldTypeName == 'Int' or targetFieldTypeName == 'Double':
+            if targetFieldTypeName == 'String' or targetFieldTypeName == 'Int' or targetFieldTypeName == 'Double' or targetFieldTypeName == 'LongLong':
                 lineEdit = QgsFieldValuesLineEdit()
                 lineEdit.setLayer(layer)
                 lineEdit.setAttributeIndex(fieldIndex)
@@ -452,6 +510,8 @@ class DataCopySourceToTarget:
 
     def copySourceFeaturesToTargetLayer(self):
 
+        self.planNumber = self.yleiskaavaDatabase.getPlanNumberForName(self.getPlanNameFromCopySettings())
+
         # self.targetLayer.startEditing()
 
         sourceCRS = self.sourceLayer.crs()
@@ -487,6 +547,9 @@ class DataCopySourceToTarget:
         # provider = self.targetLayer.dataProvider()
         # provider.addFeatures(targetLayerFeatures)
         # self.targetLayer.commitChanges()
+
+    def getPlanNameFromCopySettings(self):
+        return self.dialogCopySettings.comboBoxSpatialPlanName.currentText()
 
 
     def handleRegulationInSourceToTargetCopy(self, sourceFeature, targetFeature):
@@ -602,7 +665,7 @@ class DataCopySourceToTarget:
         defaultFieldNameValueInfos = []
 
         for i in range(self.dialogCopySettings.gridLayoutDefaultFieldValues.rowCount()):
-            widget = self.dialogCopySettings.gridLayoutDefaultFieldValues.itemAtPosition(i, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX).widget()
+            widget = self.dialogCopySettings.gridLayoutDefaultFieldValues.itemAtPosition(i, DataCopySourceToTarget.DEFAULT_VALUES_GRID_INPUT_INDEX).widget()
             text = widget.text()
 
             userFriendlyTableName = text.split('-')[0][:-1]
@@ -640,7 +703,7 @@ class DataCopySourceToTarget:
                 return None
             else:
                 return float(text)
-        elif targetFieldType == "LongLong": # QComboBox
+        elif targetFieldType == "LongLong": # QgsFieldValuesLineEdit
             text = widget.text()
             if text == "":
                 return None
@@ -653,7 +716,7 @@ class DataCopySourceToTarget:
             else:
                 return dateValue
         elif targetFieldType == "Bool": # QComboBox
-            text = widget.text()
+            text = widget.currentText()
             if text == "":
                 return None
             elif text == "Ei":
@@ -671,14 +734,57 @@ class DataCopySourceToTarget:
     def getSourceTargetFieldMatches(self):
         fieldMatches = []
 
-        for i in range(self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.rowCount()):
+        for i in range(self.getGridLayoutSourceTargetMatchRowCount()):
             sourceFieldName = self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.itemAtPosition(i, DataCopySourceToTarget.SOURCE_FIELD_NAME_INDEX).widget().text()
             sourceFieldTypeName = self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.itemAtPosition(i, DataCopySourceToTarget.SOURCE_FIELD_TYPE_INDEX).widget().text()
-            targetFieldName, targetFieldTypeName = self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.itemAtPosition(i, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX).widget().text().split(' ')
+            
+            targetFieldName = None
+            targetFieldTypeName = None
+            text = self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.itemAtPosition(i, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX).widget().currentText()
+            if text != '':
+                targetFieldName, targetFieldTypeName = text.split(' ')
+                targetFieldTypeName = targetFieldTypeName[1:-1]
 
-            if targetFieldName != "":
+            if targetFieldName != None:
                 fieldMatches.append({ "source": sourceFieldName, "sourceFieldTypeName": sourceFieldTypeName, "target": targetFieldName, "targetFieldTypeName": targetFieldTypeName })
             
             return fieldMatches
 
 
+    def targetFieldsHaveRegulation(self):
+        for i in range(self.getGridLayoutSourceTargetMatchRowCount()):
+            targetFieldName = None
+            targetFieldTypeName = None
+            text = self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.itemAtPosition(i, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX).widget().currentText()
+            if text != '':
+                targetFieldName, targetFieldTypeName = text.split(' ')
+                targetFieldTypeName = targetFieldTypeName[1:-1]
+
+            if targetFieldName == 'kaavamaaraysotsikko':
+                return True
+
+        return False
+
+
+    def targetFieldsHaveLandUseClassification(self):
+        for i in range(self.getGridLayoutSourceTargetMatchRowCount()):
+            targetFieldName = None
+            targetFieldTypeName = None
+            text = self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.itemAtPosition(i, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX).widget().currentText()
+            if text != '':
+                targetFieldName, targetFieldTypeName = text.split(' ')
+                targetFieldTypeName = targetFieldTypeName[1:-1]
+
+            if targetFieldName == 'kayttotarkoitus_lyhenne':
+                return True
+
+        return False
+
+
+    def getGridLayoutSourceTargetMatchRowCount(self):
+        count = 0
+        for index, field in enumerate(self.sourceLayer.fields().toList()):
+            if field.name() != 'id' and self.yleiskaavaUtils.getStringTypeForFeatureField(field) != 'uuid':
+                count += 1
+
+        return count
