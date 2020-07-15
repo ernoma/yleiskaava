@@ -212,7 +212,7 @@ class YleiskaavaDatabase:
         features = targetLayer.getFeatures()
         regulationList = []
         for index, feature in enumerate(features):
-            kaavamaarays_otsikko = feature.attribute("kaavamaarays_otsikko")
+            kaavamaarays_otsikko = QVariant(feature["kaavamaarays_otsikko"])
             #maaraysteksti = feature['maaraysteksti']
 
             regulationList.append({
@@ -231,10 +231,15 @@ class YleiskaavaDatabase:
 
 
     def createFeatureRegulationRelationWithRegulationID(self, targetSchemaTableName, targetFeatureID, regulationID):
+        QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - targetSchemaTableName: " + targetSchemaTableName + ", targetFeatureID: " + str(targetFeatureID) + ", regulationID: " + str(regulationID), 'Yleiskaava-työkalu', Qgis.Info)
+
         uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_kaavamaarays_yhteys", None)
-        relationLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        relationLayer = QgsVectorLayer(uri.uri(False), "temp relation layer", "postgres")
 
         schema, table_name = targetSchemaTableName.split('.')
+
+
+        relationLayer.startEditing()
 
         relationLayerFeature = QgsFeature()
         relationLayerFeature.setFields(relationLayer.fields())
@@ -242,10 +247,19 @@ class YleiskaavaDatabase:
         relationLayerFeature.setAttribute("id_" + table_name, targetFeatureID)
         relationLayerFeature.setAttribute("id_kaavamaarays", regulationID)
 
-        relationLayer.startEditing()
         provider = relationLayer.dataProvider()
-        provider.addFeature(relationLayerFeature)
-        relationLayer.commitChanges()
+        
+        success = provider.addFeatures([relationLayerFeature])
+        if not success:
+            QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - addFeatures() failed", 'Yleiskaava-työkalu', Qgis.Info)
+        else:
+            success = relationLayer.commitChanges()
+            if not success:
+                QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Info)
+                for error in relationLayer.commitErrors():
+                    QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Info)
+            else:
+                QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
 
 
     def findRegulationID(self, regulationName):
@@ -253,7 +267,7 @@ class YleiskaavaDatabase:
 
         regulationID = None
         for regulation in regulationList:
-            if regulation["kaavamaarays_otsikko"] == regulationName:
+            if regulation["kaavamaarays_otsikko"].value() == regulationName:
                 regulationID = regulation["id"]
                 break
 
@@ -262,7 +276,7 @@ class YleiskaavaDatabase:
 
     def createSpecificRegulationAndFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationName):
         uri = self.createDbURI("yk_yleiskaava", "kaavamaarays", None)
-        regulationLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        regulationLayer = QgsVectorLayer(uri.uri(False), "temp regulation layer", "postgres")
 
         regulationID = str(uuid.uuid4())
 
@@ -272,7 +286,7 @@ class YleiskaavaDatabase:
         regulationFeature.setAttribute("kaavamaarays_otsikko", regulationName)
         regulationLayer.startEditing()
         provider = regulationLayer.dataProvider()
-        provider.addFeature(relationLayerFeature)
+        provider.addFeatures([regulationFeature])
         regulationLayer.commitChanges()
 
         self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulationID)

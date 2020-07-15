@@ -6,7 +6,7 @@ from qgis.PyQt.QtWidgets import QWidget, QGridLayout, QLabel, QComboBox, QCheckB
 from qgis.core import (
     Qgis, QgsProject, QgsFeature, QgsField, QgsMessageLog, QgsMapLayer, QgsVectorLayer, QgsAuxiliaryLayer, QgsMapLayerProxyModel, QgsGeometry, QgsCoordinateReferenceSystem, QgsCoordinateTransform)
 
-from qgis.gui import QgsFieldValuesLineEdit, QgsDateTimeEdit
+from qgis.gui import QgsFilterLineEdit, QgsDateTimeEdit
 
 import os.path
 from functools import partial
@@ -81,24 +81,24 @@ class DataCopySourceToTarget:
 
 
     def setupDialogCopySourceDataToDatabase(self):
-        self.dialogCopySourceDataToDatabase.pushButtonCancel.clicked.connect(self.cancelAndHideAllDialogs)
+        self.dialogCopySourceDataToDatabase.pushButtonCancel.clicked.connect(self.hideAllDialogs)
         self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.layerChanged.connect(self.handleMapLayerComboBoxSourceChanged)
         self.dialogCopySourceDataToDatabase.pushButtonNext.clicked.connect(self.chooseSourceFeatures)
 
 
     def setupDialogChooseFeatures(self):
-        self.dialogChooseFeatures.pushButtonCancel.clicked.connect(self.cancelAndHideAllDialogs)
+        self.dialogChooseFeatures.pushButtonCancel.clicked.connect(self.hideAllDialogs)
         self.dialogChooseFeatures.pushButtonPrevious.clicked.connect(self.showDialogCopySourceDataToDatabase)
         self.dialogChooseFeatures.pushButtonNext.clicked.connect(self.chooseCopySettings)
 
 
     def setupDialogCopySettings(self):
-        self.dialogCopySettings.pushButtonCancel.clicked.connect(self.cancelAndHideAllDialogs)
+        self.dialogCopySettings.pushButtonCancel.clicked.connect(self.hideAllDialogs)
         self.dialogCopySettings.pushButtonPrevious.clicked.connect(self.chooseSourceFeatures)
         self.dialogCopySettings.pushButtonRun.clicked.connect(self.runCopySourceDataToDatabase)
 
 
-    def cancelAndHideAllDialogs(self):
+    def hideAllDialogs(self):
         self.dialogCopySourceDataToDatabaseWidget.hide()
         self.dialogChooseFeatures.hide()
         self.dialogCopySettings.hide()
@@ -502,9 +502,9 @@ class DataCopySourceToTarget:
         widget = None
 
         if targetFieldTypeName == 'String' or targetFieldTypeName == 'Int' or targetFieldTypeName == 'Double' or targetFieldTypeName == 'LongLong':
-            widget = QgsFieldValuesLineEdit()
-            widget.setLayer(layer)
-            widget.setAttributeIndex(fieldIndex)
+            widget = QgsFilterLineEdit() 
+            #widget.setLayer(layer) # QgsFieldValuesLineEdit seems to crash occasionally and does not anyway seem to list values...
+            # widget.setAttributeIndex(fieldIndex)
         elif targetFieldTypeName == 'Date':
             widget = QgsDateTimeEdit()
             widget.setAllowNull(True)
@@ -562,6 +562,8 @@ class DataCopySourceToTarget:
         self.planNumber = self.yleiskaavaDatabase.getPlanNumberForName(self.getPlanNameFromCopySettings())
 
         self.targetLayer.startEditing()
+        provider = self.targetLayer.dataProvider()
+        
 
         sourceCRS = self.sourceLayer.crs()
         targetCRS = self.targetLayer.crs()
@@ -571,7 +573,7 @@ class DataCopySourceToTarget:
 
         sourceFeatures = self.sourceLayer.getSelectedFeatures()
 
-        targetLayerFeatures = []
+        #targetLayerFeatures = []
 
         for sourceFeature in sourceFeatures:
             sourceGeom = sourceFeature.geometry()
@@ -588,21 +590,30 @@ class DataCopySourceToTarget:
 
             self.setTargetFeatureValues(sourceFeature, targetLayerFeature)
 
-            self.handleRegulationAndLandUseClassificationInSourceToTargetCopy(sourceFeature, self.targetSchemaTableName, targetLayerFeature)
-
+            self.handleRegulationAndLandUseClassificationInSourceToTargetCopy(sourceFeature, self.targetSchemaTableName, targetLayerFeature, False)
             self.handleSpatialPlanRelationInSourceToTargetCopy(targetLayerFeature)
 
-            targetLayerFeatures.append(targetLayerFeature)
+            provider.addFeatures([targetLayerFeature])
+            self.targetLayer.commitChanges()
+
+            #targetLayerFeatures.append(targetLayerFeature)
+
+            # Kaavakohteen pitää olla jo tallennettuna tietokannassa, jotta voidaan lisätä relaatio kaavamääräykseen
+            self.handleRegulationAndLandUseClassificationInSourceToTargetCopy(sourceFeature, self.targetSchemaTableName, targetLayerFeature, True)
+
+
+        self.notifyUserFinishedCopy()
         
-        provider = self.targetLayer.dataProvider()
-        provider.addFeatures(targetLayerFeatures)
-        self.targetLayer.commitChanges()
+
+    def notifyUserFinishedCopy(self):
+        self.hideAllDialogs()
+        self.iface.messageBar().pushMessage('Lähdeaineisto kopioitu tietokantaan', Qgis.Info, 30)
 
     def getPlanNameFromCopySettings(self):
         return self.dialogCopySettings.comboBoxSpatialPlanName.currentText()
 
 
-    def handleRegulationAndLandUseClassificationInSourceToTargetCopy(self, sourceFeature, targetSchemaTableName, targetFeature):
+    def handleRegulationAndLandUseClassificationInSourceToTargetCopy(self, sourceFeature, targetSchemaTableName, targetFeature, shouldCreateRelation):
         # Tee tarvittaessa linkki olemassa olevaan tai uuteen kaavamääräykseen. Huomioi asetukset "Luo tarvittaessa uudet kaavamääräykset" ja "Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan tai päinvastoin"
         # Huomioi, että kaavamääräys voi tulla lähteen käyttötarkoituksen kautta (muokkaa myös asetus-dialogia, jotta ko. asia on mahdollista)
         # Muuttaa lähdekaavamääräyksen isoihin kirjaimiin, jos ei ole valmiiksi
@@ -611,16 +622,20 @@ class DataCopySourceToTarget:
         fieldMatches = self.getSourceTargetFieldMatches()
         fieldMatchTargetNames = [fieldMatch["target"] for fieldMatch in fieldMatches]
 
-        if "kaavamaaraysotsikko" in fieldMatchTargetNames and self.getSourceFeatureValueForSourceTargetFieldMatch(fieldMatches, sourceFeature, "kaavamaaraysotsikko") != None :
-            sourceRegulationName = self.getSourceFeatureValueForSourceTargetFieldMatch(fieldMatches, sourceFeature, "kaavamaaraysotsikko")
-            self.handleRegulationInSourceToTargetCopy(sourceFeature, targetFeature, sourceRegulationName, targetSchemaTableName)
-        elif "kayttotarkoitus_lyhenne" in fieldMatchTargetNames and self.getSourceFeatureValueForSourceTargetFieldMatch(fieldMatches, sourceFeature, "kayttotarkoitus_lyhenne") != None:
-            sourceLandUseClassificationName = self.getSourceFeatureValueForSourceTargetFieldMatch(fieldMatches, sourceFeature, "kayttotarkoitus_lyhenne")
-            self.handleLandUseClassificationInSourceToTargetCopy(sourceFeature, targetFeature, sourceLandUseClassificationName, targetSchemaTableName)
+        sourceRegulationName = self.getSourceFeatureValueForSourceTargetFieldMatch(fieldMatches, sourceFeature, "kaavamaaraysotsikko")
+        sourceLandUseClassificationName = self.getSourceFeatureValueForSourceTargetFieldMatch(fieldMatches, sourceFeature, "kayttotarkoitus_lyhenne")
+
+        QgsMessageLog.logMessage("sourceRegulationName: " + str(sourceRegulationName.value()), 'Yleiskaava-työkalu', Qgis.Info)
+        QgsMessageLog.logMessage("sourceLandUseClassificationName: " + str(sourceLandUseClassificationName.value()), 'Yleiskaava-työkalu', Qgis.Info)
+
+        if "kaavamaaraysotsikko" in fieldMatchTargetNames and not sourceRegulationName.isNull():
+            self.handleRegulationInSourceToTargetCopy(sourceFeature, targetFeature, sourceRegulationName, targetSchemaTableName, shouldCreateRelation)
+        elif "kayttotarkoitus_lyhenne" in fieldMatchTargetNames and not sourceLandUseClassificationName.isNull():
+            self.handleLandUseClassificationInSourceToTargetCopy(sourceFeature, targetFeature, sourceLandUseClassificationName, targetSchemaTableName, shouldCreateRelation)
         elif self.getDefaultValuesRegulationValue() != None:
-            self.handleRegulationInSourceToTargetCopy(sourceFeature, targetFeature, self.getDefaultValuesRegulationValue(), targetSchemaTableName)
+            self.handleRegulationInSourceToTargetCopy(sourceFeature, targetFeature, self.getDefaultValuesRegulationValue(), targetSchemaTableName, shouldCreateRelation)
         elif self.getDefaultValuesLandUseClassificationValue() != None:
-            self.handleLandUseClassificationInSourceToTargetCopy(sourceFeature, targetFeature, self.getDefaultValuesLandUseClassificationValue(), targetSchemaTableName)
+            self.handleLandUseClassificationInSourceToTargetCopy(sourceFeature, targetFeature, self.getDefaultValuesLandUseClassificationValue(), targetSchemaTableName, shouldCreateRelation)
 
 
     def getDefaultValuesRegulationValue(self):
@@ -639,44 +654,48 @@ class DataCopySourceToTarget:
                 return defaultTargetFieldInfo["value"]
 
 
-    def handleLandUseClassificationInSourceToTargetCopy(self, sourceFeature, targetFeature, sourceLandUseClassificationName, targetSchemaTableName):
-        if sourceLandUseClassificationName != "":
-            regulationName = self.yleiskaavaUtils.getRegulationNameForLandUseClassification(self.planNumber, targetSchemaTableName, sourceLandUseClassificationName)
+    def handleLandUseClassificationInSourceToTargetCopy(self, sourceFeature, targetFeature, sourceLandUseClassificationName, targetSchemaTableName, shouldCreateRelation):
+        if sourceLandUseClassificationName.value() != "":
+            regulationName = self.yleiskaavaUtils.getRegulationNameForLandUseClassification(self.planNumber, targetSchemaTableName, sourceLandUseClassificationName.value())
 
             regulationList = self.yleiskaavaDatabase.getSpecificRegulations()
-            regulationNames = [regulation["kaavamaarays_otsikko"] for regulation in regulationList]
+            regulationNames = [regulation["kaavamaarays_otsikko"].value() for regulation in regulationList]
 
-            if regulationName in regulationNames:
-                self.yleiskaavaDatabase.createFeatureRegulationRelation(self.targetSchemaTableName, targetFeature["id"], regulationName)
-            elif self.shouldCreateNewRegulation(): # uusi otsikko & kaavamääräys (tai muuten virhe otsikon oikeinkirjoituksessa, tms)
-                self.yleiskaavaDatabase.createSpecificRegulationAndFeatureRegulationRelation(self.targetSchemaTableName, targetFeature["id"], regulationName)
+            if shouldCreateRelation:
+                if regulationName in regulationNames:
+                    self.yleiskaavaDatabase.createFeatureRegulationRelation(self.targetSchemaTableName, targetFeature["id"], regulationName)
+                elif self.shouldCreateNewRegulation(): # uusi otsikko & kaavamääräys (tai muuten virhe otsikon oikeinkirjoituksessa, tms)
+                    self.yleiskaavaDatabase.createSpecificRegulationAndFeatureRegulationRelation(self.targetSchemaTableName, targetFeature["id"], regulationName)
+            else:
+                if self.shouldFillLandUseClassificationWithRegulation():
+                    self.fillRegulationWithLandUseClassification(sourceLandUseClassificationName, targetSchemaTableName, targetFeature)
 
-            if self.shouldFillLandUseClassificationWithRegulation():
-                self.fillRegulationWithLandUseClassification(sourceLandUseClassificationName, targetSchemaTableName, targetFeature)
 
-
-    def handleRegulationInSourceToTargetCopy(self, sourceFeature, targetFeature, sourceRegulationName, targetSchemaTableName):
-        if sourceRegulationName != "":
+    def handleRegulationInSourceToTargetCopy(self, sourceFeature, targetFeature, sourceRegulationName, targetSchemaTableName, shouldCreateRelation):
+        QgsMessageLog.logMessage("handleRegulationInSourceToTargetCopy - sourceRegulationName: " + sourceRegulationName.value(), 'Yleiskaava-työkalu', Qgis.Info)
+        if sourceRegulationName.value() != "":
             regulationList = self.yleiskaavaDatabase.getSpecificRegulations()
-            regulationNames = [regulation["kaavamaarays_otsikko"] for regulation in regulationList]
+            regulationNames = [regulation["kaavamaarays_otsikko"].value() for regulation in regulationList]
 
-            if sourceRegulationName in regulationNames:
-                self.yleiskaavaDatabase.createFeatureRegulationRelation(self.targetSchemaTableName, targetFeature["id"], sourceRegulationName)
-            elif self.shouldCreateNewRegulation(): # uusi otsikko & kaavamääräys (tai muuten virhe otsikon oikeinkirjoituksessa, tms)
-                self.yleiskaavaDatabase.createSpecificRegulationAndFeatureRegulationRelation(self.targetSchemaTableName, targetFeature["id"], sourceRegulationName)
-
-            if self.shouldFillLandUseClassificationWithRegulation():
-                self.fillLandUseClassificationWithRegulation(sourceRegulationName, targetSchemaTableName, targetFeature)
+            if shouldCreateRelation:
+                if sourceRegulationName.value() in regulationNames:
+                    QgsMessageLog.logMessage("sourceRegulationName.value() in regulationNames", 'Yleiskaava-työkalu', Qgis.Info)
+                    self.yleiskaavaDatabase.createFeatureRegulationRelation(self.targetSchemaTableName, targetFeature["id"], sourceRegulationName.value())
+                elif self.shouldCreateNewRegulation(): # uusi otsikko & kaavamääräys (tai muuten virhe otsikon oikeinkirjoituksessa, tms)
+                    self.yleiskaavaDatabase.createSpecificRegulationAndFeatureRegulationRelation(self.targetSchemaTableName, targetFeature["id"], sourceRegulationName)
+            else:
+                if self.shouldFillLandUseClassificationWithRegulation():
+                    self.fillLandUseClassificationWithRegulation(sourceRegulationName, targetSchemaTableName, targetFeature)
 
 
     def fillRegulationWithLandUseClassification(self, landUseClassificationName, targetSchemaTableName, targetFeature):
-        regulationName = self.yleiskaavaUtils.getRegulationNameForLandUseClassification(self.planNumber, targetSchemaTableName, landUseClassificationName)
+        regulationName = self.yleiskaavaUtils.getRegulationNameForLandUseClassification(self.planNumber, targetSchemaTableName, landUseClassificationName.value())
 
         targetFeature.setAttribute("kaavamaaraysotsikko", regulationName)
 
     
     def fillLandUseClassificationWithRegulation(self, sourceRegulationName, targetSchemaTableName, targetFeature):
-        landUseClassificationName = self.yleiskaavaUtils.getLandUseClassificationNameForRegulation(self.planNumber, targetSchemaTableName, sourceRegulationName)
+        landUseClassificationName = self.yleiskaavaUtils.getLandUseClassificationNameForRegulation(self.planNumber, targetSchemaTableName, sourceRegulationName.value())
 
         targetFeature.setAttribute("kayttotarkoitus_lyhenne", landUseClassificationName)
 
@@ -689,11 +708,11 @@ class DataCopySourceToTarget:
         return self.dialogCopySettings.checkBoxFillLandUseClassificationWithRegulation.isChecked()
 
     def getSourceFeatureValueForSourceTargetFieldMatch(self, fieldMatches, sourceFeature, targetFieldName):
-        value = None
+        value = QVariant()
 
         for fieldMatch in fieldMatches:
             if targetFieldName == fieldMatch["target"]:
-                value = sourceFeature[fieldMatch["source"]]
+                value = QVariant(sourceFeature[fieldMatch["source"]])
                 break
         return value
 
@@ -714,36 +733,66 @@ class DataCopySourceToTarget:
         targetFieldData = self.getTargetFeatureFieldInfo(targetFeature)
 
         fieldMatches = self.getSourceTargetFieldMatches()
+
+        # QgsMessageLog.logMessage("len(fieldMatches): " + str(len(fieldMatches)), 'Yleiskaava-työkalu', Qgis.Info)
+
         fieldMatchSourceNames = [fieldMatch["source"] for fieldMatch in fieldMatches]
 
         defaultTargetFieldInfos = self.getDefaultTargetFieldInfo()
+
+        # QgsMessageLog.logMessage("len(defaultTargetFieldInfos): " + str(len(defaultTargetFieldInfos)), 'Yleiskaava-työkalu', Qgis.Info)
+
+        # QgsMessageLog.logMessage("len(targetFieldData): " + str(len(targetFieldData)), 'Yleiskaava-työkalu', Qgis.Info)
 
         for targetFieldDataItem in targetFieldData:
             for sourceAttrDataItem in sourceAttrData: # Jos käyttäjä täsmännyt lähdekentän kohdekenttään ja lähdekentässä on arvo, niin käytä sitä, muuten käytä kohdekenttään oletusarvoa, jos käyttäjä antanut sen
 
                 foundFieldMatch = False
+                sourceHadValue = False
 
                 for fieldMatch in fieldMatches:
+                    # QgsMessageLog.logMessage("fieldMatch - source: " + fieldMatch["source"] + ", sourceFieldTypeName: " + fieldMatch["sourceFieldTypeName"] + ", target:" + fieldMatch["target"] + ", targetFieldTypeName:" + fieldMatch["targetFieldTypeName"], 'Yleiskaava-työkalu', Qgis.Info)
+ 
                     if fieldMatch["source"] == sourceAttrDataItem["name"] and fieldMatch["target"] == targetFieldDataItem["name"]:
                         if not sourceAttrDataItem["value"].isNull():
                             attrValue = self.yleiskaavaUtils.getAttributeValueInCompatibleType(targetFieldDataItem["type"], sourceAttrDataItem["type"], sourceAttrDataItem["value"])
                             if attrValue != None:
-                                targetLayerFeature.setAttribute(targetFieldDataItem["name"], attrValue)
+                                targetFeature.setAttribute(targetFieldDataItem["name"], attrValue)
                             else:
                                 self.iface.messageBar().pushMessage('Lähderivin sarakkeen ' + sourceAttrDataItem["name"] + ' arvoa ei voitu kopioida kohderiville', Qgis.Warning)
-                            foundFieldMatch = True
+                            sourceHadValue = True
+                        foundFieldMatch = True
                         break
 
-                if not foundFieldMatch:
+                if foundFieldMatch and not sourceHadValue:
+                    # QgsMessageLog.logMessage("not foundFieldMatch - targetFieldName: " + targetFieldDataItem["name"] + ", sourceAttrName:" + sourceAttrDataItem["name"], 'Yleiskaava-työkalu', Qgis.Info)
                     for defaultTargetFieldInfo in defaultTargetFieldInfos:
-                        if defaultTargetFieldInfo["name"] == targetFieldDataItem["name"]:
+                        # QgsMessageLog.logMessage("defaultTargetFieldInfo - defaultTargetName: " + defaultTargetFieldInfo["name"]+ ", defaultTargetValue: " + str(defaultTargetFieldInfo["value"].value()) + ", targetFieldName: " + targetFieldDataItem["name"], 'Yleiskaava-työkalu', Qgis.Info)
+                        
+                        if defaultTargetFieldInfo["name"] == targetFieldDataItem["name"] and targetFieldDataItem["name"] == sourceAttrDataItem["name"]:
+                            # QgsMessageLog.logMessage("defaultTargetFieldInfo - defaultTargetName = targetFieldName: " + defaultTargetFieldInfo["name"], 'Yleiskaava-työkalu', Qgis.Info)
+                            
                             if not defaultTargetFieldInfo["value"].isNull():
                                 attrValue = self.yleiskaavaUtils.getAttributeValueInCompatibleType(targetFieldDataItem["type"], defaultTargetFieldInfo["type"], defaultTargetFieldInfo["value"])
                                 if attrValue != None:
                                     targetFeature.setAttribute(targetFieldDataItem["name"], attrValue)
                                 else:
                                     self.iface.messageBar().pushMessage('Oletusarvoa ei voitu kopioida kohderiville ' + targetFieldDataItem["name"], Qgis.Warning)
-                        break
+                            break
+                elif not foundFieldMatch:
+                    for defaultTargetFieldInfo in defaultTargetFieldInfos:
+                        # QgsMessageLog.logMessage("defaultTargetFieldInfo - defaultTargetName: " + defaultTargetFieldInfo["name"]+ ", defaultTargetValue: " + str(defaultTargetFieldInfo["value"].value()) + ", targetFieldName: " + targetFieldDataItem["name"], 'Yleiskaava-työkalu', Qgis.Info)
+                        
+                        if defaultTargetFieldInfo["name"] == targetFieldDataItem["name"]:
+                            # QgsMessageLog.logMessage("defaultTargetFieldInfo - defaultTargetName = targetFieldName: " + defaultTargetFieldInfo["name"], 'Yleiskaava-työkalu', Qgis.Info)
+                            
+                            if not defaultTargetFieldInfo["value"].isNull():
+                                attrValue = self.yleiskaavaUtils.getAttributeValueInCompatibleType(targetFieldDataItem["type"], defaultTargetFieldInfo["type"], defaultTargetFieldInfo["value"])
+                                if attrValue != None:
+                                    targetFeature.setAttribute(targetFieldDataItem["name"], attrValue)
+                                else:
+                                    self.iface.messageBar().pushMessage('Oletusarvoa ei voitu kopioida kohderiville ' + targetFieldDataItem["name"], Qgis.Warning)
+                            break
 
 
     def getDefaultTargetFieldInfo(self):
@@ -755,14 +804,14 @@ class DataCopySourceToTarget:
             userFriendlyTableName = text.split(' - ')[0]
             userFriendlytargetFieldName = text.split(' - ')[1]
 
-            targetSchemaTableName = self.yleiskaavaDatabase.getTableNameForUserFriendlyschemaTableName( userFriendlyTableName)
+            targetSchemaTableName = self.yleiskaavaDatabase.getTableNameForUserFriendlyschemaTableName(userFriendlyTableName)
             targetFieldName = self.yleiskaavaDatabase.getFieldNameForUserFriendlytargetFieldName(userFriendlytargetFieldName)
 
             targetFieldType = self.yleiskaavaDatabase.getTypeOftargetField(targetFieldName)
             widgetClass = self.getClassOftargetFieldType(targetFieldType)
 
             widget = self.dialogCopySettings.tableWidgetDefaultFieldValues.cellWidget(i, DataCopySourceToTarget.DEFAULT_VALUES_INPUT_INDEX)
-            QgsMessageLog.logMessage("getDefaultTargetFieldInfo - targetFieldName: " + targetFieldName, 'Yleiskaava-työkalu', Qgis.Info)
+            # QgsMessageLog.logMessage("getDefaultTargetFieldInfo - targetFieldName: " + targetFieldName, 'Yleiskaava-työkalu', Qgis.Info)
             value = self.getValueOfWidgetForType(widget, targetFieldType)
             variantValue = None
             if value is None:
@@ -770,21 +819,23 @@ class DataCopySourceToTarget:
             else:
                 variantValue = QVariant(value)
 
-            targetFieldInfo = { "name": targetFieldName, "value": variantValue, "type": targetFieldType, "widget": widget }
+            targetFieldInfo = { "name": targetFieldName, "type": targetFieldType, "widget": widget, "value": variantValue }
             defaultFieldNameValueInfos.append(targetFieldInfo)
+
+            # QgsMessageLog.logMessage("getDefaultTargetFieldInfo - targetFieldName: " + targetFieldName + ", value: " + str(variantValue.value()), 'Yleiskaava-työkalu', Qgis.Info)
 
         return defaultFieldNameValueInfos
 
 
     def getClassOftargetFieldType(self, targetFieldType):
-        if targetFieldType == "String": # QgsFieldValuesLineEdit
-            return QgsFieldValuesLineEdit
-        elif targetFieldType == "Int": # QgsFieldValuesLineEdit
-            return QgsFieldValuesLineEdit
-        elif targetFieldType == "Double": # QgsFieldValuesLineEdit
-            return QgsFieldValuesLineEdit
-        elif targetFieldType == "LongLong": # QgsFieldValuesLineEdit
-            return QgsFieldValuesLineEdit
+        if targetFieldType == "String": # QgsFilterLineEdit
+            return QgsFilterLineEdit
+        elif targetFieldType == "Int": # QgsFilterLineEdit
+            return QgsFilterLineEdit
+        elif targetFieldType == "Double": # QgsFilterLineEdit
+            return QgsFilterLineEdit
+        elif targetFieldType == "LongLong": # QgsFilterLineEdit
+            return QgsFilterLineEdit
         elif targetFieldType == "Date": # QgsDateTimeEdit
             return QgsDateTimeEdit
         elif targetFieldType == "Bool": # QComboBox
@@ -794,26 +845,26 @@ class DataCopySourceToTarget:
             
 
     def getValueOfWidgetForType(self, widget, targetFieldType):
-        QgsMessageLog.logMessage("getValueOfWidgetForType - targetFieldType: " + targetFieldType + ", type(widget): " + str(type(widget)), 'Yleiskaava-työkalu', Qgis.Info)
-        if targetFieldType == "String": # QgsFieldValuesLineEdit
+        # QgsMessageLog.logMessage("getValueOfWidgetForType - targetFieldType: " + targetFieldType + ", type(widget): " + str(type(widget)), 'Yleiskaava-työkalu', Qgis.Info)
+        if targetFieldType == "String": # QgsFilterLineEdit
             text = widget.text()
             if text == "":
                 return None
             else:
                 return text
-        elif targetFieldType == "Int": # QgsFieldValuesLineEdit
+        elif targetFieldType == "Int": # QgsFilterLineEdit
             text = widget.text()
             if text == "":
                 return None
             else:
                 return int(text)
-        elif targetFieldType == "Double": # QgsFieldValuesLineEdit
+        elif targetFieldType == "Double": # QgsFilterLineEdit
             text = widget.text()
             if text == "":
                 return None
             else:
                 return float(text)
-        elif targetFieldType == "LongLong": # QgsFieldValuesLineEdit
+        elif targetFieldType == "LongLong": # QgsFilterLineEdit
             text = widget.text()
             if text == "":
                 return None
@@ -844,13 +895,21 @@ class DataCopySourceToTarget:
     def getSourceTargetFieldMatches(self):
         fieldMatches = []
 
-        for i in range(self.getSourceTargetMatchRowCount()):
-            sourceFieldName = self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.cellWidget(i, DataCopySourceToTarget.SOURCE_FIELD_NAME_INDEX).text()
-            sourceFieldTypeName = self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.cellWidget(i, DataCopySourceToTarget.SOURCE_FIELD_TYPE_NAME_INDEX).text()
+        rowCount = self.getSourceTargetMatchRowCount()
+
+        #QgsMessageLog.logMessage("getSourceTargetFieldMatches - rowCount: " + str(rowCount), 'Yleiskaava-työkalu', Qgis.Info)
+
+        for index in range(rowCount):
+            sourceFieldName = self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.cellWidget(index, DataCopySourceToTarget.SOURCE_FIELD_NAME_INDEX).text()
+            sourceFieldTypeName = self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.cellWidget(index, DataCopySourceToTarget.SOURCE_FIELD_TYPE_NAME_INDEX).text()
             
             targetFieldName = None
             targetFieldTypeName = None
-            text = self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.cellWidget(i, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX).currentText()
+            text = self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.cellWidget(index, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX).currentText()
+            
+
+            #QgsMessageLog.logMessage("getSourceTargetFieldMatches - index: " + str(index) + ", sourceFieldName: " + sourceFieldName + ", sourceFieldTypeName: " + sourceFieldTypeName + ", TARGET_TABLE_FIELD_NAME: " + text, 'Yleiskaava-työkalu', Qgis.Info)
+
             if text != '':
                 targetFieldName, targetFieldTypeName = text.split(' ')
                 targetFieldTypeName = targetFieldTypeName[1:-1]
@@ -858,7 +917,7 @@ class DataCopySourceToTarget:
             if targetFieldName != None:
                 fieldMatches.append({ "source": sourceFieldName, "sourceFieldTypeName": sourceFieldTypeName, "target": targetFieldName, "targetFieldTypeName": targetFieldTypeName })
             
-            return fieldMatches
+        return fieldMatches
 
 
     def targetFieldsHaveRegulation(self):
@@ -899,7 +958,7 @@ class DataCopySourceToTarget:
                 data.append({
                     "name": field.name(),
                     "type": self.yleiskaavaUtils.getStringTypeForFeatureField(field),
-                    "value": sourceFeature.attribute(field.name())
+                    "value": QVariant(sourceFeature[field.name()])
                 })
 
         return data
