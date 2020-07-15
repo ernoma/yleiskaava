@@ -560,10 +560,8 @@ class DataCopySourceToTarget:
     def copySourceFeaturesToTargetLayer(self):
 
         self.planNumber = self.yleiskaavaDatabase.getPlanNumberForName(self.getPlanNameFromCopySettings())
-
-        self.targetLayer.startEditing()
-        provider = self.targetLayer.dataProvider()
         
+        provider = self.targetLayer.dataProvider()
 
         sourceCRS = self.sourceLayer.crs()
         targetCRS = self.targetLayer.crs()
@@ -576,6 +574,9 @@ class DataCopySourceToTarget:
         #targetLayerFeatures = []
 
         for sourceFeature in sourceFeatures:
+
+            self.targetLayer.startEditing()
+
             sourceGeom = sourceFeature.geometry()
 
             if not sourceGeom.isNull() and transform is not None:
@@ -593,16 +594,25 @@ class DataCopySourceToTarget:
             self.handleRegulationAndLandUseClassificationInSourceToTargetCopy(sourceFeature, self.targetSchemaTableName, targetLayerFeature, False)
             self.handleSpatialPlanRelationInSourceToTargetCopy(targetLayerFeature)
 
-            provider.addFeatures([targetLayerFeature])
-            self.targetLayer.commitChanges()
+            success = provider.addFeatures([targetLayerFeature])
+            if not success:
+                QgsMessageLog.logMessage("copySourceFeaturesToTargetLayer - addFeatures() failed", 'Yleiskaava-työkalu', Qgis.Critical)
+            else:
+                success = self.targetLayer.commitChanges()
+                if not success:
+                    QgsMessageLog.logMessage("copySourceFeaturesToTargetLayer - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Info)
+                    for error in self.targetLayer.commitErrors():
+                        QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
+                else:
+                    QgsMessageLog.logMessage("copySourceFeaturesToTargetLayer - commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
 
-            #targetLayerFeatures.append(targetLayerFeature)
+                    #targetLayerFeatures.append(targetLayerFeature)
 
-            # Kaavakohteen pitää olla jo tallennettuna tietokannassa, jotta voidaan lisätä relaatio kaavamääräykseen
-            self.handleRegulationAndLandUseClassificationInSourceToTargetCopy(sourceFeature, self.targetSchemaTableName, targetLayerFeature, True)
+                    # Kaavakohteen pitää olla jo tallennettuna tietokannassa, jotta voidaan lisätä relaatio kaavamääräykseen
+                    self.handleRegulationAndLandUseClassificationInSourceToTargetCopy(sourceFeature, self.targetSchemaTableName, targetLayerFeature, True)
 
 
-        self.notifyUserFinishedCopy()
+                    self.notifyUserFinishedCopy()
         
 
     def notifyUserFinishedCopy(self):
