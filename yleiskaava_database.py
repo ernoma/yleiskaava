@@ -231,7 +231,7 @@ class YleiskaavaDatabase:
 
 
     def createFeatureRegulationRelationWithRegulationID(self, targetSchemaTableName, targetFeatureID, regulationID):
-        QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - targetSchemaTableName: " + targetSchemaTableName + ", targetFeatureID: " + str(targetFeatureID) + ", regulationID: " + str(regulationID), 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - targetSchemaTableName: " + targetSchemaTableName + ", targetFeatureID: " + str(targetFeatureID) + ", regulationID: " + str(regulationID), 'Yleiskaava-työkalu', Qgis.Info)
 
         uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_kaavamaarays_yhteys", None)
         relationLayer = QgsVectorLayer(uri.uri(False), "temp relation layer", "postgres")
@@ -251,15 +251,19 @@ class YleiskaavaDatabase:
         
         success = provider.addFeatures([relationLayerFeature])
         if not success:
-            QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - addFeatures() failed", 'Yleiskaava-työkalu', Qgis.Info)
+            self.iface.messageBar().pushMessage('Bugi koodissa: createFeatureRegulationRelationWithRegulationID - addFeatures() failed"', Qgis.Critical)
+            # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - addFeatures() failed", 'Yleiskaava-työkalu', Qgis.Critical)
         else:
             success = relationLayer.commitChanges()
             if not success:
-                QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Info)
+                self.iface.messageBar().pushMessage('Bugi koodissa: createFeatureRegulationRelationWithRegulationID - commitChanges() failed, reason(s): "', Qgis.Critical)
+                # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
                 for error in relationLayer.commitErrors():
-                    QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Info)
+                    self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
+                    # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
             else:
-                QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
+                pass
+                # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
 
 
     def findRegulationID(self, regulationName):
@@ -292,23 +296,30 @@ class YleiskaavaDatabase:
         self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulationID)
 
 
-    def getCodeListValuesForSchemaTable(self, id_name):
-        if id_name == 'id_kansallinen_prosessin_vaihe':
-            schema, table_name = "yk_koodiluettelot.kansallinen_prosessin_vaihe".split('.')
-        elif id_name == 'id_laillinen_sitovuus':
-            schema, table_name = "yk_koodiluettelot.laillinen_sitovuus".split('.')
-        elif id_name == 'id_prosessin_vaihe':
-            schema, table_name = "yk_koodiluettelot.prosessin_vaihe".split('.')
-        elif id_name == 'id_kaavoitusprosessin_tila':
-            schema, table_name = "yk_koodiluettelot.kaavoitusprosessin_tila".split('.')
+    def getCodeListValuesForPlanObjectField(self, targetFieldName):
+        schema, table_name = ("yk_koodiluettelot." + targetFieldName[3:]).split('.')
         uri = self.createDbURI(schema, table_name, None)
         targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
         features = targetLayer.getFeatures()
         values = None
-        if table_name == "kansallinen_prosessin_vaihe" or table_name == "prosessin_vaihe" or table_name == "kaavoitusprosessin_tila" or table_name == "laillinen_sitovuus":
-            values = [feature['koodi'] for feature in features]
+        # if table_name == "kansallinen_prosessin_vaihe" or table_name == "prosessin_vaihe" or table_name == "kaavoitusprosessin_tila" or table_name == "laillinen_sitovuus":
+        values = [feature['koodi'] for feature in features]
 
         return values
+
+
+    def getCodeListUUIDForPlanObjectFieldCodeValue(self, targetFieldName, value):
+        schema, table_name = ("yk_koodiluettelot." + targetFieldName[3:]).split('.')
+        uri = self.createDbURI(schema, table_name, None)
+        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        features = targetLayer.getFeatures()
+        uuid = None
+        # if table_name == "kansallinen_prosessin_vaihe" or table_name == "prosessin_vaihe" or table_name == "kaavoitusprosessin_tila" or table_name == "laillinen_sitovuus":
+        for feature in features:
+            if feature['koodi'] == value:
+                uuid =  feature['id']
+                break
+        return uuid
 
 
     def getSchemaTableFields(self, name):

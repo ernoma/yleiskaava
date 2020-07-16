@@ -23,8 +23,8 @@ class YleiskaavaUtils:
         { "plan_numbers": ["yk049"], "name": "YHTEISÖJEN LOMA-ASUNTOALUE", "abbreviation": "R" }
     ]
 
-    def __init__(self):
-        pass
+    def __init__(self, yleiskaavaDatabase):
+        self.yleiskaavaDatabase = yleiskaavaDatabase
         
 
     # 
@@ -101,7 +101,8 @@ class YleiskaavaUtils:
         if field.type() == QVariant.Bool:
             return 'Bool'
         else:
-            QgsMessageLog.logMessage('getStringTypeForFeatureField tuntematon tyyppi', 'Yleiskaava-työkalu', Qgis.Critical)
+            self.iface.messageBar().pushMessage('Bugi koodissa:getStringTypeForFeatureField tuntematon tyyppi', Qgis.Critical)
+            # QgsMessageLog.logMessage('getStringTypeForFeatureField tuntematon tyyppi', 'Yleiskaava-työkalu', Qgis.Critical)
             return str(field.type())
 
 
@@ -116,8 +117,10 @@ class YleiskaavaUtils:
             return True
 
 
-    def getAttributeValueInCompatibleType(self, targetFieldTypeName, sourceFieldTypeName, sourceAttribute):
-        if targetFieldTypeName == sourceFieldTypeName:
+    def getAttributeValueInCompatibleType(self, targetFieldName, targetFieldTypeName, sourceFieldTypeName, sourceAttribute):
+        if targetFieldName == "id_kansallinen_prosessin_vaihe" or targetFieldName == "id_prosessin_vaihe" or targetFieldName == "id_kaavoitusprosessin_tila" or targetFieldName == "id_laillinen_sitovuus":
+            return self.yleiskaavaDatabase.getCodeListUUIDForPlanObjectFieldCodeValue(targetFieldName, sourceAttribute)
+        elif targetFieldTypeName == sourceFieldTypeName:
             return sourceAttribute
         else:
             if (sourceFieldTypeName == 'Int' or sourceFieldTypeName == 'LongLong') and targetFieldTypeName == 'Double':
@@ -127,7 +130,8 @@ class YleiskaavaUtils:
             elif targetFieldTypeName == 'String':
                 return sourceAttribute.toString()
             else:
-                QgsMessageLog.logMessage('getAttributeValueInCompatibleType tuntematon tyyppimuunnos', 'Yleiskaava-työkalu', Qgis.Critical)
+                self.iface.messageBar().pushMessage('Bugi koodissa: getAttributeValueInCompatibleType tuntematon tyyppimuunnos', Qgis.Critical)
+                # QgsMessageLog.logMessage('getAttributeValueInCompatibleType tuntematon tyyppimuunnos', 'Yleiskaava-työkalu', Qgis.Critical)
                 return None
 
 
