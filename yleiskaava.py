@@ -35,7 +35,9 @@ from .yleiskaava_dockwidget import YleiskaavaDockWidget
 import os.path
 
 from .yleiskaava_database import YleiskaavaDatabase
+from .yleiskaava_utils import YleiskaavaUtils
 from .yleiskaava_data_copy_source_to_target import DataCopySourceToTarget
+from .yleiskaava_update_regulation_of_group import UpdateRegulationOfGroup
 
 class Yleiskaava:
     """QGIS Plugin Implementation."""
@@ -79,8 +81,11 @@ class Yleiskaava:
         self.dockwidget = None
 
         self.yleiskaavaDatabase = YleiskaavaDatabase(self.iface)
+        self.yleiskaavaUtils = YleiskaavaUtils(self.yleiskaavaDatabase)
+        self.yleiskaavaDatabase.setYleiskaavaUtils(self.yleiskaavaUtils)
 
-        self.dataCopySourceToTarget = DataCopySourceToTarget(self.iface, self.yleiskaavaDatabase)
+        self.dataCopySourceToTarget = DataCopySourceToTarget(self.iface, self.yleiskaavaDatabase, self.yleiskaavaUtils)
+        self.updateRegulationOfGroup = UpdateRegulationOfGroup(self.iface, self.yleiskaavaDatabase, self.yleiskaavaUtils)
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -243,10 +248,12 @@ class Yleiskaava:
 
     def setupYleiskaavaDockWidget(self):
         self.dataCopySourceToTarget.setup()
-
-        self.dockwidget.pushButtonSettings.clicked.connect(self.yleiskaavaDatabase.displaySettingsDialog)
+        self.updateRegulationOfGroup.setup()
 
         self.dockwidget.pushButtonCopySourceDataToDatabase.clicked.connect(self.dataCopySourceToTarget.openDialogCopySourceDataToDatabase)
+        self.dockwidget.pushButtonUpdateRegulationForGroup.clicked.connect(self.updateRegulationOfGroup.openDialogUpdateRegulationOfGroup)
+
+        self.dockwidget.pushButtonSettings.clicked.connect(self.yleiskaavaDatabase.displaySettingsDialog)
 
         self.dockwidget.pushButtonHelp.clicked.connect(self.showHelp)
 

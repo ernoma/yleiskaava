@@ -1,7 +1,7 @@
 
 from qgis.PyQt.QtCore import QVariant
 
-from qgis.core import (QgsMessageLog)
+from qgis.core import (QgsProject, QgsMessageLog)
 
 
 class YleiskaavaUtils:
@@ -144,14 +144,14 @@ class YleiskaavaUtils:
     #         widgetToRemove.setParent(None)
 
 
-    def getLandUseClassificationNameForRegulation(self, planNumber, schemaTableName, regulationName):
-        landUseName = regulationName
+    def getLandUseClassificationNameForRegulation(self, planNumber, schemaTableName, regulationTitle):
+        landUseName = regulationTitle
 
         if schemaTableName == 'yk_yleiskaava.kaavaobjekti_alue':
             landUseClassificationAbbrs = self.getLandUseClassificationAbbreviationsForPlan(planNumber)
 
             for landUseClassificationAbbr in landUseClassificationAbbrs:
-                if landUseClassificationAbbr["name"] == regulationName:
+                if landUseClassificationAbbr["name"] == regulationTitle:
                     landUseName = landUseClassificationAbbr["abbreviation"]
                     break
 
@@ -180,6 +180,14 @@ class YleiskaavaUtils:
                 landUseClassificationAbbrs.append(landUseClassificationAbbr)
 
         return landUseClassificationAbbrs
+
+
+    def refreshTargetLayersInProject(self):
+        layerNames = self.yleiskaavaDatabase.getUserFriendlyTargetSchemaTableNames()
+        for name in layerNames:
+            layers = QgsProject.instance().mapLayersByName(name)
+            for layer in layers:
+                layer.reload()
 
 
 class COPY_ERROR_REASONS:

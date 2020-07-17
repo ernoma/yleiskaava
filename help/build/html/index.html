@@ -54,6 +54,11 @@
 <li><p>Valitse tarvittaessa oletusarvot pakollisille kohdetaulujen kentille ja mahdollisesti muita kopiointiasetuksia, kuten tehdäänkö kaavamääräysotsikkoa vastaava kaavamääräys, jos sitä ei jo ole. Klikkaa Aja-painiketta aloittaaksesi lähdekarttatason kohteiden kopioinnin yleiskaavan tietokantaan.</p></li>
 </ol>
 </div>
+<div class="section" id="kaaavamaarayksen-paivitys-joukolle-kaavakohteita">
+<h2>Kaaavamääräyksen päivitys joukolle kaavakohteita<a class="headerlink" href="#kaaavamaarayksen-paivitys-joukolle-kaavakohteita" title="Permalink to this headline">¶</a></h2>
+<p>Tällä ominaisuudella käyttäjä voi päivittää kaavamääräyksen kerralla halutulle joukolle kaavakohteita. Myös kaavakohteiden käyttötarkoituslyhenteen (kenttä kayttotarkoitus_lyhenne) arvo voidaan päivittää käyttäjän niin halutessa (samalla päivitetään kaavakohteiden kaavamaaraysotsikko-kentän arvo). Jos kaavakohteille on asetettu yleiskaava ja yleiskaavalle numero, niin käyttötarkoituksen lyhenne koitetaan huomioida kaavakohteiden kaavamääräysten päivityksessä.</p>
+<p>Teknisesti ei ole aina mahdollista visualisoida kaavakohteita suoraan kaavamääräys-taulun kaavamääräyksen perusteella ainakin siksi, että kaavakohteeseen voi liittyä useita kaavamääräyksiä. QGIS-työtilassa kaavakohteiden visualisointityyli on valittu kaavakohde-taulujen kayttotarkoitus_lyhenne-kentän perusteella, johon muiden kuin käyttötarkoitusalueiden tapauksessa, on tallennettu lyhenteen sijaan kaavamääräys-taulussa olevan kaavakohteeseen liittyvän kaavamääräyksen otsikko. Jos kaavakohteeseen liittyy useita kaavamääräyksiä, niin käyttäjältä varmistetaan, että tehdäänkö kayttotarkoitus_lyhenne-kentän arvon päivitys.</p>
+</div>
 </div>
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
@@ -76,6 +81,7 @@
 <li><a class="reference internal" href="#">Tervetuloa Yleiskaava-työkalun dokumentaatioon!</a></li>
 <li><a class="reference internal" href="#toiminnot">Toiminnot</a><ul>
 <li><a class="reference internal" href="#kopioi-lahdeaineistoa-tietokantaan">Kopioi lähdeaineistoa tietokantaan</a></li>
+<li><a class="reference internal" href="#kaaavamaarayksen-paivitys-joukolle-kaavakohteita">Kaaavamääräyksen päivitys joukolle kaavakohteita</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>

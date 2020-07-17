@@ -14,6 +14,8 @@ class YleiskaavaDatabase:
 
         self.iface = iface
 
+        self.yleiskaavaUtils = None
+
         self.plugin_dir = os.path.dirname(__file__)
 
         self.settingsDialog = uic.loadUi(os.path.join(self.plugin_dir, 'db_settings.ui'))
@@ -63,6 +65,10 @@ class YleiskaavaDatabase:
         ]
 
 
+    def setYleiskaavaUtils(self, yleiskaavaUtils):
+        self.yleiskaavaUtils = yleiskaavaUtils
+
+
     def getUserFriendlyTargetSchemaTableNames(self):
         return [item["userFriendlyTableName"] for item in self.yleiskaava_target_tables]
 
@@ -98,6 +104,19 @@ class YleiskaavaDatabase:
     def getTargetSchemaTableByName(self, name):
         table_item = next((item for item in self.yleiskaava_target_tables if item["name"] == name), None)
         return table_item
+
+
+    # def getPolgyonFeatureLayer(self):
+    #     return self.createLayerByTargetSchemaTableName("yk_yleiskaava.kaavaobjekti_alue")
+
+    # def getSupplementaryPolgyonFeatureLayer(self):
+    #     return self.createLayerByTargetSchemaTableName("yk_yleiskaava.kaavaobjekti_alue_taydentava")
+
+    # def getLineFeatureLayer(self):
+    #     return self.createLayerByTargetSchemaTableName("yk_yleiskaava.kaavaobjekti_viiva")
+
+    # def getPointFeatureLayer(self):
+    #     return self.createLayerByTargetSchemaTableName("yk_yleiskaava.kaavaobjekti_piste")
 
 
     def createLayerByTargetSchemaTableName(self, name):
@@ -146,6 +165,22 @@ class YleiskaavaDatabase:
 
         return planNumber
 
+
+    def getPlanNumberForPlanID(self, planID):
+        planNumber = None
+
+        layer = self.createLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
+        features = layer.getFeatures()
+
+        plans = []
+        for index, feature in enumerate(features):
+            if feature['id'] == planID:
+                if feature['nro'] is not None:
+                    planNumber = feature['nro']
+                break
+
+        return planNumber
+        
 
     def getYleiskaavaPlanLevelCodeWithPlanName(self, planName):
         planLevelCode = None
@@ -205,6 +240,63 @@ class YleiskaavaDatabase:
         return planID
 
 
+    def getSpatialFeaturesWithRegulationForType(self, regulationID, featureType):
+        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_kaavamaarays_yhteys", None)
+        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+
+        spatialFeatures = []
+
+        for feature in targetLayer.getFeatures():
+
+            spatialFeature = None
+            spatialFeatureType = None
+
+            if feature["id_kaavaamarays"].value() == regulationID:
+                if not feature["id_kaavaobjekti_" + featureType].isNull():
+                    spatialFeature = self.getSpatialFeature(feature["id_kaavaobjekti_alue"].value(), "alue")
+                    spatialFeatureType = featureType
+
+                if spatialFeature is not None:
+                    ids = [tempFeature["feature"]["id"] for tempFeature in spatialFeatures]
+                    if spatialFeature["id"] not in [ids]:
+                        spatialFeatures.append({
+                            "feature": spatialFeature,
+                            "type": spatialFeatureType
+                        })
+
+                # NOTE ei voi break
+
+        return spatialFeatures
+
+    
+    def getSpatialFeature(self, featureID, featureType):
+        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_" + featureType, None)
+        layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        feature = self.findSpatialFeatureFromFeatureLayerWithID(layer, featureID)
+        return feature
+
+
+    def findSpatialFeatureFromFeatureLayerWithID(self, layer, featureID):
+        for feature in layer.getFeatures():
+            if feature['id'] == featureID:
+                return feature
+
+        return None
+
+
+    def getRegulationCountForSpatialFeature(self, featureID, featureType):
+        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_kaavamaarays_yhteys", None)
+        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres") 
+
+        count = 0
+
+        for feature in targetLayer.getFeatures():
+            if feature["id_" + featureType] == featureID:
+                count += 1
+
+        return count
+
+
     def getSpecificRegulations(self):
         uri = self.createDbURI("yk_yleiskaava", "kaavamaarays", None)
         targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
@@ -213,19 +305,92 @@ class YleiskaavaDatabase:
         regulationList = []
         for index, feature in enumerate(features):
             kaavamaarays_otsikko = QVariant(feature["kaavamaarays_otsikko"])
-            #maaraysteksti = feature['maaraysteksti']
+            maaraysteksti = QVariant(feature['maaraysteksti'])
+            kuvausteksti = QVariant(feature['kuvaus_teksti'])
 
-            regulationList.append({
-                "id": feature['id'],
-                "kaavamaarays_otsikko": kaavamaarays_otsikko
-                #"maaraysteksti": maaraysteksti
-                })
+            if not kaavamaarays_otsikko.isNull():
+                regulationList.append({
+                    "id": feature['id'],
+                    "alpha_sort_key": str(kaavamaarays_otsikko.value()),
+                    "kaavamaarays_otsikko": kaavamaarays_otsikko,
+                    "maaraysteksti": maaraysteksti,
+                    "kuvaus_teksti": kuvausteksti
+                    })
 
         return regulationList
 
 
-    def createFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationName):
-        regulationID = self.findRegulationID(regulationName)
+    def updateRegulation(self, regulationID, regulationTitle, regulationText, regulationDescription):
+        uri = self.createDbURI("yk_yleiskaava", "kaavamaarays", None)
+        layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+
+        layer.startEditing()
+
+        for feature in layer.getFeatures():
+            if feature["id"] == regulationID:
+                index = layer.fields().indexFromName("kaavamaarays_otsikko")
+                success = layer.changeAttributeValue(feature.id(), index, regulationTitle)
+                if not success:
+                    self.iface.messageBar().pushMessage('updateRegulation - kaavamaarays_otsikko - changeAttributeValue() failed', Qgis.Critical)
+                    return False
+                index = layer.fields().indexFromName("maaraysteksti")
+                success = layer.changeAttributeValue(feature.id(), index, regulationText)
+                if not success:
+                    self.iface.messageBar().pushMessage('updateRegulation - maaraysteksti - changeAttributeValue() failed', Qgis.Critical)
+                    return False
+                index = layer.fields().indexFromName("kuvaus_teksti")
+                success = layer.changeAttributeValue(feature.id(), index, regulationDescription)
+                if not success:
+                    self.iface.messageBar().pushMessage('updateRegulation - kuvaus_teksti - changeAttributeValue() failed', Qgis.Critical)
+                    return False
+                success = layer.commitChanges()
+                if not success:
+                    self.iface.messageBar().pushMessage('updateRegulation - commitChanges() failed, reason(s): "', Qgis.Critical)
+                    # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
+                    for error in layer.commitErrors():
+                        self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
+                        # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
+                    return False
+                break
+
+        return True
+
+
+    def updateSpatialFeatureRegulationAndLandUseClassificationTexts(featureID, featureType, regulationTitle):
+        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_" + featureType, None)
+        layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        feature = self.findSpatialFeatureFromFeatureLayerWithID(layer, featureID)
+
+        layer.startEditing()
+
+        index = layer.fields().indexFromName("kaavamaaraysotsikko")
+        success = layer.changeAttributeValue(feature.id(), index, regulationTitle)
+        if not success:
+                self.iface.messageBar().pushMessage('updateSpatialFeatureRegulationAndLandUseClassificationTexts - kaavamaaraysotsikko - changeAttributeValue() failed', Qgis.Critical)
+                return False
+        index = layer.fields().indexFromName("kayttotarkoitus_lyhenne")
+        landUseClassificationName = regulationTitle
+        if not feature["id_yleiskaava"].isNull():
+            planNumber = self.getPlanNumberForPlanID(feature["id_yleiskaava"].value())
+            landUseClassificationName = self.yleiskaavaUtils.getLandUseClassificationNameForRegulation(planNumber, "kaavaobjekti_" + featureType, regulationTitle)
+        success = layer.changeAttributeValue(feature.id(), index, landUseClassificationName)
+        if not success:
+            self.iface.messageBar().pushMessage('updateSpatialFeatureRegulationAndLandUseClassificationTexts - kayttotarkoitus_lyhenne - changeAttributeValue() failed', Qgis.Critical)
+
+        success = layer.commitChanges()
+        if not success:
+            self.iface.messageBar().pushMessage('updateSpatialFeatureRegulationAndLandUseClassificationTexts - commitChanges() failed, reason(s): "', Qgis.Critical)
+            # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
+            for error in layer.commitErrors():
+                self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
+                # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
+            return False
+
+        return True
+
+
+    def createFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationTitle):
+        regulationID = self.findRegulationID(regulationTitle)
 
         self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulationID)
 

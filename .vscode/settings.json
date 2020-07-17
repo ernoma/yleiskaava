@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": "C:\\OSGeo4W64\\apps\\Python37"
+    "python.pythonPath": "C:\\OSGeo4W64\\apps\\Python37",
+    "restructuredtext.confPath": "${workspaceFolder}\\help\\source"
 }

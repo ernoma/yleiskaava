@@ -13,10 +13,9 @@ from functools import partial
 from collections import Counter
 import uuid
 
-from .yleiskaava_database import YleiskaavaDatabase
+
 from .yleiskaava_dialog_copy_source_data_to_database import Ui_DialogCopySourceDataToDatabase
 #from .yleiskaava_dialog_copy_settings import Ui_DialogCopySettings
-from .yleiskaava_utils import YleiskaavaUtils
 from .yleiskaava_utils import COPY_ERROR_REASONS
 
 class DataCopySourceToTarget:
@@ -45,12 +44,12 @@ class DataCopySourceToTarget:
     COPY_SOURCE_DATA_DIALOG_MIN_HEIGHT = 624
 
 
-    def __init__(self, iface, yleiskaavaDatabase):
+    def __init__(self, iface, yleiskaavaDatabase, yleiskaavaUtils):
         
         self.iface = iface
 
         self.yleiskaavaDatabase = yleiskaavaDatabase
-        self.yleiskaavaUtils = YleiskaavaUtils(self.yleiskaavaDatabase)
+        self.yleiskaavaUtils = yleiskaavaUtils
 
         self.plugin_dir = os.path.dirname(__file__)
 
@@ -61,7 +60,7 @@ class DataCopySourceToTarget:
         self.dialogChooseFeatures = uic.loadUi(os.path.join(self.plugin_dir, 'yleiskaava_dialog_choose_features.ui'))
 
         self.dialogCopySettings = uic.loadUi(os.path.join(self.plugin_dir, 'yleiskaava_dialog_copy_settings.ui'))
-        self.dialogCopySettings.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
+        self.dialogCopySettings.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
 
         self.sourceLayer = None
 
@@ -541,7 +540,7 @@ class DataCopySourceToTarget:
             self.copySourceFeaturesToTargetLayer()
 
             # Päivitä lopuksi työtilan karttatasot, jotka liittyvät T1:n ajoon
-            self.refreshTargetLayersInProject()
+            self.yleiskaavaUtils.refreshTargetLayersInProject()
         elif reason == COPY_ERROR_REASONS.SELECTED_FEATURE_COUNT_IS_ZERO:
             self.iface.messageBar().pushMessage('Yhtään lähdekarttatason kohdetta ei ole valittuna', Qgis.Critical)
         elif reason == COPY_ERROR_REASONS.TARGET_TABLE_NOT_SELECTED:
@@ -550,12 +549,7 @@ class DataCopySourceToTarget:
             self.iface.messageBar().pushMessage('Sama kohdekenttä valittu usealla lähdekentälle', Qgis.Critical)
 
 
-    def refreshTargetLayersInProject(self):
-        layerNames = self.yleiskaavaDatabase.getUserFriendlyTargetSchemaTableNames()
-        for name in layerNames:
-            layers = QgsProject.instance().mapLayersByName(name)
-            for layer in layers:
-                layer.reload()
+
 
 
     def copySourceFeaturesToTargetLayer(self):
@@ -618,7 +612,7 @@ class DataCopySourceToTarget:
                     # Kaavakohteen pitää olla jo tallennettuna tietokannassa, jotta voidaan lisätä relaatio kaavamääräykseen
                     self.handleRegulationAndLandUseClassificationInSourceToTargetCopy(sourceFeature, self.targetSchemaTableName, targetLayerFeature, True)
 
-                    self.notifyUserFinishedCopy()
+        self.notifyUserFinishedCopy()
         
 
     def notifyUserFinishedCopy(self):

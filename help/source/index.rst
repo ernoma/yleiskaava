@@ -28,6 +28,15 @@ Kopiointi lähdekarttatasosta yleiskaavan tietokantaan onnistuu seuraavin vaihei
 
 .. Voit halutessasi tarkistaa ajamisen seurauksena tehtävän kopion aiheuttamat muutokset tietokantaan "Näytä ajolla tehtävät muutokset"-painikkeella.
 
+
+Kaaavamääräyksen päivitys joukolle kaavakohteita
+................................................
+
+Tällä ominaisuudella käyttäjä voi päivittää kaavamääräyksen kerralla halutulle joukolle kaavakohteita. Myös kaavakohteiden käyttötarkoituslyhenteen (kenttä kayttotarkoitus_lyhenne) arvo voidaan päivittää käyttäjän niin halutessa (samalla päivitetään kaavakohteiden kaavamaaraysotsikko-kentän arvo). Jos kaavakohteille on asetettu yleiskaava ja yleiskaavalle numero, niin käyttötarkoituksen lyhenne koitetaan huomioida kaavakohteiden kaavamääräysten päivityksessä.
+
+Teknisesti ei ole aina mahdollista visualisoida kaavakohteita suoraan kaavamääräys-taulun kaavamääräyksen perusteella ainakin siksi, että kaavakohteeseen voi liittyä useita kaavamääräyksiä. QGIS-työtilassa kaavakohteiden visualisointityyli on valittu kaavakohde-taulujen kayttotarkoitus_lyhenne-kentän perusteella, johon muiden kuin käyttötarkoitusalueiden tapauksessa, on tallennettu lyhenteen sijaan kaavamääräys-taulussa olevan kaavakohteeseen liittyvän kaavamääräyksen otsikko. Jos kaavakohteeseen liittyy useita kaavamääräyksiä, niin käyttäjältä varmistetaan, että tehdäänkö kayttotarkoitus_lyhenne-kentän arvon päivitys.
+
+
 Indices and tables
 ==================
 
