@@ -68,7 +68,7 @@
           <string>Päivitysasetukset</string>
          </property>
          <layout class="QFormLayout" name="formLayout_2">
-          <item row="0" column="0">
+          <item row="2" column="0">
            <widget class="QCheckBox" name="checkBoxUpdateLandUseClassificationsForPolgyonFeatures">
             <property name="text">
              <string>Päivitä aluevarausten käyttötarkoitukset</string>
@@ -78,14 +78,14 @@
             </property>
            </widget>
           </item>
-          <item row="0" column="1">
+          <item row="2" column="1">
            <widget class="QPushButton" name="pushButtonSelectPolgyonFeatures">
             <property name="text">
              <string>Valitse päivitettävät aluekohteet</string>
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
+          <item row="3" column="0">
            <widget class="QCheckBox" name="checkBoxUpdateLandUseClassificationsForSupplementaryPolygonFeatures">
             <property name="text">
              <string>Päivitä täydentävien aluekohteiden käyttötarkoitukset</string>
@@ -95,14 +95,14 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
+          <item row="3" column="1">
            <widget class="QPushButton" name="pushButtonSelectSupplementaryPolygonFeatures">
             <property name="text">
              <string>Valitse päivitettävät täydentävät aluekohteet</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="0">
+          <item row="4" column="0">
            <widget class="QCheckBox" name="checkBoxUpdateLandUseClassificationsForLineFeatures">
             <property name="text">
              <string>Päivitä viivamaisten kohteiden käyttötarkoitukset</string>
@@ -112,14 +112,14 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
+          <item row="4" column="1">
            <widget class="QPushButton" name="pushButtonSelectLineFeatures">
             <property name="text">
              <string>Valitse päivitettävät viivamaiset kohteet</string>
             </property>
            </widget>
           </item>
-          <item row="3" column="0">
+          <item row="5" column="0">
            <widget class="QCheckBox" name="checkBoxUpdateLandUseClassificationsForPointFeatures">
             <property name="text">
              <string>Päivitä pistemäisten kohteiden käyttötarkoitukset</string>
@@ -129,10 +129,30 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="1">
+          <item row="5" column="1">
            <widget class="QPushButton" name="pushButtonSelectPointFeatures">
             <property name="text">
              <string>Valitse päivitettävät pistemäiset kohteet</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="checkBoxRemoveOldRegulationsFromSpatialFeatures">
+            <property name="text">
+             <string>Poista kaavakohteilta vanhat kaavamääräyset</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QCheckBox" name="checkBoxAddRegulationEvenIfSpatialFeatureHasMultipleRegulations">
+            <property name="text">
+             <string>Lisää kaavamääräys kohteelle vaikka kohteella olisi useita kaavamääräyksiä</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
             </property>
            </widget>
           </item>

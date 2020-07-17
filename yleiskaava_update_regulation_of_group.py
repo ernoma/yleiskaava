@@ -135,9 +135,7 @@ class UpdateRegulationOfGroup:
                 self.currentRegulation["maaraysteksti"] = QVariant(regulationText)
                 self.currentRegulation["kuvaus_teksti"] = QVariant(regulationDescription)
 
-                self.iface.messageBar().pushMessage('Kaavamääräysotsikko päivitetty', Qgis.Info, 30)
-
-                self.setupRegulationsInDialog()
+                self.iface.messageBar().pushMessage('Kaavamääräys päivitetty', Qgis.Info, 30)
 
                 if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPolgyonFeatures.isChecked():
                     if not self.hasUserSelectedPolgyonFeaturesForUpdate:
@@ -171,56 +169,81 @@ class UpdateRegulationOfGroup:
             else:
                 self.iface.messageBar().pushMessage("Kaavamääystä ja kohteita ei päivitetty", Qgis.Critical)
 
-            self.yleiskaavaUtils.refreshTargetLayersInProject()
-
             self.finishUpdate()
         else:
             self.iface.messageBar().pushMessage('Valitse kaavamääräys', Qgis.Info, 30)
 
 
     def finishUpdate(self):
+        self.setupRegulationsInDialog()
+
+        self.yleiskaavaUtils.refreshTargetLayersInProject()
+
         self.hasUserSelectedPolgyonFeaturesForUpdate = False
         self.hasUserSelectedSuplementaryPolgyonFeaturesForUpdate = False
         self.hasUserSelectedLineFeaturesForUpdate = False
         self.hasUserSelectedPointFeaturesForUpdate = False
 
+        self.dialogUpdateRegulationOfGroup.hide()
+
 
     def updateRegulationsAndLandUseClassificationsForSpatialFeatures(self, featureType):
         if self.currentRegulation != None:
             regulationID = self.currentRegulation["id"]
-            spatialFeatures = self.yleiskaavaDatabase.getSpatialFeaturesWithRegulationForType(regulationID, featureType)
+
+            spatialFeatures = self.getSelectedFeatures(featureType)
+            # spatialFeatures = self.yleiskaavaDatabase.getSpatialFeaturesWithRegulationForType(regulationID, featureType)
 
             spatialFeaturesWithMultipleRegulations = []
 
             for feature in spatialFeatures:
-                regulationCount = self.yleiskaavaDatabase.getRegulationCountForSpatialFeature(feature["feature"]["id"], feature["type"])
+                regulationCount = self.yleiskaavaDatabase.getRegulationCountForSpatialFeature(feature["id"], featureType)
 
-                if regulationCount > 1:
+                # QgsMessageLog.logMessage("updateRegulationsAndLandUseClassificationsForSpatialFeatures - feature['feature']['kaavammaraysotsikko']: " + feature['feature']['kaavammaraysotsikko'] + ", regulationCount for feature: " + str(regulationCount), 'Yleiskaava-työkalu', Qgis.Info)
+
+                if regulationCount > 1 and not self.dialogUpdateRegulationOfGroup.checkBoxAddRegulationEvenIfSpatialFeatureHasMultipleRegulations.isChecked():
                     spatialFeaturesWithMultipleRegulations.append(feature)
-                    # TODO kysy käyttäjältä lupa päivitykseen
                 else:
-                    success = self.yleiskaavaDatabase.updateSpatialFeatureRegulationAndLandUseClassificationTexts(feature["feature"]["id"], feature["type"], self.currentRegulation["kaavamaarays_otsikko"])
+                    shouldRemoveOldRegulationRelations = self.dialogUpdateRegulationOfGroup.checkBoxRemoveOldRegulationsFromSpatialFeatures.isChecked()
+                    success = self.yleiskaavaDatabase.updateSpatialFeatureRegulationAndLandUseClassification(feature["id"], featureType, regulationID, self.currentRegulation["kaavamaarays_otsikko"], shouldRemoveOldRegulationRelations)
 
                     if not success:
-                        self.iface.messageBar().pushMessage("Kaavakohteelle, jonka id on " + str(feature["feature"]["id"]) + " ei voitu päivittää kaavamaaraysteksti- ja kayttotarkoitus_lyhenne-kenttien tekstejä", Qgis.Critical)
+                        self.iface.messageBar().pushMessage("Kaavakohteelle, jonka id on " + str(feature["id"]) + " ei voitu päivittää kaavamääräystä, kaavamaaraysteksti- ja kayttotarkoitus_lyhenne-kenttien tekstejä", Qgis.Critical)
 
                         return False
 
         return True
 
 
+    def getSelectedFeatures(self, featureType):
+        layer = None
+
+        if featureType == "alue":
+            layer = QgsProject.instance().mapLayersByName("Aluevaraukset")[0]
+        elif featureType == "alue_taydentava":
+            layer = QgsProject.instance().mapLayersByName("Täydentävät aluekohteet (osa-alueet)")[0]
+        elif featureType == "viiva":
+            layer = QgsProject.instance().mapLayersByName("Viivamaiset kaavakohteet")[0]
+        elif featureType == "piste":
+            layer = QgsProject.instance().mapLayersByName("Pistemäiset kaavakohteet")[0]
+
+        # QgsMessageLog.logMessage("getSelectedFeatures - layer.selectedFeatureCount(): " + str(layer.selectedFeatureCount()), 'Yleiskaava-työkalu', Qgis.Info)
+
+        return layer.getSelectedFeatures()
+
 
     def setupRegulationsInDialog(self):
         self.regulations = sorted(self.yleiskaavaDatabase.getSpecificRegulations(), key=itemgetter('alpha_sort_key'))
         self.regulationTitles = []
         for index, regulation in enumerate(self.regulations):
-            #QgsMessageLog.logMessage("setupDialogUpdateRegulationOfGroup - index: " + str(index) + ", regulation['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()) + ", regulation['maaraysteksti']: " + str(regulation['maaraysteksti'].value()) + ", regulation['kuvaus_teksti']: " + str(regulation['kuvaus_teksti'].value()), 'Yleiskaava-työkalu', Qgis.Info)
-            QgsMessageLog.logMessage("setupDialogUpdateRegulationOfGroup - index: " + str(index) + ", regulation['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
+            #QgsMessageLog.logMessage("setupRegulationsInDialog - index: " + str(index) + ", regulation['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()) + ", regulation['maaraysteksti']: " + str(regulation['maaraysteksti'].value()) + ", regulation['kuvaus_teksti']: " + str(regulation['kuvaus_teksti'].value()), 'Yleiskaava-työkalu', Qgis.Info)
+            # QgsMessageLog.logMessage("setupRegulationsInDialog - index: " + str(index) + ", regulation['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
             self.regulationTitles.append(regulation["kaavamaarays_otsikko"].value())
         self.dialogUpdateRegulationOfGroup.comboBoxRegulationTitles.clear()
         self.dialogUpdateRegulationOfGroup.comboBoxRegulationTitles.addItems(self.regulationTitles)
         self.dialogUpdateRegulationOfGroup.comboBoxRegulationTitles.insertItem(0, "Valitse kaavamääräys")
         self.dialogUpdateRegulationOfGroup.comboBoxRegulationTitles.setCurrentIndex(0)
+        self.currentRegulation = None
 
     
     def handleComboBoxRegulationTitleChanged(self, currentIndex):

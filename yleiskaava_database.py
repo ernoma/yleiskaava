@@ -253,7 +253,7 @@ class YleiskaavaDatabase:
 
             if feature["id_kaavaamarays"].value() == regulationID:
                 if not feature["id_kaavaobjekti_" + featureType].isNull():
-                    spatialFeature = self.getSpatialFeature(feature["id_kaavaobjekti_alue"].value(), "alue")
+                    spatialFeature = self.getSpatialFeature(feature["id_kaavaobjekti_" + featureType], featureType)
                     spatialFeatureType = featureType
 
                 if spatialFeature is not None:
@@ -291,7 +291,7 @@ class YleiskaavaDatabase:
         count = 0
 
         for feature in targetLayer.getFeatures():
-            if feature["id_" + featureType] == featureID:
+            if feature["id_kaavaobjekti_" + featureType] == featureID:
                 count += 1
 
         return count
@@ -356,7 +356,17 @@ class YleiskaavaDatabase:
         return True
 
 
-    def updateSpatialFeatureRegulationAndLandUseClassificationTexts(featureID, featureType, regulationTitle):
+    def updateSpatialFeatureRegulationAndLandUseClassification(self, featureID, featureType, regulationID, regulationTitle, shouldRemoveOldRegulationRelations):
+        # remove old regulation relations if shouldRemoveOldRegulationRelations
+        # lisää yhteys kaavaobjekti_kaavamaarays_yhteys-tauluun, jos yhteyttä ei vielä ole
+
+
+        if shouldRemoveOldRegulationRelations:
+            self.removeRegulationRelationsFromSpatialFeature(featureID, featureType)
+
+        if not self.existsFeatureRegulationRelation(featureID, featureType, regulationID):
+            self.createFeatureRegulationRelationWithRegulationID("yk_yleiskaava.kaavaobjekti_" + featureType, featureID, regulationID)
+
         uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_" + featureType, None)
         layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
         feature = self.findSpatialFeatureFromFeatureLayerWithID(layer, featureID)
@@ -387,6 +397,26 @@ class YleiskaavaDatabase:
             return False
 
         return True
+
+
+    def existsFeatureRegulationRelation(self, featureID, featureType, regulationID):
+        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_kaavamaarays_yhteys", None)
+        relationLayer = QgsVectorLayer(uri.uri(False), "temp relation layer", "postgres")
+
+        for feature in relationLayer.getFeatures():
+            if (feature["id_kaavamaarays"] == regulationID and feature["id_kaavaobjekti_" + featureType] == featureID):
+                return True
+
+        return False
+
+
+    def removeRegulationRelationsFromSpatialFeature(self, featureID, featureType):
+        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_kaavamaarays_yhteys", None)
+        relationLayer = QgsVectorLayer(uri.uri(False), "temp relation layer", "postgres")
+
+        for feature in relationLayer.getFeatures():
+            if (feature["id_kaavaobjekti_" + featureType] == featureID):
+                relationLayer.dataProvider().deleteFeatures([feature["id"]])
 
 
     def createFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationTitle):
