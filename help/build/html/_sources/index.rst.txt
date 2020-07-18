@@ -14,7 +14,8 @@ Contents:
 Toiminnot
 =========
 
-* Kopioi lähdeaineistoa tietokantaan
+* :ref:`Kopioi lähdeaineistoa tietokantaan`
+* :ref:`Kaavamääräyksen päivitys joukolle kaavakohteita`
 
 
 Kopioi lähdeaineistoa tietokantaan
