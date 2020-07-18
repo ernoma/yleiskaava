@@ -38,6 +38,11 @@ from .yleiskaava_database import YleiskaavaDatabase
 from .yleiskaava_utils import YleiskaavaUtils
 from .yleiskaava_data_copy_source_to_target import DataCopySourceToTarget
 from .yleiskaava_update_regulation_of_group import UpdateRegulationOfGroup
+from .yleiskaava_geometry_edit_settings import GeometryEditSettings
+from .yleiskaava_change_field_values_of_group import ChangeFieldValuesOfGroup
+from .yleiskaava_update_themes_of_group import UpdateThemesOfGroup
+from .yleiskaava_update_indexing_of_features import UpdateIndexingOfFeatures
+from .yleiskaava_add_source_data_links import AddSourceDataLinks
 
 class Yleiskaava:
     """QGIS Plugin Implementation."""
@@ -86,6 +91,11 @@ class Yleiskaava:
 
         self.dataCopySourceToTarget = DataCopySourceToTarget(self.iface, self.yleiskaavaDatabase, self.yleiskaavaUtils)
         self.updateRegulationOfGroup = UpdateRegulationOfGroup(self.iface, self.yleiskaavaDatabase, self.yleiskaavaUtils)
+        self.geometryEditSettings = GeometryEditSettings(self.iface, self.yleiskaavaDatabase, self.yleiskaavaUtils)
+        self.changeFieldValuesOfGroup = ChangeFieldValuesOfGroup(self.iface, self.yleiskaavaDatabase, self.yleiskaavaUtils)
+        self.updateThemesOfGroup = UpdateThemesOfGroup(self.iface, self.yleiskaavaDatabase, self.yleiskaavaUtils)
+        self.updateIndexingOfFeatures = UpdateIndexingOfFeatures(self.iface, self.yleiskaavaDatabase, self.yleiskaavaUtils)
+        self.addSourceDataLinks = AddSourceDataLinks(self.iface, self.yleiskaavaDatabase, self.yleiskaavaUtils)
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -249,9 +259,19 @@ class Yleiskaava:
     def setupYleiskaavaDockWidget(self):
         self.dataCopySourceToTarget.setup()
         self.updateRegulationOfGroup.setup()
+        self.geometryEditSettings.setup()
+        self.changeFieldValuesOfGroup.setup()
+        self.updateThemesOfGroup.setup()
+        self.updateIndexingOfFeatures.setup()
+        self.addSourceDataLinks.setup()
 
         self.dockwidget.pushButtonCopySourceDataToDatabase.clicked.connect(self.dataCopySourceToTarget.openDialogCopySourceDataToDatabase)
         self.dockwidget.pushButtonUpdateRegulationForGroup.clicked.connect(self.updateRegulationOfGroup.openDialogUpdateRegulationOfGroup)
+        self.dockwidget.pushButtonOpenGeometryEditSettings.clicked.connect(self.geometryEditSettings.openDockWidgetGeometryEditSettings)
+        self.dockwidget.pushButtonChangeFieldValuesForGroup.clicked.connect(self.changeFieldValuesOfGroup.openDialogChangeFieldValuesForGroup)
+        self.dockwidget.pushButtonUpdateThemeForGroup.clicked.connect(self.updateThemesOfGroup.openDialogUpdateThemeForGroup)
+        self.dockwidget.pushButtonUpdateIndexingForLayer.clicked.connect(self.updateIndexingOfFeatures.openDialogUpdateIndexingOfFeatures)
+        self.dockwidget.pushButtonAddSourceDataLinks.clicked.connect(self.addSourceDataLinks.openDialogAddSourceDataLinks)
 
         self.dockwidget.pushButtonSettings.clicked.connect(self.yleiskaavaDatabase.displaySettingsDialog)
 

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>232</width>
-    <height>141</height>
+    <height>222</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -28,6 +28,41 @@
        <widget class="QPushButton" name="pushButtonUpdateRegulationForGroup">
         <property name="text">
          <string>Kaaavamääräyksen päivitys joukolle kaavakohteita...</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButtonUpdateThemeForGroup">
+        <property name="text">
+         <string>Teeman päivitys joukolle kaavakohteita...</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButtonOpenGeometryEditSettings">
+        <property name="text">
+         <string>Kaavakohteiden geometrisen jakamisen muutosasetukset</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButtonChangeFieldValuesForGroup">
+        <property name="text">
+         <string>Vaihda kenttien arvoja joukolle kaavakohteita...</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButtonUpdateIndexingForLayer">
+        <property name="text">
+         <string>Päivitä kaavakohteiden indeksointia...</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButtonAddSourceDataLinks">
+        <property name="text">
+         <string>Lisää linkkejä lähtöaineistoihin...</string>
         </property>
        </widget>
       </item>

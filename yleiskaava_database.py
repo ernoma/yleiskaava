@@ -80,6 +80,17 @@ class YleiskaavaDatabase:
                 names.append(item['userFriendlyTableName'])
         return names
 
+    
+    def getTargetLayersWithGeometry(self):
+        layers = []
+
+        for item in self.yleiskaava_target_tables:
+            if item["geometryType"] != None:
+                layer = self.createLayerByTargetSchemaTableName(item["name"])
+                layers.append(layer)
+
+        return layers
+
 
     def getUserFriendlyTableNameForTargetSchemaTableName(self, name):
         userFriendlyTableName = None
