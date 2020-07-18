@@ -29,12 +29,17 @@ Kopiointi lähdekarttatasosta yleiskaavan tietokantaan onnistuu seuraavin vaihei
 .. Voit halutessasi tarkistaa ajamisen seurauksena tehtävän kopion aiheuttamat muutokset tietokantaan "Näytä ajolla tehtävät muutokset"-painikkeella.
 
 
-Kaaavamääräyksen päivitys joukolle kaavakohteita
+Kaavamääräyksen päivitys joukolle kaavakohteita
 ................................................
 
-Tällä ominaisuudella käyttäjä voi päivittää kaavamääräyksen kerralla halutulle joukolle kaavakohteita. Myös kaavakohteiden käyttötarkoituslyhenteen (kenttä kayttotarkoitus_lyhenne) arvo voidaan päivittää käyttäjän niin halutessa (samalla päivitetään kaavakohteiden kaavamaaraysotsikko-kentän arvo). Jos kaavakohteille on asetettu yleiskaava ja yleiskaavalle numero, niin käyttötarkoituksen lyhenne koitetaan huomioida kaavakohteiden kaavamääräysten päivityksessä.
+Tällä ominaisuudella käyttäjä voi päivittää kaavamääräyksen kerralla halutulle joukolle kaavakohteita. Kaavamääräys, joka kohteille päivitetään valitaan "Valitse kaavamääräys"-kohdasta. Myös kaavamääräyksen otsikon, tekstin ja kuvauksen voi päivittää tämän dialogin kautta.
 
-Teknisesti ei ole aina mahdollista visualisoida kaavakohteita suoraan kaavamääräys-taulun kaavamääräyksen perusteella ainakin siksi, että kaavakohteeseen voi liittyä useita kaavamääräyksiä. QGIS-työtilassa kaavakohteiden visualisointityyli on valittu kaavakohde-taulujen kayttotarkoitus_lyhenne-kentän perusteella, johon muiden kuin käyttötarkoitusalueiden tapauksessa, on tallennettu lyhenteen sijaan kaavamääräys-taulussa olevan kaavakohteeseen liittyvän kaavamääräyksen otsikko. Jos kaavakohteeseen liittyy useita kaavamääräyksiä, niin käyttäjältä varmistetaan, että tehdäänkö kayttotarkoitus_lyhenne-kentän arvon päivitys.
+Asetuksella "Poista kaavakohteilta vanhat kaavamääräykset" poistetaan valituilla kaavakohteilla jo olevat kaavamääräykset. Käyttäjä valitsee päivitettävät kaavakohteet "Valitse päivitettävät aluekohteet"-, "Valitse päivitettävät täydentävät aluekohteet"-, "Valitse päivitettävät viivamaiset kohteet"- ja "Valitse päivitettävät pistemäiset kohteet"-painikkeiden kautta avatuvien karttatasojen attribuuttitaulujen kautta. Käyttäjä voi myös valita kohteet jo ennen "Kaavamääräyksen päivitys joukolle kaavakohteita"-dialogin avaamista, mutta ko. kohteiden valinta pitää varmistaa avaamalla haluamansa karttatasojen attribuuttitailut em. mainituilla painikkeilla ennen "Tee päivitykset"-painikkeen painamista.
+
+Jos kaavakohteille on asetettu yleiskaava ja yleiskaavalle numero, niin käyttötarkoituksen lyhenne koitetaan huomioida aluevarausten kaavamääräysten päivityksessä.
+
+Teknisesti ei ole aina mahdollista visualisoida kaavakohteita suoraan kaavamääräys-taulun kaavamääräyksen perusteella ainakin siksi, että kaavakohteeseen voi liittyä useita kaavamääräyksiä ja siksi QGIS-työtilassa kaavakohteiden visualisointityyli on valittu kaavakohde-taulujen kayttotarkoitus_lyhenne-kentän perusteella, johon muiden kuin käyttötarkoitusalueiden tapauksessa, on tallennettu lyhenteen sijaan kaavamääräys-taulussa olevan kaavakohteeseen liittyvän kaavamääräyksen otsikko. Jos kaavakohteeseen liittyy useita kaavamääräyksiä, niin käyttäjä voi "Päivitä käyttötarkoitus vaikka kohteella olisi useita kaavamääräyksiä"-asetuksella valita miten tässä tilanteessa toimitaan. Kaavakohteiden käyttötarkoituksen (kenttä kayttotarkoitus_lyhenne) arvo päivitetään myös (ja samalla päivitetään kaavakohteiden kaavamaaraysotsikko-kentän arvo), kun "Päivitä käyttötarkoitus vaikka kohteella olisi useita kaavamääräyksiä"-asetus on valittu, vaikka kohteella olisi useita kaavamääräyksiä päivityksen jälkeen. Jos ko. asetus ei ole käytössä, niin valittu kaavamääräys lisätään kohteelle, mutta käyttötarkoitukseen ei tehdä muutoksia, jos kohteella on useita kaavamääräyksiä päivityksen jälkeen. Jos kuitenkin asetus "Poista kaavakohteilta vanhat kaavamääräykset" on käytössä, niin "Päivitä käyttötarkoitus vaikka kohteella olisi useita kaavamääräyksiä"-asetuksella ei ole vaikutusta.
+
 
 
 Indices and tables

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>482</width>
-    <height>357</height>
+    <height>393</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -139,7 +139,7 @@
           <item row="0" column="0">
            <widget class="QCheckBox" name="checkBoxRemoveOldRegulationsFromSpatialFeatures">
             <property name="text">
-             <string>Poista kaavakohteilta vanhat kaavamääräyset</string>
+             <string>Poista kaavakohteilta vanhat kaavamääräykset</string>
             </property>
             <property name="checked">
              <bool>true</bool>
@@ -147,9 +147,9 @@
            </widget>
           </item>
           <item row="1" column="0">
-           <widget class="QCheckBox" name="checkBoxAddRegulationEvenIfSpatialFeatureHasMultipleRegulations">
+           <widget class="QCheckBox" name="checkBoxUpdateRegulationTextsEvenIfSpatialFeatureHasMultipleRegulations">
             <property name="text">
-             <string>Lisää kaavamääräys kohteelle vaikka kohteella olisi useita kaavamääräyksiä</string>
+             <string>Päivitä käyttötarkoitus vaikka kohteella olisi useita kaavamääräyksiä</string>
             </property>
             <property name="checked">
              <bool>true</bool>
