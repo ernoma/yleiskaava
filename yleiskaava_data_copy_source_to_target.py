@@ -4,7 +4,7 @@ from qgis.PyQt.QtCore import Qt, QVariant, QSize
 from qgis.PyQt.QtWidgets import QWidget, QGridLayout, QLabel, QComboBox, QCheckBox
 
 from qgis.core import (
-    Qgis, QgsProject, QgsFeature, QgsField, QgsMessageLog, QgsMapLayer, QgsVectorLayer, QgsAuxiliaryLayer, QgsMapLayerProxyModel, QgsGeometry, QgsCoordinateReferenceSystem, QgsCoordinateTransform)
+    Qgis, QgsProject, QgsFeature, QgsField, QgsWkbTypes, QgsMessageLog, QgsMapLayer, QgsVectorLayer, QgsAuxiliaryLayer, QgsMapLayerProxyModel, QgsGeometry, QgsCoordinateReferenceSystem, QgsCoordinateTransform)
 
 from qgis.gui import QgsFilterLineEdit, QgsDateTimeEdit
 
@@ -142,6 +142,19 @@ class DataCopySourceToTarget:
         # QgsMessageLog.logMessage(layer.name(), 'Yleiskaava-työkalu', Qgis.Info)
         self.sourceLayer = layer
         self.updateUIBasedOnSourceLayer(self.sourceLayer)
+        
+        geomType = self.sourceLayer.geometryType()
+
+        if geomType == QgsWkbTypes.PointGeometry:
+            self.selectTargetLayer('Pistemäiset kaavakohteet')
+        elif geomType == QgsWkbTypes.LineGeometry:
+            self.selectTargetLayer('Viivamaiset kaavakohteet')
+        
+
+    def selectTargetLayer(self, layerName):
+        widget = self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.cellWidget(0, DataCopySourceToTarget.TARGET_TABLE_NAME_INDEX)
+        if widget != None:
+            widget.setCurrentIndex(1)
 
 
     def updateUIBasedOnSourceLayer(self, sourceLayer):
@@ -244,12 +257,33 @@ class DataCopySourceToTarget:
 
 
     def getTargetFieldComboBoxText(self, targetFieldName, targetFieldTypeName):
-        return '' + targetFieldName + ' (' + targetFieldTypeName + ')'
+        userFriendlyFieldName = self.yleiskaavaDatabase.getUserFriendlytargetFieldName(targetFieldName)
+        return '' + userFriendlyFieldName + ' (' + targetFieldName + ', ' + targetFieldTypeName + ')'
+
+
+    def getTargetFieldNameAndTypeFromComboBoxText(self, text):
+        QgsMessageLog.logMessage('getTargetFieldNameAndTypeFromComboBoxText, text: ' + str(text), 'Yleiskaava-työkalu', Qgis.Info)
+        userFriendlyFieldName, targetFieldNameAndTypeName = text.rsplit(' (', 1)
+        targetFieldName, targetFieldTypeName = targetFieldNameAndTypeName[0:-1].split(', ')
+        return userFriendlyFieldName, targetFieldName, targetFieldTypeName
 
 
     def selectBestFittingTargetField(self, sourceFieldName, sourceFieldTypeName, targetFields, targetFieldNameComboBox):
         
         max_levenshtein_ratio = 0
+
+        if sourceFieldName == 'Yleisk_nro':
+            targetFieldNameComboBox.setCurrentText('')
+            return
+        elif sourceFieldName.lower().startswith('luok'):
+            targetFieldComboBoxText = self.getTargetFieldComboBoxText('luokittelu', 'String')
+            targetFieldNameComboBox.setCurrentText(targetFieldComboBoxText)
+            return
+        elif sourceFieldName.lower().startswith('tuont'):
+            targetFieldComboBoxText = self.getTargetFieldComboBoxText('aineisto_lisatieto', 'String')
+            targetFieldNameComboBox.setCurrentText(targetFieldComboBoxText)
+            return
+
 
         for index, field in enumerate(targetFields.toList()):
             targetFieldName = field.name()
@@ -319,8 +353,7 @@ class DataCopySourceToTarget:
             targetFieldTypeName = None
             text = self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.cellWidget(i, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX).currentText()
             if text != '':
-                targetFieldName, targetFieldTypeName = text.split(' ')
-                targetFieldTypeName = targetFieldTypeName[1:-1]
+                userFriendlyFieldName, targetFieldName, targetFieldTypeName = self.getTargetFieldNameAndTypeFromComboBoxText(text)
 
             if targetFieldName in targetFieldNames:
                 return targetFieldName
@@ -358,20 +391,21 @@ class DataCopySourceToTarget:
 
     def showDialogCopySettings(self):
 
-        # jos "Luo tarvittaessa uudet kaavamääräykset" / "Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan tai päinvastoin" eivät relevantteja lähdeaineiston täysmäysten perusteella, niin näytä ko. elementit dialogissa disabloituna ja ilman valintaa
-        if not self.targetFieldsHaveRegulation() and not self.targetFieldsHaveLandUseClassification():
-            self.dialogCopySettings.checkBoxCreateRegulations.setChecked(False)
-            #self.dialogCopySettings.checkBoxCreateRegulations.setEnabled(False)
-        else:
-            self.dialogCopySettings.checkBoxCreateRegulations.setChecked(True)
-            self.dialogCopySettings.checkBoxCreateRegulations.setEnabled(True)
+        # # jos "Luo tarvittaessa uudet kaavamääräykset" / "Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan tai päinvastoin" eivät relevantteja lähdeaineiston täysmäysten perusteella, niin näytä ko. elementit dialogissa disabloituna ja ilman valintaa
+        # if not self.targetFieldsHaveRegulation() and not self.targetFieldsHaveLandUseClassification():
+        #     self.dialogCopySettings.checkBoxCreateRegulations.setChecked(False)
+        #     #self.dialogCopySettings.checkBoxCreateRegulations.setEnabled(False)
+        # else:
+        #     self.dialogCopySettings.checkBoxCreateRegulations.setChecked(True)
+        #     self.dialogCopySettings.checkBoxCreateRegulations.setEnabled(True)
+
         # Huomioi, että jos käyttötarkoitus ja kaavamääräys molemmat lähdekohde-matchissä tai ei kumpaakaan, niin ei ruksia asetusdialogissa "Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan tai päinvastoin"-kohtaan
-        if (not self.targetFieldsHaveRegulation() and not self.targetFieldsHaveLandUseClassification()) or (self.targetFieldsHaveRegulation() and self.targetFieldsHaveLandUseClassification()):
-            self.dialogCopySettings.checkBoxFillLandUseClassificationWithRegulation.setChecked(False)
-            #self.dialogCopySettings.checkBoxFillLandUseClassificationWithRegulation.setEnabled(False)
-        else:
-            self.dialogCopySettings.checkBoxFillLandUseClassificationWithRegulation.setChecked(True)
-            self.dialogCopySettings.checkBoxFillLandUseClassificationWithRegulation.setEnabled(True)
+        # if (not self.targetFieldsHaveRegulation() and not self.targetFieldsHaveLandUseClassification()) or (self.targetFieldsHaveRegulation() and self.targetFieldsHaveLandUseClassification()):
+        #     self.dialogCopySettings.checkBoxFillLandUseClassificationWithRegulation.setChecked(False)
+        #     #self.dialogCopySettings.checkBoxFillLandUseClassificationWithRegulation.setEnabled(False)
+        # else:
+        #     self.dialogCopySettings.checkBoxFillLandUseClassificationWithRegulation.setChecked(True)
+        #     self.dialogCopySettings.checkBoxFillLandUseClassificationWithRegulation.setEnabled(True)
             
 
         self.initializeDialogCopySettingsPlanPart()
@@ -472,14 +506,16 @@ class DataCopySourceToTarget:
             self.dialogCopySettings.comboBoxSpatialPlanName.setEnabled(False)
 
 
-    def getChosenTargetFieldNames(self):
-        # hae valittujen kohdekenttien nimet dialogin taulusta
-        names = []
-        for i in range(self.getSourceTargetMatchRowCount()):
-            name = self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.cellWidget(i,DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX).currentText()
-            if len(name) > 0:
-                names.append(name.split(' ')[0]) # Remove type and append
-        return names
+    # def getChosenTargetFieldNames(self):
+    #     # hae valittujen kohdekenttien nimet dialogin taulusta
+    #     names = []
+    #     for i in range(self.getSourceTargetMatchRowCount()):
+    #         name = self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.cellWidget(i,DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX).currentText()
+    #         if len(name) > 0:
+    #              # Remove userFriendlyFieldName and type and append
+    #             userFriendlyFieldName, targetFieldName, targetFieldTypeName = self.getTargetFieldNameAndTypeFromComboBoxText(name)
+    #             names.append(targetFieldName)
+    #     return names
 
 
     def showFieldInSettingsDialogDefaults(self, schemaTableName, layer, fieldIndex, field):
@@ -562,7 +598,7 @@ class DataCopySourceToTarget:
         targetCRS = self.targetLayer.crs()
         transform = None
         if sourceCRS != targetCRS:
-            transform = QgsCoordinateTransform(source_crs, dest_crs, QgsProject.instance())
+            transform = QgsCoordinateTransform(sourceCRS, targetCRS, QgsProject.instance())
 
         sourceFeatures = self.sourceLayer.getSelectedFeatures()
 
@@ -575,9 +611,10 @@ class DataCopySourceToTarget:
             sourceGeom = sourceFeature.geometry()
 
             if not sourceGeom.isNull() and transform is not None:
-                transformedSourceGeom = sourceGeom.transform(transform)
+                transformedSourceGeom = QgsGeometry(sourceGeom)
+                transformedSourceGeom.transform(transform)
             else:
-                transformedSourceGeom = sourceGeom
+                transformedSourceGeom = QgsGeometry(sourceGeom)
 
             targetLayerFeature = QgsFeature()
             targetLayerFeature.setFields(self.targetLayer.fields())
@@ -586,7 +623,7 @@ class DataCopySourceToTarget:
 
             self.setTargetFeatureValues(sourceFeature, targetLayerFeature)
 
-            QgsMessageLog.logMessage("copySourceFeaturesToTargetLayer - targetLayerFeature['nro']: " + str(targetLayerFeature['nro']), 'Yleiskaava-työkalu', Qgis.Info)
+            # QgsMessageLog.logMessage("copySourceFeaturesToTargetLayer - targetLayerFeature['nro']: " + str(targetLayerFeature['nro']), 'Yleiskaava-työkalu', Qgis.Info)
 
             self.handleRegulationAndLandUseClassificationInSourceToTargetCopy(sourceFeature, self.targetSchemaTableName, targetLayerFeature, False)
             self.handleSpatialPlanRelationInSourceToTargetCopy(targetLayerFeature)
@@ -705,6 +742,8 @@ class DataCopySourceToTarget:
 
     
     def fillLandUseClassificationWithRegulation(self, sourceRegulationName, targetSchemaTableName, targetFeature):
+        QgsMessageLog.logMessage("fillLandUseClassificationWithRegulation - planNumber: " + str(self.planNumber) + ", targetSchemaTableName: " + targetSchemaTableName + ", sourceRegulationName: " + str(sourceRegulationName.value()), 'Yleiskaava-työkalu', Qgis.Info)
+
         landUseClassificationName = self.yleiskaavaUtils.getLandUseClassificationNameForRegulation(self.planNumber, targetSchemaTableName, sourceRegulationName.value())
 
         targetFeature.setAttribute("kayttotarkoitus_lyhenne", landUseClassificationName)
@@ -768,7 +807,7 @@ class DataCopySourceToTarget:
  
                     if fieldMatch["source"] == sourceAttrDataItem["name"] and fieldMatch["target"] == targetFieldDataItem["name"]:
                         if not sourceAttrDataItem["value"].isNull():
-                            QgsMessageLog.logMessage("setTargetFeatureValues, fieldMatch - sourceHadValue = True - source: " + fieldMatch["source"] + ", sourceFieldTypeName: " + fieldMatch["sourceFieldTypeName"] + ", sourceValue: " + str(sourceAttrDataItem["value"].value()) + ", target:" + fieldMatch["target"] + ", targetFieldTypeName:" + fieldMatch["targetFieldTypeName"], 'Yleiskaava-työkalu', Qgis.Info)
+                            # QgsMessageLog.logMessage("setTargetFeatureValues, fieldMatch - sourceHadValue = True - source: " + fieldMatch["source"] + ", sourceFieldTypeName: " + fieldMatch["sourceFieldTypeName"] + ", sourceValue: " + str(sourceAttrDataItem["value"].value()) + ", target:" + fieldMatch["target"] + ", targetFieldTypeName:" + fieldMatch["targetFieldTypeName"], 'Yleiskaava-työkalu', Qgis.Info)
 
                             attrValue = self.yleiskaavaUtils.getAttributeValueInCompatibleType(targetFieldDataItem["name"], targetFieldDataItem["type"], sourceAttrDataItem["type"], sourceAttrDataItem["value"])
                             if attrValue != None:
@@ -781,12 +820,12 @@ class DataCopySourceToTarget:
                         break                
 
                 if foundFieldMatch and not sourceHadValue:
-                    QgsMessageLog.logMessage("setTargetFeatureValues, foundFieldMatch and not sourceHadValue - targetFieldName: " + targetFieldDataItem["name"] + ", sourceAttrName:" + sourceAttrDataItem["name"], 'Yleiskaava-työkalu', Qgis.Info)
+                    # QgsMessageLog.logMessage("setTargetFeatureValues, foundFieldMatch and not sourceHadValue - targetFieldName: " + targetFieldDataItem["name"] + ", sourceAttrName:" + sourceAttrDataItem["name"], 'Yleiskaava-työkalu', Qgis.Info)
                     for defaultTargetFieldInfo in defaultTargetFieldInfos:
-                        QgsMessageLog.logMessage("defaultTargetFieldInfo - defaultTargetName: " + defaultTargetFieldInfo["name"] + ", targetFieldName: " + targetFieldDataItem["name"], 'Yleiskaava-työkalu', Qgis.Info)
+                        # QgsMessageLog.logMessage("defaultTargetFieldInfo - defaultTargetName: " + defaultTargetFieldInfo["name"] + ", targetFieldName: " + targetFieldDataItem["name"], 'Yleiskaava-työkalu', Qgis.Info)
                         
                         if defaultTargetFieldInfo["name"] == targetFieldDataItem["name"]:
-                            QgsMessageLog.logMessage("setTargetFeatureValues, foundFieldMatch and not sourceHadValue, defaultTargetFieldInfo - defaultTargetName = targetFieldName: " + defaultTargetFieldInfo["name"] + ", defaultTargetValue: " + str(defaultTargetFieldInfo["value"].value()), 'Yleiskaava-työkalu', Qgis.Info)
+                            # QgsMessageLog.logMessage("setTargetFeatureValues, foundFieldMatch and not sourceHadValue, defaultTargetFieldInfo - defaultTargetName = targetFieldName: " + defaultTargetFieldInfo["name"] + ", defaultTargetValue: " + str(defaultTargetFieldInfo["value"].value()), 'Yleiskaava-työkalu', Qgis.Info)
                             
                             if not defaultTargetFieldInfo["value"].isNull():
                                 attrValue = self.yleiskaavaUtils.getAttributeValueInCompatibleType(targetFieldDataItem["name"], targetFieldDataItem["type"], defaultTargetFieldInfo["type"], defaultTargetFieldInfo["value"])
@@ -798,9 +837,8 @@ class DataCopySourceToTarget:
 
             if not foundFieldMatchForTarget:
                 for defaultTargetFieldInfo in defaultTargetFieldInfos:
-                    if targetFieldDataItem["name"] == 'nro':
-                        QgsMessageLog.logMessage("setTargetFeatureValues, not foundFieldMatch - targetFieldName: " + targetFieldDataItem["name"] + ", targetFieldType: " + targetFieldDataItem["type"], 'Yleiskaava-työkalu', Qgis.Info)
-                        QgsMessageLog.logMessage("setTargetFeatureValues, not foundFieldMatch - defaultTargetName: " + defaultTargetFieldInfo["name"] + ", defaultTargetType: " + defaultTargetFieldInfo["type"]  + ", defaultTargetValue: " + str(defaultTargetFieldInfo["value"].value()), 'Yleiskaava-työkalu', Qgis.Info)
+                    # QgsMessageLog.logMessage("setTargetFeatureValues, not foundFieldMatch - targetFieldName: " + targetFieldDataItem["name"] + ", targetFieldType: " + targetFieldDataItem["type"], 'Yleiskaava-työkalu', Qgis.Info)
+                    # QgsMessageLog.logMessage("setTargetFeatureValues, not foundFieldMatch - defaultTargetName: " + defaultTargetFieldInfo["name"] + ", defaultTargetType: " + defaultTargetFieldInfo["type"]  + ", defaultTargetValue: " + str(defaultTargetFieldInfo["value"].value()), 'Yleiskaava-työkalu', Qgis.Info)
                     
                     if defaultTargetFieldInfo["name"] == targetFieldDataItem["name"]:
                         # QgsMessageLog.logMessage("defaultTargetFieldInfo - defaultTargetName = targetFieldName: " + defaultTargetFieldInfo["name"], 'Yleiskaava-työkalu', Qgis.Info)
@@ -935,8 +973,7 @@ class DataCopySourceToTarget:
             # QgsMessageLog.logMessage("getSourceTargetFieldMatches - index: " + str(index) + ", sourceFieldName: " + sourceFieldName + ", sourceFieldTypeName: " + sourceFieldTypeName + ", TARGET_TABLE_FIELD_NAME: " + text, 'Yleiskaava-työkalu', Qgis.Info)
 
             if text != '':
-                targetFieldName, targetFieldTypeName = text.split(' ')
-                targetFieldTypeName = targetFieldTypeName[1:-1]
+                userFriendlyFieldName, targetFieldName, targetFieldTypeName = self.getTargetFieldNameAndTypeFromComboBoxText(text)
 
             if targetFieldName != None:
                 fieldMatches.append({ "source": sourceFieldName, "sourceFieldTypeName": sourceFieldTypeName, "target": targetFieldName, "targetFieldTypeName": targetFieldTypeName })
@@ -951,8 +988,7 @@ class DataCopySourceToTarget:
             targetFieldTypeName = None
             text = self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.cellWidget(i, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX).currentText()
             if text != '':
-                targetFieldName, targetFieldTypeName = text.split(' ')
-                targetFieldTypeName = targetFieldTypeName[1:-1]
+                userFriendlyFieldName, targetFieldName, targetFieldTypeName = self.getTargetFieldNameAndTypeFromComboBoxText(text)
 
             if targetFieldName == 'kaavamaaraysotsikko':
                 return True
@@ -966,8 +1002,7 @@ class DataCopySourceToTarget:
             targetFieldTypeName = None
             text = self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.cellWidget(i, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX).currentText()
             if text != '':
-                targetFieldName, targetFieldTypeName = text.split(' ')
-                targetFieldTypeName = targetFieldTypeName[1:-1]
+                userFriendlyFieldName, targetFieldName, targetFieldTypeName = self.getTargetFieldNameAndTypeFromComboBoxText(text)
 
             if targetFieldName == 'kayttotarkoitus_lyhenne':
                 return True

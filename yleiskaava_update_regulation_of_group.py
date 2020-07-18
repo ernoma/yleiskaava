@@ -62,28 +62,28 @@ class UpdateRegulationOfGroup:
     def selectPolgyonFeatures(self):
         layer = QgsProject.instance().mapLayersByName("Aluevaraukset")[0]
         if layer.selectedFeatureCount() > 0:
-             self.iface.messageBar().pushMessage('Aluevaraukset karttatasolla oli jo valmiiksi valittuja kohteita', Qgis.Info, 20)
+             self.iface.messageBar().pushMessage('Aluevaraukset karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedPolgyonFeaturesForUpdate = True
 
     def selectSupplementaryPolygonFeatures(self):
         layer = QgsProject.instance().mapLayersByName("Täydentävät aluekohteet (osa-alueet)")[0]
         if layer.selectedFeatureCount() > 0:
-             self.iface.messageBar().pushMessage('Täydentävät aluekohteet  karttatasolla oli jo valmiiksi valittuja kohteita', Qgis.Info, 20)
+             self.iface.messageBar().pushMessage('Täydentävät aluekohteet  karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedSuplementaryPolgyonFeaturesForUpdate = True
 
     def selectLineFeatures(self):
         layer = QgsProject.instance().mapLayersByName("Viivamaiset kaavakohteet")[0]
         if layer.selectedFeatureCount() > 0:
-             self.iface.messageBar().pushMessage('Viivamaiset kaavakohteet karttatasolla oli jo valmiiksi valittuja kohteita', Qgis.Info, 20)
+             self.iface.messageBar().pushMessage('Viivamaiset kaavakohteet karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedLineFeaturesForUpdate = True
 
     def selectPointFeatures(self):
         layer = QgsProject.instance().mapLayersByName("Pistemäiset kaavakohteet")[0]
         if layer.selectedFeatureCount() > 0:
-             self.iface.messageBar().pushMessage('Pistemäiset kaavakohteet karttatasolla oli jo valmiiksi valittuja kohteita', Qgis.Info, 20)
+             self.iface.messageBar().pushMessage('Pistemäiset kaavakohteet karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedPointFeaturesForUpdate = True
 

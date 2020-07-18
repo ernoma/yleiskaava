@@ -382,7 +382,7 @@ class YleiskaavaDatabase:
             landUseClassificationName = regulationTitle
             if feature["id_yleiskaava"] is not None:
                 planNumber = self.getPlanNumberForPlanID(feature["id_yleiskaava"])
-                landUseClassificationName = self.yleiskaavaUtils.getLandUseClassificationNameForRegulation(planNumber, "kaavaobjekti_" + featureType, regulationTitle)
+                landUseClassificationName = self.yleiskaavaUtils.getLandUseClassificationNameForRegulation(planNumber, "yk_yleiskaava.kaavaobjekti_" + featureType, regulationTitle)
             success = layer.changeAttributeValue(feature.id(), index, landUseClassificationName)
             if not success:
                 self.iface.messageBar().pushMessage('updateSpatialFeatureRegulationAndLandUseClassificationTexts - kayttotarkoitus_lyhenne - changeAttributeValue() failed', Qgis.Critical)

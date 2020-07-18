@@ -128,7 +128,7 @@ class YleiskaavaUtils:
             elif sourceFieldTypeName == 'Bool' and (targetFieldTypeName == 'Int' or targetFieldTypeName == 'LongLong'):
                 return sourceAttribute.toInt()
             elif targetFieldTypeName == 'String':
-                return sourceAttribute.toString()
+                return str(sourceAttribute.value())
             else:
                 self.iface.messageBar().pushMessage('Bugi koodissa: getAttributeValueInCompatibleType tuntematon tyyppimuunnos', Qgis.Critical)
                 # QgsMessageLog.logMessage('getAttributeValueInCompatibleType tuntematon tyyppimuunnos', 'Yleiskaava-työkalu', Qgis.Critical)
@@ -176,7 +176,7 @@ class YleiskaavaUtils:
         landUseClassificationAbbrs = []
         
         for landUseClassificationAbbr in YleiskaavaUtils.LAND_USE_CLASSIFICATION_ABBREVIATIONS:
-            if planNumber in landUseClassification["plan_numbers"]:
+            if planNumber in landUseClassificationAbbr["plan_numbers"]:
                 landUseClassificationAbbrs.append(landUseClassificationAbbr)
 
         return landUseClassificationAbbrs
