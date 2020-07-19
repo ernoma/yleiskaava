@@ -47,6 +47,9 @@
       </item>
       <item>
        <widget class="QPushButton" name="pushButtonChangeFieldValuesForGroup">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>Vaihda kenttien arvoja joukolle kaavakohteita...</string>
         </property>
@@ -54,6 +57,9 @@
       </item>
       <item>
        <widget class="QPushButton" name="pushButtonUpdateIndexingForLayer">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>Päivitä kaavakohteiden indeksointia...</string>
         </property>
@@ -61,6 +67,9 @@
       </item>
       <item>
        <widget class="QPushButton" name="pushButtonAddSourceDataLinks">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>Lisää linkkejä lähtöaineistoihin...</string>
         </property>

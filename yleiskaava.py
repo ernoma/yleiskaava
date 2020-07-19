@@ -26,6 +26,8 @@ from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt, QUrl
 from qgis.PyQt.QtGui import QIcon, QDesktopServices
 from qgis.PyQt.QtWidgets import QAction, QWidget, QGridLayout, QLabel, QComboBox
 
+from qgis.core import (
+    Qgis, QgsProject)
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -213,6 +215,9 @@ class Yleiskaava:
         # when closing the docked window:
         # self.dockwidget = None
 
+        self.geometryEditSettings.onClosePlugin()
+
+
         self.pluginIsActive = False
 
 
@@ -246,17 +251,21 @@ class Yleiskaava:
                 # Create the dockwidget (after translation) and keep reference
                 self.dockwidget = YleiskaavaDockWidget()
 
-            self.setupYleiskaavaDockWidget()
+                self.setupYleiskaavaDockWidget()
 
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
 
             # show the dockwidget
             # TODO: fix to allow choice of dock location
-            self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.dockwidget)
+            self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
 
     def setupYleiskaavaDockWidget(self):
+
+        if not self.canUse():
+            self.iface.messageBar().pushMessage('Yleiskaavan QGIS-työtila pitää käynnistää ennen työkalujen käyttöä', Qgis.Warning, duration=10)
+
         self.dataCopySourceToTarget.setup()
         self.updateRegulationOfGroup.setup()
         self.geometryEditSettings.setup()
@@ -276,6 +285,14 @@ class Yleiskaava:
         self.dockwidget.pushButtonSettings.clicked.connect(self.yleiskaavaDatabase.displaySettingsDialog)
 
         self.dockwidget.pushButtonHelp.clicked.connect(self.showHelp)
+
+
+
+    def canUse(self):
+        if len(QgsProject.instance().mapLayersByName("Aluevaraukset")) != 1 or len(QgsProject.instance().mapLayersByName("Täydentävät aluekohteet (osa-alueet)")) != 1 or len(QgsProject.instance().mapLayersByName("Viivamaiset kaavakohteet")) != 1:
+            return False
+        
+        return True
 
 
     def showHelp(self):

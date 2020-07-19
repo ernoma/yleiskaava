@@ -139,16 +139,17 @@ class DataCopySourceToTarget:
 
 
     def handleMapLayerComboBoxSourceChanged(self, layer):
-        # QgsMessageLog.logMessage(layer.name(), 'Yleiskaava-työkalu', Qgis.Info)
-        self.sourceLayer = layer
-        self.updateUIBasedOnSourceLayer(self.sourceLayer)
-        
-        geomType = self.sourceLayer.geometryType()
+        if layer is not None:
+            # QgsMessageLog.logMessage(layer.name(), 'Yleiskaava-työkalu', Qgis.Info)
+            self.sourceLayer = layer
+            self.updateUIBasedOnSourceLayer(self.sourceLayer)
+            
+            geomType = self.sourceLayer.geometryType()
 
-        if geomType == QgsWkbTypes.PointGeometry:
-            self.selectTargetLayer('Pistemäiset kaavakohteet')
-        elif geomType == QgsWkbTypes.LineGeometry:
-            self.selectTargetLayer('Viivamaiset kaavakohteet')
+            if geomType == QgsWkbTypes.PointGeometry:
+                self.selectTargetLayer('Pistemäiset kaavakohteet')
+            elif geomType == QgsWkbTypes.LineGeometry:
+                self.selectTargetLayer('Viivamaiset kaavakohteet')
         
 
     def selectTargetLayer(self, layerName):
@@ -158,54 +159,54 @@ class DataCopySourceToTarget:
 
 
     def updateUIBasedOnSourceLayer(self, sourceLayer):
+        if sourceLayer is not None:
+            self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.clearContents()
+            self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setRowCount(self.getSourceTargetMatchRowCount())
+            self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setColumnCount(4)
+            self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setHorizontalHeaderLabels([
+                "Lähdekenttä",
+                "Lähdetietotyyppi",
+                "Kohdekarttataso (kaavaobjekti)",
+                "Kohdekarttatason kenttä"
+            ])
 
-        self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.clearContents()
-        self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setRowCount(self.getSourceTargetMatchRowCount())
-        self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setColumnCount(4)
-        self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setHorizontalHeaderLabels([
-            "Lähdekenttä",
-            "Lähdetietotyyppi",
-            "Kohdekarttataso (kaavaobjekti)",
-            "Kohdekarttatason kenttä"
-        ])
-
-        self.targetTableComboBoxes = []
-        self.targetFieldNameComboBoxes = []
+            self.targetTableComboBoxes = []
+            self.targetFieldNameComboBoxes = []
 
 
-        index = 0
-        for field in sourceLayer.fields().toList():
-            if field.name() != 'id' and self.yleiskaavaUtils.getStringTypeForFeatureField(field) != 'uuid':
-                sourceFieldnameLabel = QLabel(field.name())
-                sourceFieldnameLabel.setObjectName(DataCopySourceToTarget.OBJECT_NAME_UNIQUE_IDENTIFIERS["SOURCE_FIELD_NAME"] + str(index))
-                sourceFieldTypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
-                sourceFieldtypeLabel = QLabel(sourceFieldTypeName)
-                sourceFieldtypeLabel.setObjectName(DataCopySourceToTarget.OBJECT_NAME_UNIQUE_IDENTIFIERS["SOURCE_FIELD_TYPE_NAME"] + str(index))
-                
-                targetTableComboBox = QComboBox()
-                targetTableComboBox.setObjectName(DataCopySourceToTarget.OBJECT_NAME_UNIQUE_IDENTIFIERS["TARGET_TABLE_NAME"] + str(index))
+            index = 0
+            for field in sourceLayer.fields().toList():
+                if field.name() != 'id' and self.yleiskaavaUtils.getStringTypeForFeatureField(field) != 'uuid':
+                    sourceFieldnameLabel = QLabel(field.name())
+                    sourceFieldnameLabel.setObjectName(DataCopySourceToTarget.OBJECT_NAME_UNIQUE_IDENTIFIERS["SOURCE_FIELD_NAME"] + str(index))
+                    sourceFieldTypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
+                    sourceFieldtypeLabel = QLabel(sourceFieldTypeName)
+                    sourceFieldtypeLabel.setObjectName(DataCopySourceToTarget.OBJECT_NAME_UNIQUE_IDENTIFIERS["SOURCE_FIELD_TYPE_NAME"] + str(index))
+                    
+                    targetTableComboBox = QComboBox()
+                    targetTableComboBox.setObjectName(DataCopySourceToTarget.OBJECT_NAME_UNIQUE_IDENTIFIERS["TARGET_TABLE_NAME"] + str(index))
 
-                # anna valita vain geometrialtaan lähdetason kanssa yhteensopiva kohdetaso
-                targetTableNames = sorted(self.yleiskaavaDatabase.getTargetSchemaTableNamesShownInCopySourceToTargetUI(geometry_type = sourceLayer.geometryType()))
-                targetTableNames.insert(0, "Valitse kohdekarttataso")
+                    # anna valita vain geometrialtaan lähdetason kanssa yhteensopiva kohdetaso
+                    targetTableNames = sorted(self.yleiskaavaDatabase.getTargetSchemaTableNamesShownInCopySourceToTargetUI(geometry_type = sourceLayer.geometryType()))
+                    targetTableNames.insert(0, "Valitse kohdekarttataso")
 
-                targetTableComboBox.addItems(targetTableNames)
-                self.targetTableComboBoxes.append(targetTableComboBox)
-                
-                targetFieldNameComboBox = QComboBox()
-                targetFieldNameComboBox.setObjectName(DataCopySourceToTarget.OBJECT_NAME_UNIQUE_IDENTIFIERS["TARGET_TABLE_FIELD_NAME"] + str(index))
-                self.targetFieldNameComboBoxes.append(targetFieldNameComboBox)
-                
-                self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setCellWidget(index, DataCopySourceToTarget.SOURCE_FIELD_NAME_INDEX, sourceFieldnameLabel)
-                self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setCellWidget(index, DataCopySourceToTarget.SOURCE_FIELD_TYPE_NAME_INDEX, sourceFieldtypeLabel)
-                self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setCellWidget(index, DataCopySourceToTarget.TARGET_TABLE_NAME_INDEX, targetTableComboBox)
-                self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setCellWidget(index, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX, targetFieldNameComboBox)
+                    targetTableComboBox.addItems(targetTableNames)
+                    self.targetTableComboBoxes.append(targetTableComboBox)
+                    
+                    targetFieldNameComboBox = QComboBox()
+                    targetFieldNameComboBox.setObjectName(DataCopySourceToTarget.OBJECT_NAME_UNIQUE_IDENTIFIERS["TARGET_TABLE_FIELD_NAME"] + str(index))
+                    self.targetFieldNameComboBoxes.append(targetFieldNameComboBox)
+                    
+                    self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setCellWidget(index, DataCopySourceToTarget.SOURCE_FIELD_NAME_INDEX, sourceFieldnameLabel)
+                    self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setCellWidget(index, DataCopySourceToTarget.SOURCE_FIELD_TYPE_NAME_INDEX, sourceFieldtypeLabel)
+                    self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setCellWidget(index, DataCopySourceToTarget.TARGET_TABLE_NAME_INDEX, targetTableComboBox)
+                    self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setCellWidget(index, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX, targetFieldNameComboBox)
 
-                targetTableComboBox.currentTextChanged.connect(partial(self.handleTargetTableSelectChanged, index, sourceFieldTypeName, targetTableComboBox, targetFieldNameComboBox))
+                    targetTableComboBox.currentTextChanged.connect(partial(self.handleTargetTableSelectChanged, index, sourceFieldTypeName, targetTableComboBox, targetFieldNameComboBox))
 
-                index += 1
+                    index += 1
 
-        self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.resizeColumnsToContents()
+            self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.resizeColumnsToContents()
 
 
     def handleTargetTableSelectChanged(self, rowIndex, sourceFieldTypeName, targetTableComboBox, targetFieldNameComboBox):
@@ -1040,9 +1041,11 @@ class DataCopySourceToTarget:
 
     def getSourceTargetMatchRowCount(self):
         count = 0
-        for index, field in enumerate(self.sourceLayer.fields().toList()):
-            if field.name() != 'id' and self.yleiskaavaUtils.getStringTypeForFeatureField(field) != 'uuid':
-                count += 1
+        if self.sourceLayer is not None:
+            fields = self.sourceLayer.fields().toList()
+            for index, field in enumerate(fields):
+                if field.name() != 'id' and self.yleiskaavaUtils.getStringTypeForFeatureField(field) != 'uuid':
+                    count += 1
 
         return count
 
