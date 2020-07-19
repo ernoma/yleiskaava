@@ -308,6 +308,30 @@ class YleiskaavaDatabase:
         return count
 
 
+    def getRegulationsForSpatialFeature(self, featureID, featureType):
+        regulationList = []
+
+        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_kaavamaarays_yhteys", None)
+        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres") 
+
+        for feature in targetLayer.getFeatures():
+            if feature["id_kaavaobjekti_" + featureType] == featureID:
+                kaavamaarays_otsikko = QVariant(feature["kaavamaarays_otsikko"])
+                maaraysteksti = QVariant(feature['maaraysteksti'])
+                kuvausteksti = QVariant(feature['kuvaus_teksti'])
+
+                if not kaavamaarays_otsikko.isNull():
+                    regulationList.append({
+                        "id": feature['id'],
+                        "alpha_sort_key": str(kaavamaarays_otsikko.value()),
+                        "kaavamaarays_otsikko": kaavamaarays_otsikko,
+                        "maaraysteksti": maaraysteksti,
+                        "kuvaus_teksti": kuvausteksti
+                        })
+
+        return regulationList
+
+
     def getSpecificRegulations(self):
         uri = self.createDbURI("yk_yleiskaava", "kaavamaarays", None)
         targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
@@ -474,6 +498,18 @@ class YleiskaavaDatabase:
             else:
                 pass
                 # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
+
+
+    def addRegulationRelationsToLayer(sourceFeatureID, targetFeatureID, featureType):
+        # TODO ilmeisesti toimii vain, jos targetFeatureID löytyy jo tallennettuna tietokannasta ko. kaavaobjekti-taulusta
+        regulations = self.getRegulationsForSpatialFeature(sourceFeatureID, featureType)
+        targetSchemaTableName = "yk_yleiskaava.kaavaobjekti_" + featureType
+        for regulation in regulations:
+            self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulation["id"])
+
+
+    def addThemeRelationsToLayer(sourceFeatureID, targetFeatureID, featureType):
+        pass
 
 
     def findRegulationID(self, regulationName):

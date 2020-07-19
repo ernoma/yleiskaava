@@ -32,6 +32,9 @@ class GeometryEditSettings:
         self.suplementaryAreaFeatureLayerEditBuffer = None
         self.lineFeatureLayerEditBuffer = None
 
+        self.addedLineFeatureIDs = []
+        self.changedLineFeatureIDs = []
+
 
     def setup(self):
         # TODO selvitä pitääkö splitParts käsitellä eri tavalla kuin splitFeatures
@@ -46,7 +49,7 @@ class GeometryEditSettings:
 
 
     def openDockWidgetGeometryEditSettings(self):
-        QgsMessageLog.logMessage("openDockWidgetGeometryEditSettings", 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage("openDockWidgetGeometryEditSettings", 'Yleiskaava-työkalu', Qgis.Info)
         self.areaFeatureLayer = QgsProject.instance().mapLayersByName("Aluevaraukset")[0]
         self.suplementaryAreaFeatureLayer = QgsProject.instance().mapLayersByName("Täydentävät aluekohteet (osa-alueet)")[0]
         self.lineFeatureLayer = QgsProject.instance().mapLayersByName("Viivamaiset kaavakohteet")[0]
@@ -79,16 +82,16 @@ class GeometryEditSettings:
 
         if self.lineFeatureLayer != None:
             receiversCount = self.lineFeatureLayer.receivers(self.lineFeatureLayer.editingStarted)
-            QgsMessageLog.logMessage("followEdits - before receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
-            QgsMessageLog.logMessage("followEdits - connect(self.followLineFeatureLayerEdits)", 'Yleiskaava-työkalu', Qgis.Info)
+            # QgsMessageLog.logMessage("followEdits - before receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
+            # QgsMessageLog.logMessage("followEdits - connect(self.followLineFeatureLayerEdits)", 'Yleiskaava-työkalu', Qgis.Info)
             self.lineFeatureLayer.editingStarted.connect(self.followLineFeatureLayerEdits)
             receiversCount = self.lineFeatureLayer.receivers(self.lineFeatureLayer.editingStarted)
-            QgsMessageLog.logMessage("followEdits - after receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
+            # QgsMessageLog.logMessage("followEdits - after receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
             self.lineFeatureLayer.editingStopped.connect(self.stopFollowingLineFeatureLayerEdits)
 
 
     def disconnectAll(self):
-        QgsMessageLog.logMessage("disconnectAll", 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage("disconnectAll", 'Yleiskaava-työkalu', Qgis.Info)
         if self.areaFeatureLayer != None:
             try:
                 self.areaFeatureLayer.editingStarted.disconnect(self.followAreaFeatureLayerEdits)
@@ -107,7 +110,7 @@ class GeometryEditSettings:
             try:
                 self.lineFeatureLayer.editingStarted.disconnect(self.followLineFeatureLayerEdits)
                 receiversCount = self.lineFeatureLayer.receivers(self.lineFeatureLayer.editingStarted)
-                QgsMessageLog.logMessage("disconnectAll - receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
+                # QgsMessageLog.logMessage("disconnectAll - receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
                 self.lineFeatureLayer.editingStopped.disconnect(self.stopFollowingLineFeatureLayerEdits)
             except TypeError:
                 pass
@@ -135,9 +138,9 @@ class GeometryEditSettings:
 
     def followLineFeatureLayerEdits(self):
         receiversCount = self.lineFeatureLayer.receivers(self.lineFeatureLayer.editingStarted)
-        QgsMessageLog.logMessage("followLineFeatureLayerEdits - receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage("followLineFeatureLayerEdits - receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
         #self.lineFeatures = self.lineFeatureLayer.getFeatures()
-        QgsMessageLog.logMessage("followLineFeatureLayerEdits - self.lineFeatureLayer.featureCount(): " + str(self.lineFeatureLayer.featureCount()), 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage("followLineFeatureLayerEdits - self.lineFeatureLayer.featureCount(): " + str(self.lineFeatureLayer.featureCount()), 'Yleiskaava-työkalu', Qgis.Info)
         self.lineFeatureLayerEditBuffer = self.lineFeatureLayer.editBuffer()
         #self.areaFeatureLayerEditBuffer.featureAdded.connect(self.areaFeatureGeometryChanged)
         self.lineFeatureLayerEditBuffer.geometryChanged.connect(self.lineFeatureGeometryChanged)
@@ -188,6 +191,7 @@ class GeometryEditSettings:
 
     def lineFeatureGeometryChanged(self, fid, geometry):
         QgsMessageLog.logMessage("lineFeatureGeometryChanged - fid: " + str(fid) + ", geometry.length(): " + str(geometry.length()), 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage("lineFeatureGeometryChanged - self.lineFeatureLayer.getFeature(fid).geometry().length(): " + str(self.lineFeatureLayer.getFeature(fid).geometry().length()), 'Yleiskaava-työkalu', Qgis.Info)
         QgsMessageLog.logMessage("lineFeatureGeometryChanged - self.lineFeatureLayer.featureCount(): " + str(self.lineFeatureLayer.featureCount()), 'Yleiskaava-työkalu', Qgis.Info)
         #lineFeatures = self.lineFeatureLayer.getFeatures()
         #QgsMessageLog.logMessage("lineFeatureGeometryChanged - len(lineFeatures): " + str(len(lineFeatures)), 'Yleiskaava-työkalu', Qgis.Info)
@@ -199,6 +203,13 @@ class GeometryEditSettings:
         # addedFeatures = self.lineFeatureLayerEditBuffer.addedFeatures()
         # for key in addedFeatures.keys():
         #     QgsMessageLog.logMessage("lineFeatureGeometryChanged - addedFeatures, key: " + str(key) + ", feature.geometry.length(): " + str( addedFeatures[key].geometry().length()), 'Yleiskaava-työkalu', Qgis.Info)
+        self.changedLineFeatureIDs.append(fid)
+        self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText("Viivamaisen kohteen geometriassa muutos, käyttötarkoitus: " + str(self.lineFeatureLayer.getFeature(fid)["kayttotarkoitus_lyhenne"]) + ", muuttuneita viivamaisia kohteita yhteensä: " + str(len(self.changedLineFeatureIDs)))
+
+        if len(self.addedLineFeatureIDs) == 1:
+            self.addRegulationAndThemeRelationsToLineFeature()
+        elif len(self.addedLineFeatureIDs) > 1:
+            self.iface.messageBar().pushMessage('Uusia viivamaisia kohteita on useita, joten uuden kohteen kaavamääräystä ja teemaa ei aseteta', Qgis.Warning)
 
 
     def areaFeatureAdded(self, fid):
@@ -212,4 +223,26 @@ class GeometryEditSettings:
     def lineFeatureAdded(self, fid):
         QgsMessageLog.logMessage("lineFeatureAdded - fid: " + str(fid), 'Yleiskaava-työkalu', Qgis.Info)
         QgsMessageLog.logMessage("lineFeatureAdded - self.lineFeatureLayer.featureCount(): " + str(self.lineFeatureLayer.featureCount()), 'Yleiskaava-työkalu', Qgis.Info)
+        #self.addedFeatureIDs.append(fid)
+        self.addedLineFeatureIDs.append(fid)
+        self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText("Uusi viivamainen kohde, uusia yhteensä: " + str(len(self.addedLineFeatureIDs)))
 
+        if len(self.changedLineFeatureIDs) == 1:
+            self.addRegulationAndThemeRelationsToLineFeature()
+        elif len(self.changedLineFeatureIDs) > 1:
+            self.iface.messageBar().pushMessage('Geometrialtaan muuttuneita viivamaisia kohteita on useita, joten uuden viivamaisen kohteen kaavamääräystä ja teemaa ei aseteta', Qgis.Warning)
+
+
+    def addRegulationAndThemeRelationsToLineFeature(self):
+        if len(self.changedLineFeatureIDs) == 1 and len(self.addedLineFeatureIDs) == 1:
+            sourceFeatureID = self.changedLineFeatureIDs.pop(0)
+            targetFeatureID = self.addedLineFeatureIDs.pop(0)
+            sourceFeatureUUID = self.lineFeatureLayer.getFeature(sourceFeatureID)["id"]
+            targetFeatureUUID = self.lineFeatureLayer.getFeature(targetFeatureID)["id"]
+            
+            QgsMessageLog.logMessage("addRegulationAndThemeRelationsToLineFeature - sourceFeatureUUID: " + str(sourceFeatureUUID) + ", targetFeatureUUID: " + str(targetFeatureUUID), 'Yleiskaava-työkalu', Qgis.Info)
+
+            self.yleiskaavaDatabase.addRegulationRelationsToLayer(sourceFeatureUUID, targetFeatureUUID, "viiva")
+            self.yleiskaavaDatabase.addThemeRelationsToLayer(sourceFeatureUUID, targetFeatureUUID, "viiva")
+        else:
+            self.iface.messageBar().pushMessage('Uuden viivamaisen kohteen kaavamääräystä ja teemaa ei aseteta', Qgis.Warning)
