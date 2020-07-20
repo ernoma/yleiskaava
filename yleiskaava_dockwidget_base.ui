@@ -33,6 +33,9 @@
       </item>
       <item>
        <widget class="QPushButton" name="pushButtonUpdateThemeForGroup">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>Teeman päivitys joukolle kaavakohteita...</string>
         </property>
