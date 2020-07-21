@@ -6,6 +6,7 @@ from qgis.gui import QgsFileWidget
 import os.path
 #import psycopg2
 from configparser import ConfigParser
+import json
 import uuid
 
 class YleiskaavaDatabase:
@@ -77,6 +78,14 @@ class YleiskaavaDatabase:
         names = []
         for item in self.yleiskaava_target_tables:
             if item['showInCopySourceToTargetUI'] == True and item["geometryType"] == geometry_type:
+                names.append(item['userFriendlyTableName'])
+        return names
+
+
+    def getAllTargetSchemaTableNamesShownInCopySourceToTargetUI(self):
+        names = []
+        for item in self.yleiskaava_target_tables:
+            if item['showInCopySourceToTargetUI'] == True:
                 names.append(item['userFriendlyTableName'])
         return names
 
@@ -839,3 +848,30 @@ class YleiskaavaDatabase:
 
         return targetFieldType
 
+
+    def getSourceDataAPIs(self):
+        # uri = self.createDbURI("yk_prosessi", "lahderajapinta", None)
+        # layer = QgsVectorLayer(uri.uri(False), "temp regulation layer", "postgres")
+
+        # apis = []
+
+        # for features in layer:
+        #     apis.append({
+        #         "id": feature['id'],
+        #         "nimi": feature['nimi'],
+        #         "url": url
+        #         })
+
+        filePath = 'T:\kaavadat\Yleiskaava\_Yleiskaava_Tietomallityö\kaavoitustyön_tuki\ohjelmistokehitys\kaava_tyokalu\lahderajapinnat.json'
+
+        if not os.path.exists(filePath):
+            self.iface.messageBar().pushMessage('Virhe', 'Lähderajapintatiedostoa ei voitu lukea',\
+                Qgis.Warning)
+            return
+
+        apis = None
+
+        with open(filePath) as f:
+            apis = json.load(f)
+
+        return apis
