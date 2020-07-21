@@ -320,12 +320,12 @@ class YleiskaavaDatabase:
 
         for feature in targetLayer.getFeatures():
             if feature["id_kaavaobjekti_" + featureType] == featureID:
-                QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavakohde löytyi yhteyksistä, id_kaavaobjekti_*: " + str(feature["id_kaavaobjekti_" + featureType]), 'Yleiskaava-työkalu', Qgis.Info)
+                # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavakohde löytyi yhteyksistä, id_kaavaobjekti_*: " + str(feature["id_kaavaobjekti_" + featureType]), 'Yleiskaava-työkalu', Qgis.Info)
                 for regulation in regulations:
                     if regulation["id"] == feature["id_kaavamaarays"]:
-                        QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, jos kaavamaarays_otsikko ei null, feature['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
+                        # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, jos kaavamaarays_otsikko ei null, feature['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
                         if not regulation["kaavamaarays_otsikko"].isNull():
-                            QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, regulation['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
+                            # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, regulation['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
                             regulationList.append(regulation)
                         break
 
@@ -458,6 +458,16 @@ class YleiskaavaDatabase:
         relationLayer.commitChanges()
 
 
+    def deleteSpatialFeature(self, featureID, featureType):
+        layer = self.createLayerByTargetSchemaTableName("yk_yleiskaava.kaavaobjekti_" + featureType)
+        layer.startEditing()
+        for feature in layer.getFeatures():
+            if (feature["id"] == featureID):
+                layer.deleteFeature(feature.id())
+                break
+        layer.commitChanges()
+
+
     def createFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationTitle):
         regulationID = self.findRegulationID(regulationTitle)
 
@@ -502,7 +512,7 @@ class YleiskaavaDatabase:
 
 
     def addRegulationRelationsToLayer(self, sourceFeatureID, targetFeatureID, featureType):
-        # TODO ilmeisesti toimii vain, jos targetFeatureID löytyy jo tallennettuna tietokannasta ko. kaavaobjekti-taulusta
+        # NOTE ilmeisesti toimii vain, jos targetFeatureID löytyy jo tallennettuna tietokannasta ko. kaavaobjekti-taulusta
         regulations = self.getRegulationsForSpatialFeature(sourceFeatureID, featureType)
         targetSchemaTableName = "yk_yleiskaava.kaavaobjekti_" + featureType
         for regulation in regulations:
@@ -510,8 +520,94 @@ class YleiskaavaDatabase:
             self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulation["id"])
 
 
+    def getThemes(self):
+        uri = self.createDbURI("yk_kuvaustekniikka", "teema", None)
+        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+
+        features = targetLayer.getFeatures()
+        themeList = []
+        for index, feature in enumerate(features):
+            nimi = QVariant(feature["nimi"])
+            kuvaus = QVariant(feature['kuvaus'])
+            id_yleiskaava = QVariant(feature['id_yleiskaava'])
+
+            if not nimi.isNull():
+                themeList.append({
+                    "id": feature['id'],
+                    "alpha_sort_key": str(nimi.value()),
+                    "nimi": nimi,
+                    "kuvaus": kuvaus,
+                    "id_yleiskaava": id_yleiskaava
+                    })
+
+        return themeList
+
+
+    def getThemesForSpatialFeature(self, featureID, featureType):
+        themeList = []
+
+        themes = self.getThemes()
+
+        uri = self.createDbURI("yk_kuvaustekniikka", "kaavaobjekti_teema_yhteys", None)
+        themeRelationLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres") 
+        #targetLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_kaavamaarays_yhteys")[0]
+
+        for feature in themeRelationLayer.getFeatures():
+            if feature["id_kaavaobjekti_" + featureType] == featureID:
+                # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavakohde löytyi yhteyksistä, id_kaavaobjekti_*: " + str(feature["id_kaavaobjekti_" + featureType]), 'Yleiskaava-työkalu', Qgis.Info)
+                for theme in themes:
+                    if theme["id"] == feature["id_teema"]:
+                        # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, jos kaavamaarays_otsikko ei null, feature['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
+                        if not theme["nimi"].isNull():
+                            # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, regulation['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
+                            themeList.append(theme)
+                        break
+
+        return themeList
+
+
+    def createFeatureThemeRelationWithThemeID(self, targetSchemaTableName, targetFeatureID, themeID):
+        # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - targetSchemaTableName: " + targetSchemaTableName + ", targetFeatureID: " + str(targetFeatureID) + ", regulationID: " + str(regulationID), 'Yleiskaava-työkalu', Qgis.Info)
+
+        uri = self.createDbURI("yk_kuvaustekniikka", "kaavaobjekti_teema_yhteys", None)
+        relationLayer = QgsVectorLayer(uri.uri(False), "temp relation layer", "postgres")
+        #relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_kaavamaarays_yhteys")[0]
+
+        schema, table_name = targetSchemaTableName.split('.')
+
+        relationLayer.startEditing()
+
+        relationLayerFeature = QgsFeature()
+        relationLayerFeature.setFields(relationLayer.fields())
+        relationLayerFeature.setAttribute("id", str(uuid.uuid4()))
+        relationLayerFeature.setAttribute("id_" + table_name, targetFeatureID)
+        relationLayerFeature.setAttribute("id_teema", themeID)
+
+        provider = relationLayer.dataProvider()
+        
+        success = provider.addFeatures([relationLayerFeature])
+        if not success:
+            self.iface.messageBar().pushMessage('Bugi koodissa: createFeatureThemeRelationWithThemeID - addFeatures() failed"', Qgis.Critical)
+            # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - addFeatures() failed", 'Yleiskaava-työkalu', Qgis.Critical)
+        else:
+            success = relationLayer.commitChanges()
+            if not success:
+                self.iface.messageBar().pushMessage('Bugi koodissa: createFeatureThemeRelationWithThemeID - commitChanges() failed, reason(s): "', Qgis.Critical)
+                # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
+                for error in relationLayer.commitErrors():
+                    self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
+                    # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
+            else:
+                # pass
+                QgsMessageLog.logMessage("createFeatureThemeRelationWithThemeID - relationLayer.commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
+
+
     def addThemeRelationsToLayer(self, sourceFeatureID, targetFeatureID, featureType):
-        pass
+        themes = self.getThemesForSpatialFeature(sourceFeatureID, featureType)
+        targetSchemaTableName = "yk_yleiskaava.kaavaobjekti_" + featureType
+        for theme in themes:
+            # QgsMessageLog.logMessage("addThemeRelationsToLayer - teema relation lisätään kaavakohteelle, fid: " + str(targetFeatureID), 'Yleiskaava-työkalu', Qgis.Info)
+            self.createFeatureThemeRelationWithThemeID(targetSchemaTableName, targetFeatureID, theme["id"])
 
 
     def findRegulationID(self, regulationName):
