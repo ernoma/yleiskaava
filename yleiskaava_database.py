@@ -202,6 +202,22 @@ class YleiskaavaDatabase:
         return planNumber
         
 
+    def getPlanNameForPlanID(self, planID):
+        planName = None
+
+        layer = self.createLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
+        features = layer.getFeatures()
+
+        plans = []
+        for index, feature in enumerate(features):
+            if feature['id'] == planID:
+                if feature['nimi'] is not None:
+                    planName = feature['nimi']
+                break
+
+        return planName
+
+
     def getYleiskaavaPlanLevelCodeWithPlanName(self, planName):
         planLevelCode = None
 
@@ -546,7 +562,8 @@ class YleiskaavaDatabase:
                     "alpha_sort_key": str(nimi.value()),
                     "nimi": nimi,
                     "kuvaus": kuvaus,
-                    "id_yleiskaava": id_yleiskaava
+                    "id_yleiskaava": id_yleiskaava,
+                    "yleiskaava_nimi": QVariant(self.getPlanNameForPlanID(id_yleiskaava))
                     })
 
         return themeList
@@ -847,6 +864,155 @@ class YleiskaavaDatabase:
                 break
 
         return targetFieldType
+
+
+    def getUserFriendlySpatialFeatureTypeName(self, featureType):
+        userFriendlyFeatureTypeName = None
+
+        if featureType == 'alue':
+            return 'aluevaraus'
+        elif featureType == 'alue_taydentava':
+            return 'täydentävä aluekohde'
+        elif featureType == 'viiva':
+            return 'viivamainen kohde'
+        elif featureType == 'piste':
+            return 'pistemäinen kohde'
+
+
+    def getSelectedFeatures(self, featureType):
+        layer = None
+
+        if featureType == "alue":
+            layer = QgsProject.instance().mapLayersByName("Aluevaraukset")[0]
+        elif featureType == "alue_taydentava":
+            layer = QgsProject.instance().mapLayersByName("Täydentävät aluekohteet (osa-alueet)")[0]
+        elif featureType == "viiva":
+            layer = QgsProject.instance().mapLayersByName("Viivamaiset kaavakohteet")[0]
+        elif featureType == "piste":
+            layer = QgsProject.instance().mapLayersByName("Pistemäiset kaavakohteet")[0]
+
+        # QgsMessageLog.logMessage("getSelectedFeatures - layer.selectedFeatureCount(): " + str(layer.selectedFeatureCount()), 'Yleiskaava-työkalu', Qgis.Info)
+
+        return layer.getSelectedFeatures()
+
+
+    def updateTheme(self, themeID, themeName, themeDescription):
+        uri = self.createDbURI("yk_kuvaustekniikka", "teema", None)
+        layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+
+        layer.startEditing()
+
+        for feature in layer.getFeatures():
+            if feature["id"] == themeID:
+                index = layer.fields().indexFromName("nimi")
+                success = layer.changeAttributeValue(feature.id(), index, themeName)
+                if not success:
+                    self.iface.messageBar().pushMessage('updateTheme - nimi - changeAttributeValue() failed', Qgis.Critical)
+                    return False
+                index = layer.fields().indexFromName("kuvaus")
+                success = layer.changeAttributeValue(feature.id(), index, themeDescription)
+                if not success:
+                    self.iface.messageBar().pushMessage('updateTheme - kuvaus - changeAttributeValue() failed', Qgis.Critical)
+                    return False
+    
+                success = layer.commitChanges()
+                if not success:
+                    self.iface.messageBar().pushMessage('updateTheme - commitChanges() failed, reason(s): "', Qgis.Critical)
+                    # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
+                    for error in layer.commitErrors():
+                        self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
+                        # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
+                    return False
+                break
+
+        return True
+
+    
+    def getThemeCountForSpatialFeature(self, featureID, featureType):
+        uri = self.createDbURI("yk_kuvaustekniikka", "kaavaobjekti_teema_yhteys", None)
+        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres") 
+
+        count = 0
+
+        for feature in targetLayer.getFeatures():
+            if feature["id_kaavaobjekti_" + featureType] == featureID:
+                count += 1
+
+        return count
+
+
+    def updateSpatialFeatureTheme(self, featureID, featureType, themeID, themeName, shouldRemoveOldThemeRelations):
+        # poista vanhat teemat jos shouldRemoveOldThemeRelations
+        # lisää yhteys kaavaobjekti_teema_yhteys-tauluun, jos yhteyttä ei vielä ole
+
+        if shouldRemoveOldThemeRelations:
+            self.removeThemeRelationsFromSpatialFeature(featureID, featureType)
+
+        if not self.existsFeatureThemeRelation(featureID, featureType, themeID):
+            self.createFeatureThemeRelationWithThemeID("yk_yleiskaava.kaavaobjekti_" + featureType, featureID, themeID)
+
+        return True
+
+
+    def createFeatureThemeRelationWithThemeID(self, targetSchemaTableName, targetFeatureID, themeID):
+        # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - targetSchemaTableName: " + targetSchemaTableName + ", targetFeatureID: " + str(targetFeatureID) + ", regulationID: " + str(regulationID), 'Yleiskaava-työkalu', Qgis.Info)
+
+        uri = self.createDbURI("yk_kuvaustekniikka", "kaavaobjekti_teema_yhteys", None)
+        relationLayer = QgsVectorLayer(uri.uri(False), "temp relation layer", "postgres")
+        #relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_kaavamaarays_yhteys")[0]
+
+        schema, table_name = targetSchemaTableName.split('.')
+
+
+        relationLayer.startEditing()
+
+        relationLayerFeature = QgsFeature()
+        relationLayerFeature.setFields(relationLayer.fields())
+        relationLayerFeature.setAttribute("id", str(uuid.uuid4()))
+        relationLayerFeature.setAttribute("id_" + table_name, targetFeatureID)
+        relationLayerFeature.setAttribute("id_teema", themeID)
+
+        provider = relationLayer.dataProvider()
+        
+        success = provider.addFeatures([relationLayerFeature])
+        if not success:
+            self.iface.messageBar().pushMessage('Bugi koodissa: createFeatureThemeRelationWithThemeID - addFeatures() failed"', Qgis.Critical)
+            # QgsMessageLog.logMessage("createFeatureThemeRelationWithThemeID - addFeatures() failed", 'Yleiskaava-työkalu', Qgis.Critical)
+        else:
+            success = relationLayer.commitChanges()
+            if not success:
+                self.iface.messageBar().pushMessage('Bugi koodissa: createFeatureThemeRelationWithThemeID - commitChanges() failed, reason(s): "', Qgis.Critical)
+                # QgsMessageLog.logMessage("createFeatureThemeRelationWithThemeID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
+                for error in relationLayer.commitErrors():
+                    self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
+                    # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
+            else:
+                # pass
+                QgsMessageLog.logMessage("createFeatureThemeRelationWithThemeID - relationLayer.commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
+
+
+    def existsFeatureThemeRelation(self, featureID, featureType, themeID):
+        uri = self.createDbURI("yk_kuvaustekniikka", "kaavaobjekti_teema_yhteys", None)
+        relationLayer = QgsVectorLayer(uri.uri(False), "temp relation layer", "postgres")
+
+        for feature in relationLayer.getFeatures():
+            if (feature["id_teema"] == themeID and feature["id_kaavaobjekti_" + featureType] == featureID):
+                return True
+
+        return False
+
+
+    def removeThemeRelationsFromSpatialFeature(self, featureID, featureType):
+        uri = self.createDbURI("yk_kuvaustekniikka", "kaavaobjekti_teema_yhteys", None)
+        relationLayer = QgsVectorLayer(uri.uri(False), "temp relation layer", "postgres")
+
+        relationLayer.startEditing()
+
+        for feature in relationLayer.getFeatures():
+            if (feature["id_kaavaobjekti_" + featureType] == featureID):
+                relationLayer.deleteFeature(feature.id())
+
+        relationLayer.commitChanges()
 
 
     def getSourceDataAPIs(self):

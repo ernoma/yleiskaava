@@ -9,6 +9,7 @@ import os.path
 import uuid
 from operator import itemgetter
 
+
 class UpdateRegulationOfGroup:
 
 
@@ -38,8 +39,6 @@ class UpdateRegulationOfGroup:
 
 
     def setupDialogUpdateRegulationOfGroup(self):
-
-        #self.setupRegulationsInDialog()
 
         self.dialogUpdateRegulationOfGroup.comboBoxRegulationTitles.currentIndexChanged.connect(self.handleComboBoxRegulationTitleChanged)
 
@@ -222,7 +221,7 @@ class UpdateRegulationOfGroup:
         if self.currentRegulation != None:
             regulationID = self.currentRegulation["id"]
 
-            spatialFeatures = self.getSelectedFeatures(featureType)
+            spatialFeatures = self.yleiskaavaDatabase.getSelectedFeatures(featureType)
             # spatialFeatures = self.yleiskaavaDatabase.getSpatialFeaturesWithRegulationForType(regulationID, featureType)
 
             for feature in spatialFeatures:
@@ -239,28 +238,11 @@ class UpdateRegulationOfGroup:
                 success = self.yleiskaavaDatabase.updateSpatialFeatureRegulationAndLandUseClassification(feature["id"], featureType, regulationID, self.currentRegulation["kaavamaarays_otsikko"], shouldRemoveOldRegulationRelations, shouldUpdateOnlyRelation)
 
                 if not success:
-                    self.iface.messageBar().pushMessage("Kaavakohteelle, jonka id on " + str(feature["id"]) + " ei voitu päivittää kaavamääräystä, kaavamaaraysteksti- ja kayttotarkoitus_lyhenne-kenttien tekstejä", Qgis.Critical)
+                    self.iface.messageBar().pushMessage("Kaavakohteelle, jonka tyyppi on " + self.yleiskaavaDatabase.getUserFriendlySpatialFeatureTypeName(featureType) + " ja id on " + str(feature["id"]) + " ei voitu päivittää kaavamääräystä, kaavamaaraysteksti- ja kayttotarkoitus_lyhenne-kenttien tekstejä", Qgis.Critical)
 
                     return False
 
         return True
-
-
-    def getSelectedFeatures(self, featureType):
-        layer = None
-
-        if featureType == "alue":
-            layer = QgsProject.instance().mapLayersByName("Aluevaraukset")[0]
-        elif featureType == "alue_taydentava":
-            layer = QgsProject.instance().mapLayersByName("Täydentävät aluekohteet (osa-alueet)")[0]
-        elif featureType == "viiva":
-            layer = QgsProject.instance().mapLayersByName("Viivamaiset kaavakohteet")[0]
-        elif featureType == "piste":
-            layer = QgsProject.instance().mapLayersByName("Pistemäiset kaavakohteet")[0]
-
-        # QgsMessageLog.logMessage("getSelectedFeatures - layer.selectedFeatureCount(): " + str(layer.selectedFeatureCount()), 'Yleiskaava-työkalu', Qgis.Info)
-
-        return layer.getSelectedFeatures()
 
 
     def setupRegulationsInDialog(self):

@@ -27,14 +27,14 @@
       <item>
        <widget class="QPushButton" name="pushButtonUpdateRegulationForGroup">
         <property name="text">
-         <string>Kaaavamääräyksen päivitys joukolle kaavakohteita...</string>
+         <string>Kaavamääräyksen päivitys joukolle kaavakohteita...</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="pushButtonUpdateThemeForGroup">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="text">
          <string>Teeman päivitys joukolle kaavakohteita...</string>
