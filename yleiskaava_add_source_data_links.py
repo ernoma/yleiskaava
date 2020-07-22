@@ -59,4 +59,20 @@ class AddSourceDataLinks:
         if index == 0:
             pass
         else:
-            availableLayerNames, availableLayerTtitles = self.yleiskaavaSourceDataAPIs.getSourceDataAPILayerNamesAndTitles(self.apis[index - 1]['id'])
+            availableLayerNames, availableLayerTitles = self.yleiskaavaSourceDataAPIs.getSourceDataAPILayerNamesAndTitles(self.apis[index - 1]['id'])
+            comboBoxTexts = []
+            for index, availableLayerName in enumerate(availableLayerNames):
+                text = self.getLayerTitleNameComboBoxText(availableLayerName, availableLayerTitles[index])
+                comboBoxTexts.append(text)
+            self.dialogAddSourceDataLinks.comboBoxChooseSourceDataLayer.addItems(comboBoxTexts)
+
+            # TODO Kun käyttäjä valitsee lähdetason, niin lisää taulukkoon
+            #  * painike kohteen kaikkien tietojen katsomiseen dialogista,
+            #  * painike kohdesivun avaamiseen ja
+            #  * perustiedot sekä
+            #  * painike kohdetason kohteen valintaan
+            # ? miten jo tietokannassa ko. rajapinnan kohteet huomioidaan?
+
+
+    def getLayerTitleNameComboBoxText(self, availableLayerName, availableLayerTitle):
+        return '' + availableLayerTitle + ' (' + availableLayerName + ')'

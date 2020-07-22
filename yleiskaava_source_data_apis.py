@@ -36,8 +36,16 @@ class YleiskaavaSourceDataAPIs:
     def getSourceDataAPILayerNamesAndTitles(self, apiID):
         for api in self.sourceDataAPIs['wfs']:
             if api['id'] == apiID:
+                filteredNames = []
+                filteredTitles = []
                 names, titles = self.getWFSAPILayerNamesAndTitles(api['url'])
-                return names, titles
+                for index, name in enumerate(names):
+                    for info in api["layers_info"]:
+                        if info["ignore"] == False and info["layer_name"] == name:
+                            filteredNames.append(name)
+                            filteredTitles.append(info["user_friendly_title"])
+                            break
+                return filteredNames, filteredTitles
 
 
     def getWFSAPILayerNamesAndTitles(self, url):
