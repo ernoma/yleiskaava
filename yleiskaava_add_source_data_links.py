@@ -41,7 +41,31 @@ class AddSourceDataLinks:
         self.dialogAddSourceDataLinks.comboBoxChooseSourceDataAPI.addItems(names)
         self.dialogAddSourceDataLinks.comboBoxChooseSourceDataAPI.currentIndexChanged.connect(self.handleComboBoxChooseSourceDataAPIIndexChanged)
 
+        self.dialogAddSourceDataLinks.comboBoxChooseSourceDataLayer.currentIndexChanged.connect(self.handleComboBoxChooseSourceDataLayerIndexChanged)
+
         self.dialogAddSourceDataLinks.pushButtonCancel.clicked.connect(self.dialogAddSourceDataLinks.hide)
+
+        self.setupTableWidgetSourceTargetMatches()
+
+
+    def setupTableWidgetSourceTargetMatches(self):
+        
+        # TODO Kun käyttäjä valitsee lähdetason, niin lisää taulukkoon
+        #  * painike kohteen kaikkien tietojen katsomiseen dialogista,
+        #  * painike kohdesivun avaamiseen ja
+        #  * perustiedot sekä
+        #  * painike kohdetason kohteen valintaan
+        # ? miten jo tietokannassa ko. rajapinnan kohteet huomioidaan?
+
+        self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.clearContents()
+        # self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setRowCount(self.getSourceTargetMatchRowCount())
+        self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setColumnCount(4)
+        self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setHorizontalHeaderLabels([
+            "Lähdenimi / tunniste",
+            "Lähdetietoikkuna",
+            "Lähdetietosivu",
+            "Kohde"
+        ])
 
 
     def openDialogAddSourceDataLinks(self):
@@ -66,13 +90,29 @@ class AddSourceDataLinks:
                 comboBoxTexts.append(text)
             self.dialogAddSourceDataLinks.comboBoxChooseSourceDataLayer.addItems(comboBoxTexts)
 
-            # TODO Kun käyttäjä valitsee lähdetason, niin lisää taulukkoon
-            #  * painike kohteen kaikkien tietojen katsomiseen dialogista,
-            #  * painike kohdesivun avaamiseen ja
-            #  * perustiedot sekä
-            #  * painike kohdetason kohteen valintaan
-            # ? miten jo tietokannassa ko. rajapinnan kohteet huomioidaan?
-
 
     def getLayerTitleNameComboBoxText(self, availableLayerName, availableLayerTitle):
         return '' + availableLayerTitle + ' (' + availableLayerName + ')'
+
+
+    def getLayerTitleAndNameFromComboBoxText(self, text):
+        # QgsMessageLog.logMessage('getLayerTitleAndNameFromComboBoxText, text: ' + str(text), 'Yleiskaava-työkalu', Qgis.Info)
+        title, namePart = text.rsplit(' (', 1)
+        name = namePart[0:-1]
+        return title, name
+
+
+    def handleComboBoxChooseSourceDataLayerIndexChanged(self, index):
+        apiIndex = self.dialogAddSourceDataLinks.comboBoxChooseSourceDataAPI.currentIndex() - 1
+
+        if apiIndex > 0:
+
+            text = self.dialogAddSourceDataLinks.comboBoxChooseSourceDataLayer.itemText(index)
+            title, name = self.getLayerTitleAndNameFromComboBoxText(text)
+
+            apiID = self.apis[apiIndex]["id"]
+
+            features = self.yleiskaavaSourceDataAPIs.getFeatures(apiID, name)
+
+            # TODO listaa kohteen nimi ja painikkeet, tms. taulukossa
+            
