@@ -76,7 +76,7 @@
          </property>
          <layout class="QFormLayout" name="formLayout_2">
           <item row="0" column="0">
-           <widget class="QCheckBox" name="checkBoxRemoveOldThemes">
+           <widget class="QCheckBox" name="checkBoxRemoveOldThemesFromSpatialFeatures">
             <property name="text">
              <string>Poista kaavakohteilta vanhat teemat</string>
             </property>

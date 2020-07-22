@@ -28,8 +28,8 @@ class UpdateThemesOfGroup:
 
         self.currentTheme = None
 
-        self.hasUserSelectedPolgyonFeaturesForUpdate = False
-        self.hasUserSelectedSuplementaryPolgyonFeaturesForUpdate = False
+        self.hasUserSelectedPolygonFeaturesForUpdate = False
+        self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate = False
         self.hasUserSelectedLineFeaturesForUpdate = False
         self.hasUserSelectedPointFeaturesForUpdate = False
 
@@ -48,7 +48,7 @@ class UpdateThemesOfGroup:
         self.dialogUpdateThemeOfGroup.checkBoxUpdatePointFeatures.stateChanged.connect(self.checkBoxUpdatePointFeaturesStateChanged)
 
         # Varoita käyttäjää, jos jo valmiiksi valittuja kohteita
-        self.dialogUpdateThemeOfGroup.pushButtonSelectPolygonFeatures.clicked.connect(self.selectPolgyonFeatures)
+        self.dialogUpdateThemeOfGroup.pushButtonSelectPolygonFeatures.clicked.connect(self.selectPolygonFeatures)
         self.dialogUpdateThemeOfGroup.pushButtonSelectSupplementaryPolygonFeatures.clicked.connect(self.selectSupplementaryPolygonFeatures)
         self.dialogUpdateThemeOfGroup.pushButtonSelectLineFeatures.clicked.connect(self.selectLineFeatures)
         self.dialogUpdateThemeOfGroup.pushButtonSelectPointFeatures.clicked.connect(self.selectPointFeatures)
@@ -59,19 +59,19 @@ class UpdateThemesOfGroup:
         self.dialogUpdateThemeOfGroup.pushButtonCancel.clicked.connect(self.dialogUpdateThemeOfGroup.hide)
 
 
-    def selectPolgyonFeatures(self):
+    def selectPolygonFeatures(self):
         layer = QgsProject.instance().mapLayersByName("Aluevaraukset")[0]
         if layer.selectedFeatureCount() > 0:
              self.iface.messageBar().pushMessage('Aluevaraukset karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
         self.iface.showAttributeTable(layer)
-        self.hasUserSelectedPolgyonFeaturesForUpdate = True
+        self.hasUserSelectedPolygonFeaturesForUpdate = True
 
     def selectSupplementaryPolygonFeatures(self):
         layer = QgsProject.instance().mapLayersByName("Täydentävät aluekohteet (osa-alueet)")[0]
         if layer.selectedFeatureCount() > 0:
              self.iface.messageBar().pushMessage('Täydentävät aluekohteet  karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
         self.iface.showAttributeTable(layer)
-        self.hasUserSelectedSuplementaryPolgyonFeaturesForUpdate = True
+        self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate = True
 
     def selectLineFeatures(self):
         layer = QgsProject.instance().mapLayersByName("Viivamaiset kaavakohteet")[0]
@@ -89,10 +89,10 @@ class UpdateThemesOfGroup:
 
 
     def checkBoxUpdatePolygonFeaturesStateChanged(self):
-        if self.dialogUpdateThemeOfGroup.checkBoxUpdatePolgyonFeatures.isChecked():
-            self.dialogUpdateThemeOfGroup.pushButtonSelectPolgyonFeatures.setEnabled(True)
+        if self.dialogUpdateThemeOfGroup.checkBoxUpdatePolygonFeatures.isChecked():
+            self.dialogUpdateThemeOfGroup.pushButtonSelectPolygonFeatures.setEnabled(True)
         else:
-            self.dialogUpdateThemeOfGroup.pushButtonSelectPolgyonFeatures.setEnabled(False)
+            self.dialogUpdateThemeOfGroup.pushButtonSelectPolygonFeatures.setEnabled(False)
 
     def checkBoxUpdateSupplementaryPolygonFeaturesStateChanged(self):
         if self.dialogUpdateThemeOfGroup.checkBoxUpdateSupplementaryPolygonFeatures.isChecked():
@@ -139,10 +139,10 @@ class UpdateThemesOfGroup:
         # TODO yleiskaavan id, nimi, nro
         if self.currentTheme != None:
             themeID = self.currentTheme["id"]
-            themeName = self.dialogUpdateThemeOfGroup.lineEditThemeName.toPlainText()
+            themeName = self.dialogUpdateThemeOfGroup.lineEditThemeName.text()
             themeDescription = self.dialogUpdateThemeOfGroup.plainTextEditThemeDescription.toPlainText()
 
-            if not self.equalsThemeAndFormTexts(themeName, themeText, themeDescription):
+            if not self.equalsThemeAndFormTexts(themeName, themeDescription):
                 success = self.yleiskaavaDatabase.updateTheme(themeID, themeName, themeDescription)
 
                 if success:
@@ -152,18 +152,18 @@ class UpdateThemesOfGroup:
                     # self.currentTheme["id_yleiskaava"] = QVariant(themeDescription)
 
                     self.iface.messageBar().pushMessage('Teema päivitetty', Qgis.Info, 30)
-            elif not self.dialogUpdateThemeOfGroup.checkBoxUpdatePolgyonFeatures.isChecked() and not self.dialogUpdateThemeOfGroup.checkBoxUpdateSupplementaryPolygonFeatures.isChecked() and not self.dialogUpdateThemeOfGroup.checkBoxUpdateLineFeatures.isChecked() and not self.dialogUpdateThemeOfGroup.checkBoxUpdatePointFeatures.isChecked():
+            elif not self.dialogUpdateThemeOfGroup.checkBoxUpdatePolygonFeatures.isChecked() and not self.dialogUpdateThemeOfGroup.checkBoxUpdateSupplementaryPolygonFeatures.isChecked() and not self.dialogUpdateThemeOfGroup.checkBoxUpdateLineFeatures.isChecked() and not self.dialogUpdateThemeOfGroup.checkBoxUpdatePointFeatures.isChecked():
                 self.iface.messageBar().pushMessage('Teemaan ei ole tehty muutoksia eikä päivitettäviä kaavakohteita ole valittu. Ei tehdä päivityksiä', Qgis.Info, 30)
 
-            if self.dialogUpdateThemeOfGroup.checkBoxUpdatePolgyonFeatures.isChecked():
-                if not self.hasUserSelectedPolgyonFeaturesForUpdate:
+            if self.dialogUpdateThemeOfGroup.checkBoxUpdatePolygonFeatures.isChecked():
+                if not self.hasUserSelectedPolygonFeaturesForUpdate:
                     self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä aluevarauksia; aluevarauksia ei päivitetty', Qgis.Warning)
                 else:
                     success = self.updateSpatialFeatures("alue")
                     if success:
                         self.iface.messageBar().pushMessage('Aluvarausten teema päivitetty', Qgis.Info, 30)
             if self.dialogUpdateThemeOfGroup.checkBoxUpdateSupplementaryPolygonFeatures.isChecked():
-                if not self.hasUserSelectedSuplementaryPolgyonFeaturesForUpdate:
+                if not self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate:
                     self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä täydentäviä aluekohteita; täydentäviä aluekohteita ei päivitetty', Qgis.Warning)
                 else:
                     success = self.updateSpatialFeatures("alue_taydentava")
@@ -192,7 +192,7 @@ class UpdateThemesOfGroup:
             self.iface.messageBar().pushMessage('Valitse teema', Qgis.Info, 30)
 
 
-    def equalsThemeAndFormTexts(self, formThemeName, formThemeText, formThemeDescription):
+    def equalsThemeAndFormTexts(self, formThemeName, formThemeDescription):
         themeName = self.currentTheme["nimi"].value()
         themeDescription = ""
         if not self.currentTheme["kuvaus"].isNull():
@@ -216,8 +216,8 @@ class UpdateThemesOfGroup:
     def reset(self):
         self.setupThemesInDialog()
 
-        self.hasUserSelectedPolgyonFeaturesForUpdate = False
-        self.hasUserSelectedSuplementaryPolgyonFeaturesForUpdate = False
+        self.hasUserSelectedPolygonFeaturesForUpdate = False
+        self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate = False
         self.hasUserSelectedLineFeaturesForUpdate = False
         self.hasUserSelectedPointFeaturesForUpdate = False
 

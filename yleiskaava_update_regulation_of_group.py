@@ -29,8 +29,8 @@ class UpdateRegulationOfGroup:
 
         self.currentRegulation = None
 
-        self.hasUserSelectedPolgyonFeaturesForUpdate = False
-        self.hasUserSelectedSuplementaryPolgyonFeaturesForUpdate = False
+        self.hasUserSelectedPolygonFeaturesForUpdate = False
+        self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate = False
         self.hasUserSelectedLineFeaturesForUpdate = False
         self.hasUserSelectedPointFeaturesForUpdate = False
 
@@ -42,13 +42,13 @@ class UpdateRegulationOfGroup:
 
         self.dialogUpdateRegulationOfGroup.comboBoxRegulationTitles.currentIndexChanged.connect(self.handleComboBoxRegulationTitleChanged)
 
-        self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPolgyonFeatures.stateChanged.connect(self.checkBoxUpdateLandUseClassificationsForPolgyonFeaturesStateChanged)
+        self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPolygonFeatures.stateChanged.connect(self.checkBoxUpdateLandUseClassificationsForPolygonFeaturesStateChanged)
         self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForSupplementaryPolygonFeatures.stateChanged.connect(self.checkBoxUpdateLandUseClassificationsForSupplementaryPolygonFeaturesStateChanged)
         self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForLineFeatures.stateChanged.connect(self.checkBoxUpdateLandUseClassificationsForLineFeaturesStateChanged)
         self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPointFeatures.stateChanged.connect(self.checkBoxUpdateLandUseClassificationsForPointFeaturesStateChanged)
 
         # Varoita käyttäjää, jos jo valmiiksi valittuja kohteita
-        self.dialogUpdateRegulationOfGroup.pushButtonSelectPolgyonFeatures.clicked.connect(self.selectPolgyonFeatures)
+        self.dialogUpdateRegulationOfGroup.pushButtonSelectPolygonFeatures.clicked.connect(self.selectPolygonFeatures)
         self.dialogUpdateRegulationOfGroup.pushButtonSelectSupplementaryPolygonFeatures.clicked.connect(self.selectSupplementaryPolygonFeatures)
         self.dialogUpdateRegulationOfGroup.pushButtonSelectLineFeatures.clicked.connect(self.selectLineFeatures)
         self.dialogUpdateRegulationOfGroup.pushButtonSelectPointFeatures.clicked.connect(self.selectPointFeatures)
@@ -58,19 +58,19 @@ class UpdateRegulationOfGroup:
         self.dialogUpdateRegulationOfGroup.pushButtonCancel.clicked.connect(self.dialogUpdateRegulationOfGroup.hide)
     
 
-    def selectPolgyonFeatures(self):
+    def selectPolygonFeatures(self):
         layer = QgsProject.instance().mapLayersByName("Aluevaraukset")[0]
         if layer.selectedFeatureCount() > 0:
              self.iface.messageBar().pushMessage('Aluevaraukset karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
         self.iface.showAttributeTable(layer)
-        self.hasUserSelectedPolgyonFeaturesForUpdate = True
+        self.hasUserSelectedPolygonFeaturesForUpdate = True
 
     def selectSupplementaryPolygonFeatures(self):
         layer = QgsProject.instance().mapLayersByName("Täydentävät aluekohteet (osa-alueet)")[0]
         if layer.selectedFeatureCount() > 0:
              self.iface.messageBar().pushMessage('Täydentävät aluekohteet  karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
         self.iface.showAttributeTable(layer)
-        self.hasUserSelectedSuplementaryPolgyonFeaturesForUpdate = True
+        self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate = True
 
     def selectLineFeatures(self):
         layer = QgsProject.instance().mapLayersByName("Viivamaiset kaavakohteet")[0]
@@ -87,11 +87,11 @@ class UpdateRegulationOfGroup:
         self.hasUserSelectedPointFeaturesForUpdate = True
 
 
-    def checkBoxUpdateLandUseClassificationsForPolgyonFeaturesStateChanged(self):
-        if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPolgyonFeatures.isChecked():
-            self.dialogUpdateRegulationOfGroup.pushButtonSelectPolgyonFeatures.setEnabled(True)
+    def checkBoxUpdateLandUseClassificationsForPolygonFeaturesStateChanged(self):
+        if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPolygonFeatures.isChecked():
+            self.dialogUpdateRegulationOfGroup.pushButtonSelectPolygonFeatures.setEnabled(True)
         else:
-            self.dialogUpdateRegulationOfGroup.pushButtonSelectPolgyonFeatures.setEnabled(False)
+            self.dialogUpdateRegulationOfGroup.pushButtonSelectPolygonFeatures.setEnabled(False)
 
     def checkBoxUpdateLandUseClassificationsForSupplementaryPolygonFeaturesStateChanged(self):
         if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForSupplementaryPolygonFeatures.isChecked():
@@ -145,18 +145,18 @@ class UpdateRegulationOfGroup:
                     self.currentRegulation["kuvaus_teksti"] = QVariant(regulationDescription)
 
                     self.iface.messageBar().pushMessage('Kaavamääräys päivitetty', Qgis.Info, 30)
-            elif not self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPolgyonFeatures.isChecked() and not self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForSupplementaryPolygonFeatures.isChecked() and not self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForLineFeatures.isChecked() and not self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPointFeatures.isChecked():
+            elif not self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPolygonFeatures.isChecked() and not self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForSupplementaryPolygonFeatures.isChecked() and not self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForLineFeatures.isChecked() and not self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPointFeatures.isChecked():
                 self.iface.messageBar().pushMessage('Kaavamääräykseen ei ole tehty muutoksia eikä päivitettäviä kaavakohteita ole valittu. Ei tehdä päivityksiä', Qgis.Info, 30)
 
-            if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPolgyonFeatures.isChecked():
-                if not self.hasUserSelectedPolgyonFeaturesForUpdate:
+            if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPolygonFeatures.isChecked():
+                if not self.hasUserSelectedPolygonFeaturesForUpdate:
                     self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä aluevarauksia; aluevarauksia ei päivitetty', Qgis.Warning)
                 else:
                     success = self.updateRegulationsAndLandUseClassificationsForSpatialFeatures("alue")
                     if success:
                         self.iface.messageBar().pushMessage('Aluvarausten käyttötarkoitukset päivitetty', Qgis.Info, 30)
             if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForSupplementaryPolygonFeatures.isChecked():
-                if not self.hasUserSelectedSuplementaryPolgyonFeaturesForUpdate:
+                if not self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate:
                     self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä täydentäviä aluekohteita; täydentäviä aluekohteita ei päivitetty', Qgis.Warning)
                 else:
                     success = self.updateRegulationsAndLandUseClassificationsForSpatialFeatures("alue_taydentava")
@@ -211,8 +211,8 @@ class UpdateRegulationOfGroup:
     def reset(self):
         self.setupRegulationsInDialog()
 
-        self.hasUserSelectedPolgyonFeaturesForUpdate = False
-        self.hasUserSelectedSuplementaryPolgyonFeaturesForUpdate = False
+        self.hasUserSelectedPolygonFeaturesForUpdate = False
+        self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate = False
         self.hasUserSelectedLineFeaturesForUpdate = False
         self.hasUserSelectedPointFeaturesForUpdate = False
 
