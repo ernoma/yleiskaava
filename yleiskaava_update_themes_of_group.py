@@ -188,6 +188,38 @@ class UpdateThemesOfGroup:
             #     self.iface.messageBar().pushMessage("Kaavakohteita ei päivitetty", Qgis.Critical)
 
             self.finishUpdate(shouldHide)
+        elif self.dialogUpdateThemeOfGroup.checkBoxRemoveOldThemesFromSpatialFeatures.isChecked():
+            # ainoastaan poistetaan vanha(t) teema(t) valituilta kohteilta
+            if self.dialogUpdateThemeOfGroup.checkBoxUpdatePolygonFeatures.isChecked():
+                if not self.hasUserSelectedPolygonFeaturesForUpdate:
+                    self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä aluevarauksia; aluevarauksia ei päivitetty', Qgis.Warning)
+                else:
+                    success = self.removeThemesFromSpatialFeatures("alue")
+                    if success:
+                        self.iface.messageBar().pushMessage('Aluvarausten teemat poistettu', Qgis.Info, 30)
+            if self.dialogUpdateThemeOfGroup.checkBoxUpdateSupplementaryPolygonFeatures.isChecked():
+                if not self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate:
+                    self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä täydentäviä aluekohteita; täydentäviä aluekohteita ei päivitetty', Qgis.Warning)
+                else:
+                    success = self.removeThemesFromSpatialFeatures("alue_taydentava")
+                    if success:
+                        self.iface.messageBar().pushMessage('Täydentävien aluekohteiden teemat poistettu', Qgis.Info, 30)
+            if self.dialogUpdateThemeOfGroup.checkBoxUpdateLineFeatures.isChecked():
+                if not self.hasUserSelectedLineFeaturesForUpdate:
+                    self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä viivamaisia kohteita; viivamaisia ei päivitetty', Qgis.Warning)
+                else:
+                    success = self.removeThemesFromSpatialFeatures("viiva")
+                    if success:
+                        self.iface.messageBar().pushMessage('Viivamaisten kohteiden teemat poistettu', Qgis.Info, 30)
+            if self.dialogUpdateThemeOfGroup.checkBoxUpdatePointFeatures.isChecked():
+                if not self.hasUserSelectedPointFeaturesForUpdate:
+                    self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä pistemäisiä kohteita; pistemäisiä kohteita ei päivitetty', Qgis.Warning)
+                else:
+                    success = self.removeThemesFromSpatialFeatures("piste")
+                    if success:
+                        self.iface.messageBar().pushMessage('Pistemäisten kohteiden teemat poistettu', Qgis.Info, 30)
+
+            self.finishUpdate(shouldHide)
         else:
             self.iface.messageBar().pushMessage('Valitse teema', Qgis.Info, 30)
 
@@ -243,6 +275,21 @@ class UpdateThemesOfGroup:
                     self.iface.messageBar().pushMessage("Kaavakohteelle, jonka tyyppi on " + self.yleiskaavaDatabase.getUserFriendlySpatialFeatureTypeName(featureType) + " ja id on " + str(feature["id"]) + " ei voitu päivittää teemaa", Qgis.Critical)
 
                     return False
+
+        return True
+
+
+    def removeThemesFromSpatialFeatures(self, featureType):
+        spatialFeatures = self.yleiskaavaDatabase.getSelectedFeatures(featureType)
+        # spatialFeatures = self.yleiskaavaDatabase.getSpatialFeaturesWithRegulationForType(regulationID, featureType)
+
+        for feature in spatialFeatures:
+            success = self.yleiskaavaDatabase.removeSpatialFeatureThemes(feature["id"], featureType)
+
+            if not success:
+                self.iface.messageBar().pushMessage("Kaavakohteelta, jonka tyyppi on " + self.yleiskaavaDatabase.getUserFriendlySpatialFeatureTypeName(featureType) + " ja id on " + str(feature["id"]) + " ei voitu poistaa teemoja", Qgis.Critical)
+
+                return False
 
         return True
 

@@ -179,7 +179,7 @@
        <item>
         <widget class="QPushButton" name="pushButtonCancel">
          <property name="text">
-          <string>Peruuta</string>
+          <string>Sulje</string>
          </property>
         </widget>
        </item>
@@ -197,9 +197,16 @@
         </spacer>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButtonUpdateRegulationAndSpatialFeatures">
+        <widget class="QPushButton" name="pushButtonUpdate">
          <property name="text">
           <string>Tee päivitykset</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButtonUpdateAndClose">
+         <property name="text">
+          <string>Tee päivitykset ja sulje</string>
          </property>
         </widget>
        </item>

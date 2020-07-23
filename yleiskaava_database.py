@@ -416,6 +416,48 @@ class YleiskaavaDatabase:
         return True
 
 
+    def removeSpatialFeatureRegulationAndLandUseClassification(self, featureID, featureType, shouldUpdateOnlyRelation):
+        self.removeRegulationRelationsFromSpatialFeature(featureID, featureType)
+
+        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_" + featureType, None)
+        layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        feature = self.findSpatialFeatureFromFeatureLayerWithID(layer, featureID)
+
+        if not shouldUpdateOnlyRelation:
+            layer.startEditing()
+
+            index = layer.fields().indexFromName("kaavamaaraysotsikko")
+            success = layer.changeAttributeValue(feature.id(), index, None)
+            if not success:
+                    self.iface.messageBar().pushMessage('removeSpatialFeatureRegulationAndLandUseClassification - kaavamaaraysotsikko - changeAttributeValue() failed', Qgis.Critical)
+                    return False
+            index = layer.fields().indexFromName("kayttotarkoitus_lyhenne")
+            # landUseClassificationName = None
+            # if feature["id_yleiskaava"] is not None:
+            #     planNumber = self.getPlanNumberForPlanID(feature["id_yleiskaava"])
+                # landUseClassificationName = self.yleiskaavaUtils.getLandUseClassificationNameForRegulation(planNumber, "yk_yleiskaava.kaavaobjekti_" + featureType, regulationTitle)
+            success = layer.changeAttributeValue(feature.id(), index, None)
+            if not success:
+                self.iface.messageBar().pushMessage('removeSpatialFeatureRegulationAndLandUseClassification - kayttotarkoitus_lyhenne - changeAttributeValue() failed', Qgis.Critical)
+
+            success = layer.commitChanges()
+            if not success:
+                self.iface.messageBar().pushMessage('removeSpatialFeatureRegulationAndLandUseClassification - commitChanges() failed, reason(s): "', Qgis.Critical)
+                # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
+                for error in layer.commitErrors():
+                    self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
+                    # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
+                return False
+
+        return True
+
+
+    def removeSpatialFeatureThemes(self, featureID, featureType):
+        self.removeThemeRelationsFromSpatialFeature(featureID, featureType)
+
+        return True
+        
+
     def updateSpatialFeatureRegulationAndLandUseClassification(self, featureID, featureType, regulationID, regulationTitle, shouldRemoveOldRegulationRelations, shouldUpdateOnlyRelation):
         # remove old regulation relations if shouldRemoveOldRegulationRelations
         # lisää yhteys kaavaobjekti_kaavamaarays_yhteys-tauluun, jos yhteyttä ei vielä ole
