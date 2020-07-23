@@ -61,7 +61,7 @@
       <item>
        <widget class="QPushButton" name="pushButtonUpdateIndexingForLayer">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="text">
          <string>Päivitä kaavakohteiden indeksointia...</string>
