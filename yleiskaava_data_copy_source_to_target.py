@@ -4,7 +4,7 @@ from qgis.PyQt.QtCore import Qt, QVariant, QSize
 from qgis.PyQt.QtWidgets import QWidget, QGridLayout, QLabel, QComboBox, QCheckBox
 
 from qgis.core import (
-    Qgis, QgsProject, QgsFeature, QgsField, QgsWkbTypes, QgsMessageLog, QgsMapLayer, QgsVectorLayer, QgsAuxiliaryLayer, QgsMapLayerProxyModel, QgsGeometry, QgsCoordinateReferenceSystem, QgsCoordinateTransform)
+    Qgis, QgsProject, QgsFeature, QgsField, QgsWkbTypes, QgsMessageLog, QgsMapLayer, QgsVectorLayer,  QgsMapLayerProxyModel, QgsGeometry, QgsCoordinateReferenceSystem, QgsCoordinateTransform)
 
 from qgis.gui import QgsFilterLineEdit, QgsDateTimeEdit
 
@@ -487,7 +487,7 @@ class DataCopySourceToTarget:
             for field in spatialTargetTableFields:
                 targetFieldName = field.name()
 
-                if self.isShownDefaultTargetFieldName(targetFieldName):
+                if self.yleiskaavaUtils.isShownTargetFieldName(targetFieldName):
                     success = self.showFieldInSettingsDialogDefaults(self.targetSchemaTableName, spatialTargetTableLayer, index, field)
                     if success:
                         index += 1
@@ -535,32 +535,13 @@ class DataCopySourceToTarget:
         targetSchemaTableFieldLabel.setObjectName(DataCopySourceToTarget.OBJECT_NAME_UNIQUE_IDENTIFIERS["DEFAULT_VALUES_LABEL"] + str(fieldIndex))
         self.dialogCopySettings.tableWidgetDefaultFieldValues.setCellWidget(fieldIndex, DataCopySourceToTarget.DEFAULT_VALUES_LABEL_INDEX, targetSchemaTableFieldLabel)
 
-        widget = None
-
-        if targetFieldTypeName == 'String' or targetFieldTypeName == 'Int' or targetFieldTypeName == 'Double' or targetFieldTypeName == 'LongLong':
-            widget = QgsFilterLineEdit() 
-            #widget.setLayer(layer) # QgsFieldValuesLineEdit seems to crash occasionally and does not anyway seem to list values...
-            # widget.setAttributeIndex(fieldIndex)
-        elif targetFieldTypeName == 'Date':
-            widget = QgsDateTimeEdit()
-            widget.setAllowNull(True)
-            widget.clear()
-        elif targetFieldTypeName == 'Bool':
-            widget = QComboBox()
-            values = ["", "Kyllä", "Ei"]
-            widget.addItems(values)
-            #checkBox = QCheckBox("Kyllä / ei")
-        elif targetFieldTypeName == 'uuid':
-            values = self.yleiskaavaDatabase.getCodeListValuesForPlanObjectField(targetFieldName)
-            values.insert(0, "")
-            widget = QComboBox()
-            widget.addItems(values)
+        widget = self.yleiskaavaUtils.getWidgetForSpatialFeatureFieldType(targetFieldTypeName, targetFieldName)
 
         if widget != None:
             widget.setObjectName(DataCopySourceToTarget.OBJECT_NAME_UNIQUE_IDENTIFIERS["DEFAULT_VALUES_INPUT"] + str(fieldIndex))
             self.dialogCopySettings.tableWidgetDefaultFieldValues.setCellWidget(fieldIndex, DataCopySourceToTarget.DEFAULT_VALUES_INPUT_INDEX, widget)
         else:
-            self.iface.messageBar().pushMessage('Bugi koodissa: showFieldInSettingsDialogDefaults widget == None', Qgis.Warning, duration=10)
+            self.iface.messageBar().pushMessage('Bugi koodissa: showFieldInSettingsDialogDefaults widget == None', Qgis.Warning)
             #QgsMessageLog.logMessage('showFieldInSettingsDialogDefaults widget == None', 'Yleiskaava-työkalu', Qgis.Critical)
             return False
             
@@ -642,7 +623,7 @@ class DataCopySourceToTarget:
                         self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
                         # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
                 else:
-                    pass
+                    # pass
                     # QgsMessageLog.logMessage("copySourceFeaturesToTargetLayer - commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
 
                     #targetLayerFeatures.append(targetLayerFeature)
@@ -871,11 +852,11 @@ class DataCopySourceToTarget:
             targetFieldName = self.yleiskaavaDatabase.getFieldNameForUserFriendlytargetFieldName(userFriendlytargetFieldName)
 
             targetFieldType = self.yleiskaavaDatabase.getTypeOftargetField(targetFieldName)
-            widgetClass = self.getClassOftargetFieldType(targetFieldType)
+            widgetClass = self.yleiskaavaUtils.getClassOftargetFieldType(targetFieldType)
 
             widget = self.dialogCopySettings.tableWidgetDefaultFieldValues.cellWidget(i, DataCopySourceToTarget.DEFAULT_VALUES_INPUT_INDEX)
             # QgsMessageLog.logMessage("getDefaultTargetFieldInfo - targetFieldName: " + targetFieldName, 'Yleiskaava-työkalu', Qgis.Info)
-            value = self.getValueOfWidgetForType(widget, targetFieldType)
+            value = self.yleiskaavaUtils.getValueOfWidgetForType(widget, targetFieldType)
             variantValue = None
             if value is None:
                 variantValue = QVariant()
@@ -888,71 +869,6 @@ class DataCopySourceToTarget:
             # QgsMessageLog.logMessage("getDefaultTargetFieldInfo - targetFieldName: " + targetFieldName + ", value: " + str(variantValue.value()), 'Yleiskaava-työkalu', Qgis.Info)
 
         return defaultFieldNameValueInfos
-
-
-    def getClassOftargetFieldType(self, targetFieldType):
-        if targetFieldType == "String": # QgsFilterLineEdit
-            return QgsFilterLineEdit
-        elif targetFieldType == "Int": # QgsFilterLineEdit
-            return QgsFilterLineEdit
-        elif targetFieldType == "Double": # QgsFilterLineEdit
-            return QgsFilterLineEdit
-        elif targetFieldType == "LongLong": # QgsFilterLineEdit
-            return QgsFilterLineEdit
-        elif targetFieldType == "Date": # QgsDateTimeEdit
-            return QgsDateTimeEdit
-        elif targetFieldType == "Bool": # QComboBox
-            return QComboBox
-        else: #elif targetFieldType == "uuid": # QComboBox
-            return QComboBox
-            
-
-    def getValueOfWidgetForType(self, widget, targetFieldType):
-        # QgsMessageLog.logMessage("getValueOfWidgetForType - targetFieldType: " + targetFieldType + ", type(widget): " + str(type(widget)), 'Yleiskaava-työkalu', Qgis.Info)
-        if targetFieldType == "String": # QgsFilterLineEdit
-            text = widget.text()
-            if text == "":
-                return None
-            else:
-                return text
-        elif targetFieldType == "Int": # QgsFilterLineEdit
-            text = widget.text()
-            if text == "":
-                return None
-            else:
-                return int(text)
-        elif targetFieldType == "Double": # QgsFilterLineEdit
-            text = widget.text()
-            if text == "":
-                return None
-            else:
-                return float(text)
-        elif targetFieldType == "LongLong": # QgsFilterLineEdit
-            text = widget.text()
-            if text == "":
-                return None
-            else:
-                return int(text)
-        elif targetFieldType == "Date": # QgsDateTimeEdit
-            dateValue = widget.date()
-            if dateValue.isNull():
-                return None
-            else:
-                return dateValue
-        elif targetFieldType == "Bool": # QComboBox
-            text = widget.currentText()
-            if text == "":
-                return None
-            elif text == "Ei":
-                return False
-            else: # Kyllä
-                return True
-        else: #elif targetFieldType == "uuid": # QComboBox
-            text = widget.currentText()
-            if text == "":
-                return None
-            else:
-                return text
 
 
     def getSourceTargetFieldMatches(self):
@@ -1055,19 +971,9 @@ class DataCopySourceToTarget:
 
         if self.targetSchemaTableName is not None:
             spatialTargetTableFields = self.yleiskaavaDatabase.getSchemaTableFields(self.targetSchemaTableName)
-
-            for field in spatialTargetTableFields:
-                targetFieldName = field.name()
-
-                if self.isShownDefaultTargetFieldName(targetFieldName):
-                    count += 1
+            count = self.yleiskaavaUtils.getShownFieldNameCount(spatialTargetTableFields)
 
         return count
 
     
-    def isShownDefaultTargetFieldName(self, targetFieldName):
-        if targetFieldName != 'id' and targetFieldName != 'id_yleiskaava' and targetFieldName != 'kansallinen_laillinen_sitovuus'  and targetFieldName != 'kohde_periytyy_muualta' and targetFieldName != 'pinta_ala_ha' and targetFieldName != 'pituus_km' and targetFieldName != 'rakennusoikeus_kem' and targetFieldName != 'rakennusoikeus_lkm' and targetFieldName != 'id_kaavakohteen_olemassaolo' and targetFieldName != 'id_kansallisen_kaavakohteen_olemassaolo':
-            return True
-
-        return False
 

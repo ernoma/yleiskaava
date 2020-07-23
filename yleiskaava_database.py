@@ -742,6 +742,22 @@ class YleiskaavaDatabase:
         return layer.fields().toList()
 
 
+    def getFieldNamesAndTypes(self, featureType):
+        fieldNamesAndTypes = []
+
+        layer = self.createLayerByTargetSchemaTableName("yk_yleiskaava.kaavaobjekti_" + featureType)
+
+        for index, field in enumerate(layer.fields().toList()):
+            fieldName = field.name()
+            fieldTypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
+            fieldNamesAndTypes.append({
+                "name": fieldName,
+                "typeName": fieldTypeName
+            })
+
+        return fieldNamesAndTypes
+
+
     def createDbURI(self, schema, table_name, geomFieldName):
         self.connParams = self.readConnectionParamsFromInput()
 
@@ -936,6 +952,48 @@ class YleiskaavaDatabase:
         # QgsMessageLog.logMessage("getSelectedFeatures - layer.selectedFeatureCount(): " + str(layer.selectedFeatureCount()), 'Yleiskaava-työkalu', Qgis.Info)
 
         return layer.getSelectedFeatures()
+
+
+    def getTargetLayer(self, featureType):
+        layer = None
+
+        if featureType == "alue":
+            layer = QgsProject.instance().mapLayersByName("Aluevaraukset")[0]
+        elif featureType == "alue_taydentava":
+            layer = QgsProject.instance().mapLayersByName("Täydentävät aluekohteet (osa-alueet)")[0]
+        elif featureType == "viiva":
+            layer = QgsProject.instance().mapLayersByName("Viivamaiset kaavakohteet")[0]
+        elif featureType == "piste":
+            layer = QgsProject.instance().mapLayersByName("Pistemäiset kaavakohteet")[0]
+
+        return layer
+
+
+    def updateSelectedSpatialFeaturesWithFieldValues(self, featureType, updatedFieldData):
+        layer = self.getTargetLayer(featureType)
+        features = layer.getSelectedFeatures()
+
+        layer.startEditing()
+
+        for feature in features:
+            for updatedFieldDataItem in updatedFieldData:
+                index = layer.fields().indexFromName(updatedFieldDataItem["fieldName"])
+                layer.changeAttributeValue(feature.id(), index, updatedFieldDataItem["value"])
+
+        success = layer.commitChanges()
+
+        if not success:
+            self.iface.messageBar().pushMessage('Bugi koodissa: updateSelectedSpatialFeaturesWithFieldValues - commitChanges() failed, reason(s): "', Qgis.Critical)
+            # QgsMessageLog.logMessage("copySourceFeaturesToTargetLayer - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
+            for error in self.targetLayer.commitErrors():
+                self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
+                # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
+
+            return False
+        else:
+            pass
+
+        return True
 
 
     def updateTheme(self, themeID, themeName, themeDescription):

@@ -1,7 +1,13 @@
 
-from qgis.PyQt.QtCore import QVariant
+from qgis.PyQt.QtCore import Qt, QVariant
+from qgis.PyQt.QtWidgets import (
+    QWidget,
+    QLabel, QComboBox, QCheckBox,
+    QGridLayout, QHBoxLayout)
+    
 
 from qgis.core import (QgsProject, QgsMessageLog)
+from qgis.gui import QgsFilterLineEdit, QgsDateTimeEdit
 
 
 class YleiskaavaUtils:
@@ -101,7 +107,7 @@ class YleiskaavaUtils:
         if field.type() == QVariant.Bool:
             return 'Bool'
         else:
-            self.iface.messageBar().pushMessage('Bugi koodissa:getStringTypeForFeatureField tuntematon tyyppi', Qgis.Critical)
+            self.iface.messageBar().pushMessage('Bugi koodissa: getStringTypeForFeatureField tuntematon tyyppi', Qgis.Critical)
             # QgsMessageLog.logMessage('getStringTypeForFeatureField tuntematon tyyppi', 'Yleiskaava-työkalu', Qgis.Critical)
             return str(field.type())
 
@@ -134,6 +140,136 @@ class YleiskaavaUtils:
                 # QgsMessageLog.logMessage('getAttributeValueInCompatibleType tuntematon tyyppimuunnos', 'Yleiskaava-työkalu', Qgis.Critical)
                 return None
 
+
+    def getWidgetForSpatialFeatureFieldType(self, fieldTypeName, fieldName):
+        widget = None
+
+        if fieldTypeName == 'String' or fieldTypeName == 'Int' or fieldTypeName == 'Double' or fieldTypeName == 'LongLong':
+            widget = QgsFilterLineEdit() 
+            #widget.setLayer(layer) # QgsFieldValuesLineEdit seems to crash occasionally and does not anyway seem to list values...
+            # widget.setAttributeIndex(fieldIndex)
+        elif fieldTypeName == 'Date':
+            widget = QgsDateTimeEdit()
+            widget.setAllowNull(True)
+            widget.clear()
+        elif fieldTypeName == 'Bool':
+            widget = QComboBox()
+            values = ["", "Kyllä", "Ei"]
+            widget.addItems(values)
+            #checkBox = QCheckBox("Kyllä / ei")
+        elif fieldTypeName == 'uuid':
+            values = self.yleiskaavaDatabase.getCodeListValuesForPlanObjectField(fieldName)
+            values.insert(0, "")
+            widget = QComboBox()
+            widget.addItems(values)
+
+        return widget
+
+    def getClassOftargetFieldType(self, targetFieldType):
+        if targetFieldType == "String": # QgsFilterLineEdit
+            return QgsFilterLineEdit
+        elif targetFieldType == "Int": # QgsFilterLineEdit
+            return QgsFilterLineEdit
+        elif targetFieldType == "Double": # QgsFilterLineEdit
+            return QgsFilterLineEdit
+        elif targetFieldType == "LongLong": # QgsFilterLineEdit
+            return QgsFilterLineEdit
+        elif targetFieldType == "Date": # QgsDateTimeEdit
+            return QgsDateTimeEdit
+        elif targetFieldType == "Bool": # QComboBox
+            return QComboBox
+        else: #elif targetFieldType == "uuid": # QComboBox
+            return QComboBox
+            
+
+    def getValueOfWidgetForType(self, widget, targetFieldType):
+        # QgsMessageLog.logMessage("getValueOfWidgetForType - targetFieldType: " + targetFieldType + ", type(widget): " + str(type(widget)), 'Yleiskaava-työkalu', Qgis.Info)
+        if targetFieldType == "String": # QgsFilterLineEdit
+            text = widget.text()
+            if text == "":
+                return None
+            else:
+                return text
+        elif targetFieldType == "Int": # QgsFilterLineEdit
+            text = widget.text()
+            if text == "":
+                return None
+            else:
+                return int(text)
+        elif targetFieldType == "Double": # QgsFilterLineEdit
+            text = widget.text()
+            if text == "":
+                return None
+            else:
+                return float(text)
+        elif targetFieldType == "LongLong": # QgsFilterLineEdit
+            text = widget.text()
+            if text == "":
+                return None
+            else:
+                return int(text)
+        elif targetFieldType == "Date": # QgsDateTimeEdit
+            dateValue = widget.date()
+            if dateValue.isNull():
+                return None
+            else:
+                return dateValue
+        elif targetFieldType == "Bool": # QComboBox
+            text = widget.currentText()
+            if text == "":
+                return None
+            elif text == "Ei":
+                return False
+            else: # Kyllä
+                return True
+        else: #elif targetFieldType == "uuid": # QComboBox
+            text = widget.currentText()
+            if text == "":
+                return None
+            else:
+                return text
+
+
+    def createCenteredCheckBoxCellWidgetForTableWidget(self):
+        checkBox = QCheckBox()
+        # checkBox.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        cellWidget = QWidget()
+        layout = QHBoxLayout(cellWidget)
+        layout.addWidget(checkBox)
+        layout.setAlignment(Qt.AlignCenter)
+        layout.setContentsMargins(0,0,0,0)
+        cellWidget.setLayout(layout)
+
+        return cellWidget
+
+
+    def isShownTargetFieldName(self, targetFieldName):
+        if targetFieldName != 'id' and targetFieldName != 'id_yleiskaava' and targetFieldName != 'kansallinen_laillinen_sitovuus'  and targetFieldName != 'kohde_periytyy_muualta' and targetFieldName != 'pinta_ala_ha' and targetFieldName != 'pituus_km' and targetFieldName != 'rakennusoikeus_kem' and targetFieldName != 'rakennusoikeus_lkm' and targetFieldName != 'id_kaavakohteen_olemassaolo' and targetFieldName != 'id_kansallisen_kaavakohteen_olemassaolo':
+            return True
+
+        return False
+
+
+    def getShownFieldNamesAndTypes(self, fieldNamesAndTypes):
+        shownFieldNamesAndTypes = []
+
+        for fieldNamesAndType in fieldNamesAndTypes:
+            if self.isShownTargetFieldName(fieldNamesAndType["name"]):
+                shownFieldNamesAndTypes.append(fieldNamesAndType)
+
+        return shownFieldNamesAndTypes
+
+
+    def getShownFieldNameCount(self, fields):
+        count = 0
+
+        for field in spatialTargetTableFields:
+            targetFieldName = field.name()
+
+            if self.isShownTargetFieldName(targetFieldName):
+                count += 1
+
+        return count
 
     # def emptyGridLayout(self, gridLayout):
     #     for i in reversed(range(gridLayout.count())): 
