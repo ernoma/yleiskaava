@@ -353,8 +353,8 @@ class YleiskaavaDatabase:
         return classifications
 
 
-    def getLayerFieldValuesFeaturesHavingLanduseClassification(self, userFriendlyTableName, landUseClassification, fieldName):
-        values = []
+    def getLayerFeatureIDsAndFieldValuesForFeaturesHavingLanduseClassification(self, userFriendlyTableName, landUseClassification, fieldName):
+        featureIDsAndValues = []
 
         featureType = self.getFeatureTypeForUserFriendlyTargetSchemaTableName(userFriendlyTableName)
         uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_" + featureType, None)
@@ -362,9 +362,12 @@ class YleiskaavaDatabase:
         for feature in layer.getFeatures():
             if feature['kayttotarkoitus_lyhenne'] == landUseClassification:
                 if not QVariant(feature[fieldName]).isNull() and str(feature[fieldName]) != '':
-                    values.append(str(feature[fieldName]))
+                    featureIDsAndValues.append({
+                        "id": feature["id"],
+                        "value": str(feature[fieldName])
+                    })
 
-        return values
+        return featureIDsAndValues
 
     # def getDistinctRegulationsOfLayer(self, userFriendlyTableName):
     #     featureType = self.getFeatureTypeForUserFriendlyTargetSchemaTableName(userFriendlyTableName)
@@ -1034,6 +1037,33 @@ class YleiskaavaDatabase:
             layer = QgsProject.instance().mapLayersByName("Pistemäiset kaavakohteet")[0]
 
         return layer
+
+    
+    def updateSpatialFeaturesWithFieldValues(self, layer, featureIDsAndValues, fieldName):
+        features = layer.getFeatures()
+        index = layer.fields().indexFromName(fieldName)
+        layer.startEditing()
+
+        for feature in features:
+            for featureIDsAndValue in featureIDsAndValues:
+                if feature["id"] == featureIDsAndValue["id"]:
+                    # QgsMessageLog.logMessage("updateSpatialFeaturesWithFieldValues - changing attribute value for feature id: " + featureIDsAndValue["id"] + ", value: " + featureIDsAndValue["value"], 'Yleiskaava-työkalu', Qgis.Info)
+                    layer.changeAttributeValue(feature.id(), index, featureIDsAndValue["value"])
+
+        success = layer.commitChanges()
+
+        if not success:
+            self.iface.messageBar().pushMessage('Bugi koodissa: updateSpatialFeaturesWithFieldValues - commitChanges() failed, reason(s): "', Qgis.Critical)
+            # QgsMessageLog.logMessage("copySourceFeaturesToTargetLayer - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
+            for error in self.targetLayer.commitErrors():
+                self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
+                # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
+
+            return False
+        else:
+            pass
+
+        return True
 
 
     def updateSelectedSpatialFeaturesWithFieldValues(self, featureType, updatedFieldData):

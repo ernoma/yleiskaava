@@ -29,7 +29,10 @@ class UpdateIndexingOfFeatures:
         self.dialogUpdateIndexingOfFeatures = uic.loadUi(os.path.join(self.plugin_dir, 'yleiskaava_dialog_update_indexing_of_features.ui'))
 
         self.selectedLayer = None
-        
+        self.selectedFeatureID = None
+        self.selectedFieldName = None
+        self.sortedFeatureIDsAndValues = None
+        self.featureIDsAndNewIndexValues = None
 
     def setup(self):
         # targetTableNames = sorted(self.yleiskaavaDatabase.getAllTargetSchemaTableNamesShownInCopySourceToTargetUI())
@@ -63,8 +66,11 @@ class UpdateIndexingOfFeatures:
             except RuntimeError:
                 pass
 
-        self.selectedLayer = None 
-
+        self.selectedLayer = None
+        self.selectedFeatureID = None
+        self.selectedFieldName = None
+        self.sortedFeatureIDsAndValues = None
+        self.featureIDsAndNewIndexValues = None
 
     def clearForm(self):
         self.reset()
@@ -148,11 +154,12 @@ class UpdateIndexingOfFeatures:
             landUseClassification = self.dialogUpdateIndexingOfFeatures.comboBoxChooseLandUseClassification.currentText()
             fieldNameText = self.dialogUpdateIndexingOfFeatures.comboBoxChooseIndexFieldToUpdate.currentText()
             userFriendlyFieldName, fieldName, fieldTypeName = self.getTargetFieldNameAndTypeFromComboBoxText(fieldNameText)
-            values = self.yleiskaavaDatabase.getLayerFieldValuesFeaturesHavingLanduseClassification(userFriendlyTableName, landUseClassification, fieldName)
-            sortedValues = self.getValidAndSortedValues(values)
+            self.selectedFieldName = fieldName
+            featureIDsAndValues = self.yleiskaavaDatabase.getLayerFeatureIDsAndFieldValuesForFeaturesHavingLanduseClassification(userFriendlyTableName, landUseClassification, fieldName)
+            self.sortedFeatureIDsAndValues = self.getValidAndSortedfeatureIDsAndValues(featureIDsAndValues)
             self.dialogUpdateIndexingOfFeatures.comboBoxTargetLayerFeatureIndexValuesCurrent.clear()
-            self.dialogUpdateIndexingOfFeatures.comboBoxTargetLayerFeatureIndexValuesCurrent.addItems(sortedValues)
-            if len(sortedValues) == 0:
+            self.dialogUpdateIndexingOfFeatures.comboBoxTargetLayerFeatureIndexValuesCurrent.addItems([item["value"] for item in self.sortedFeatureIDsAndValues])
+            if len(self.sortedFeatureIDsAndValues) == 0:
                 self.iface.messageBar().pushMessage("Valitulla kaavakohdekarttatasolla, käyttötarkoituksella ja indeksikentällä ei ole indeksiarvoja", Qgis.Info, 5)
                 # self.iface.messageBar().pushMessage("Valitulla kaavakohdekarttatasolla, käyttötarkoituksella, indeksikentällä ja vakioalku- ja loppuosalla ei voi muodostaa automaattista indeksiä", Qgis.Warning)
         else:
@@ -178,14 +185,17 @@ class UpdateIndexingOfFeatures:
         
 
     def handleFeatureSelectionChanged(self):
-        if self.selectedLayer.selectedFeatureCount() == 1:
-            features = self.selectedLayer.getSelectedFeatures()
-            feature = QgsFeature()
-            features.nextFeature(feature)
-            self.fillTableWidgetTargetFeatureInfo(feature)
-        else:
-            self.clearTableWidgetTargetFeatureInfo()
-            self.iface.messageBar().pushMessage('' + userFriendlyTableName + ' karttatasolla on valittuna useita kohteita', Qgis.Info, 20)
+        if self.dialogUpdateIndexingOfFeatures.isVisible():
+            if self.selectedLayer.selectedFeatureCount() == 1:
+                features = self.selectedLayer.getSelectedFeatures()
+                feature = QgsFeature()
+                features.nextFeature(feature)
+                self.selectedFeatureID = feature["id"]
+                self.fillTableWidgetTargetFeatureInfo(feature)
+            else:
+                self.clearTableWidgetTargetFeatureInfo()
+                userFriendlyTableName = self.dialogUpdateIndexingOfFeatures.comboBoxChooseTargetLayer.currentText()
+                self.iface.messageBar().pushMessage('' + userFriendlyTableName + ' karttatasolla on valittuna useita kohteita', Qgis.Info, 20)
 
 
     def fillTableWidgetTargetFeatureInfo(self, feature):
@@ -245,7 +255,7 @@ class UpdateIndexingOfFeatures:
         
 
     def handlePushButtonUpdateClicked(self):
-        pass
+        self.updateFeatureValues()
 
 
     def shouldReverse(self):
@@ -272,24 +282,25 @@ class UpdateIndexingOfFeatures:
         return isValid, valuePart
 
 
-    def getValidValuesAndValueParts(self, values):
-        validValuesAndValueParts = []
-        for value in values:
-            isValid, valuePart = self.getValuePartIfValid(value)
+    def getValidFeatureIDsAndValuesAndValueParts(self, featureIDsAndValues):
+        validFeatureIDsAndValuesAndValueParts = []
+        for featureIDsAndValue in featureIDsAndValues:
+            isValid, valuePart = self.getValuePartIfValid(featureIDsAndValue["value"])
             if isValid:
-                validValuesAndValueParts.append({
-                    'value': value,
+                validFeatureIDsAndValuesAndValueParts.append({
+                    'id': featureIDsAndValue["id"],
+                    'value': featureIDsAndValue["value"],
                     'valuePart': valuePart
                 })
 
-        return validValuesAndValueParts
+        return validFeatureIDsAndValuesAndValueParts
 
 
-    def getIndexValueTypesForValues(self, values):
+    # def getIndexFeatureIDsAndValueTypesForValues(self, values):
 
-        validValuesAndValueParts = self.getValidValuesAndValueParts(values)
+    #     validValuesAndValueParts = self.getValidFeatureIDsAndValuesAndValueParts(values)
 
-        return self.getIndexValueTypes([valueAndValuePart['valuePart'] for valueAndValuePart in validValuesAndValueParts])
+    #     return self.getIndexValueTypes([valueAndValuePart['valuePart'] for valueAndValuePart in validValuesAndValueParts])
         
 
     def getIndexValueTypeForValuePart(self, valuePart):
@@ -332,43 +343,43 @@ class UpdateIndexingOfFeatures:
         return hasFloats, hasInts, hasStrings
 
 
-    def getValidAndSortedValuesAndValueParts(self, values, shouldLowerValueParts):
-        validValuesAndValueParts = self.getValidValuesAndValueParts(values)
+    def getValidAndSortedFeatureIDsAndValuesAndValueParts(self, featureIDsAndValues, shouldLowerValueParts):
+        validFeatureIDsAndValuesAndValueParts = self.getValidFeatureIDsAndValuesAndValueParts(featureIDsAndValues)
 
         # Haetaan indeksiarvojen tyyppi
-        hasFloats, hasInts, hasStrings = self.getIndexValueTypes([valueAndValuePart['valuePart'] for valueAndValuePart in validValuesAndValueParts])
+        hasFloats, hasInts, hasStrings = self.getIndexValueTypes([validFeatureIDsAndValuesAndValuePart['valuePart'] for validFeatureIDsAndValuesAndValuePart in validFeatureIDsAndValuesAndValueParts])
         
         # if (hasInts and hasStrings) or (hasFloats and hasStrings):
         #    canIndex = False
 
-        sortedValidValuesAndValueParts = None
+        sortedFeatureIDsAndValidValuesAndValueParts = None
 
         # if canIndex:
         shouldReverse = self.shouldReverse()
         if hasStrings:
-            QgsMessageLog.logMessage("getValidAndSortedValues - hasStrings", 'Yleiskaava-työkalu', Qgis.Info)
-            sortedValidValuesAndValueParts = sorted(validValuesAndValueParts, key=lambda x: x['valuePart'], reverse = shouldReverse)
+            QgsMessageLog.logMessage("getValidAndSortedFeatureIDsAndValuesAndValueParts - hasStrings", 'Yleiskaava-työkalu', Qgis.Info)
+            sortedFeatureIDsAndValidValuesAndValueParts = sorted(validFeatureIDsAndValuesAndValueParts, key=lambda x: x['valuePart'], reverse = shouldReverse)
             if shouldLowerValueParts:
-                for index, sortedValidValuesAndValuePart in enumerate(sortedValidValuesAndValueParts):
-                    sortedValidValuesAndValueParts[index]['valuePart'] = sortedValidValuesAndValueParts[index]['valuePart'].lower()
+                for index, sortedFeatureIDsAndValidValuesAndValuePart in enumerate(sortedFeatureIDsAndValidValuesAndValueParts):
+                    sortedFeatureIDsAndValidValuesAndValueParts[index]['valuePart'] = sortedFeatureIDsAndValidValuesAndValueParts[index]['valuePart'].lower()
 
         elif hasFloats:
-            QgsMessageLog.logMessage("getValidAndSortedValues - hasFloats", 'Yleiskaava-työkalu', Qgis.Info)
-            sortedValidValuesAndValueParts = sorted(validValuesAndValueParts, key=lambda x: float(x['valuePart']), reverse = shouldReverse)
+            QgsMessageLog.logMessage("getValidAndSortedFeatureIDsAndValuesAndValueParts - hasFloats", 'Yleiskaava-työkalu', Qgis.Info)
+            sortedFeatureIDsAndValidValuesAndValueParts = sorted(validFeatureIDsAndValuesAndValueParts, key=lambda x: float(x['valuePart']), reverse = shouldReverse)
         elif hasInts:
-            QgsMessageLog.logMessage("getValidAndSortedValues - hasInts", 'Yleiskaava-työkalu', Qgis.Info)
-            sortedValidValuesAndValueParts = sorted(validValuesAndValueParts, key=lambda x: int(x['valuePart']), reverse = shouldReverse)
+            QgsMessageLog.logMessage("getValidAndSortedFeatureIDsAndValuesAndValueParts - hasInts", 'Yleiskaava-työkalu', Qgis.Info)
+            sortedFeatureIDsAndValidValuesAndValueParts = sorted(validFeatureIDsAndValuesAndValueParts, key=lambda x: int(x['valuePart']), reverse = shouldReverse)
         else:
-            self.iface.messageBar().pushMessage('Bugi koodissa: getValidAndSortedValues', Qgis.Critical)
+            self.iface.messageBar().pushMessage('Bugi koodissa: getValidAndSortedFeatureIDsAndValuesAndValueParts', Qgis.Critical)
 
-        return sortedValidValuesAndValueParts
+        return sortedFeatureIDsAndValidValuesAndValueParts
 
 
-    def getValidAndSortedValues(self, values):
-        sortedValues = []
-        sortedValidValuesAndValueParts = self.getValidAndSortedValuesAndValueParts(values, False)
-        sortedValues = [sortedValidValuesAndValuePart['value'] for sortedValidValuesAndValuePart in sortedValidValuesAndValueParts]
-        return sortedValues
+    def getValidAndSortedfeatureIDsAndValues(self, featureIDsAndValues):
+        sortedFeatureIDsAndValues = []
+        sortedValidFeatureIDsAndValuesAndValueParts = self.getValidAndSortedFeatureIDsAndValuesAndValueParts(featureIDsAndValues, False)
+        sortedFeatureIDsAndValues = [ { "id": sortedValidFeatureIDsAndValuesAndValuePart['id'], "value": sortedValidFeatureIDsAndValuesAndValuePart['value'] } for sortedValidFeatureIDsAndValuesAndValuePart in sortedValidFeatureIDsAndValuesAndValueParts]
+        return sortedFeatureIDsAndValues
 
 
     def fillComboBoxTargetLayerFeatureIndexValuesAfterUpdate(self, text):
@@ -376,60 +387,68 @@ class UpdateIndexingOfFeatures:
 
         isValid, valuePart = self.getValuePartIfValid(text)
         if isValid:
-            currentIndexValues = [self.dialogUpdateIndexingOfFeatures.comboBoxTargetLayerFeatureIndexValuesCurrent.itemText(i) for i in range(self.dialogUpdateIndexingOfFeatures.comboBoxTargetLayerFeatureIndexValuesCurrent.count())]
+            currentFeatureIDsAndIndexValues = self.sortedFeatureIDsAndValues
+            #currentIndexValues = [self.dialogUpdateIndexingOfFeatures.comboBoxTargetLayerFeatureIndexValuesCurrent.itemText(i) for i in range(self.dialogUpdateIndexingOfFeatures.comboBoxTargetLayerFeatureIndexValuesCurrent.count())]
         
-            success, newIndexValues = self.getNewIndexValuesSorted(text, valuePart, currentIndexValues)
+            success, self.featureIDsAndNewIndexValues = self.getFeatureIDsAndNewIndexValuesSorted(text, valuePart, currentFeatureIDsAndIndexValues)
             if success:
                 self.dialogUpdateIndexingOfFeatures.comboBoxTargetLayerFeatureIndexValuesAfterUpdate.clear()
-                self.dialogUpdateIndexingOfFeatures.comboBoxTargetLayerFeatureIndexValuesAfterUpdate.addItems(newIndexValues)
+                self.dialogUpdateIndexingOfFeatures.comboBoxTargetLayerFeatureIndexValuesAfterUpdate.addItems([item["value"] for item in self.featureIDsAndNewIndexValues])
 
                 self.dialogUpdateIndexingOfFeatures.pushButtonUpdate.setEnabled(True)
             else:
                 self.dialogUpdateIndexingOfFeatures.pushButtonUpdate.setEnabled(False)
 
         else: # ei validi
+            self.featureIDsAndNewIndexValues = None
+            # self.dialogUpdateIndexingOfFeatures.lineEditNewIndexValueForFeatureToAddBetween.clear()
             self.dialogUpdateIndexingOfFeatures.pushButtonUpdate.setEnabled(False)
 
 
-    def getNewIndexValuesSorted(self, value, valuePart, currentIndexValues):
+    def getFeatureIDsAndNewIndexValuesSorted(self, value, valuePart, currentFeatureIDsAndIndexValues):
         success = False
 
-        if value not in currentIndexValues:
-            currentIndexValues.append(value)
+        if value not in [currentFeatureIDsAndIndexValue["value"] for currentFeatureIDsAndIndexValue in currentFeatureIDsAndIndexValues]:
+            currentFeatureIDsAndIndexValues.append({
+                "id": self.selectedFeatureID,
+                "value": value})
             success = True
-            newIndexValues = self.getValidAndSortedValues(currentIndexValues)
-            return success, newIndexValues
+            featureIDsAndNewIndexValues = self.getValidAndSortedfeatureIDsAndValues(currentFeatureIDsAndIndexValues)
+            return success, featureIDsAndNewIndexValues
         else:
-            # hasFloats, hasInts, hasStrings = self.getIndexValueTypesForValues()
             valueType = self.getIndexValueTypeForValuePart(valuePart)
-            sortedValidValuesAndValueParts = self.getValidAndSortedValuesAndValueParts(currentIndexValues, True)
+            sortedValidFeatureIDsAndValuesAndValueParts = self.getValidAndSortedFeatureIDsAndValuesAndValueParts(currentFeatureIDsAndIndexValues, True)
 
             if valueType == 'String':
-                success, newIndexValues = self.addExistingIndexValueToStringValues(value, valuePart.lower(), sortedValidValuesAndValueParts)
-                return success, newIndexValues
+                success, featureIDsAndNewIndexValues = self.addExistingIndexValueToStringValues(self.selectedFeatureID, value, valuePart.lower(), sortedValidFeatureIDsAndValuesAndValueParts)
+                return success, featureIDsAndNewIndexValues
             elif valueType == 'Float':
-                success, newIndexValues = self.addExistingIndexValueToFloatValues(value, valuePart, sortedValidValuesAndValueParts)
-                return success, newIndexValues
+                success, featureIDsAndNewIndexValues = self.addExistingIndexValueToFloatValues(self.selectedFeatureID, value, valuePart, sortedValidFeatureIDsAndValuesAndValueParts)
+                return success, featureIDsAndNewIndexValues
             else: # if valueType == 'Int':
-                success, newIndexValues = self.addExistingIndexValueToIntValues(value, valuePart, sortedValidValuesAndValueParts)
-                return success, newIndexValues
+                success, featureIDsAndNewIndexValues = self.addExistingIndexValueToIntValues(self.selectedFeatureID, value, valuePart, sortedValidFeatureIDsAndValuesAndValueParts)
+                return success, featureIDsAndNewIndexValues
                 
 
-    def addExistingIndexValueToStringValues(self, value, valuePart, sortedValidValuesAndValueParts):
+    def addExistingIndexValueToStringValues(self, featureID, value, valuePart, sortedValidFeatureIDsAndValuesAndValueParts):
         # käsittele isoilla ja pienillä kirjaimilla:
         #  - a, b, c, ..
         #  TODO - aa, bb, cc, ..
         #  TODO - i, ii, iii, ..
         success = False
-        newIndexValues = []
+        featureIDsAndnewIndexValues = []
 
-        currentIndexValues = [sortedValidValuesAndValuePart['value'] for sortedValidValuesAndValuePart in sortedValidValuesAndValueParts]
-        currentIndexValueParts = [sortedValidValuesAndValuePart['valuePart'] for sortedValidValuesAndValuePart in sortedValidValuesAndValueParts]
+        # currentIndexValues = [sortedValidFeatureIDsAndValuesAndValuePart['value'] for sortedValidFeatureIDsAndValuesAndValuePart in sortedValidFeatureIDsAndValuesAndValueParts]
+        currentIndexValueParts = [sortedValidFeatureIDsAndValuesAndValuePart['valuePart'] for sortedValidFeatureIDsAndValuesAndValuePart in sortedValidFeatureIDsAndValuesAndValueParts]
         if not self.yleiskaavaUtils.allStringsInListHaveEqualLength(currentIndexValueParts):
-            currentIndexValues.append(value)
+            sortedValidFeatureIDsAndValuesAndValueParts.append({
+                "id": featureID,
+                "value": value,
+                "valuePart": valuePart
+            })
             success = True
-            newIndexValues = self.getValidAndSortedValues(currentIndexValues)
-            return success, newIndexValues
+            featureIDsAndnewIndexValues = self.getValidAndSortedfeatureIDsAndValues(sortedValidFeatureIDsAndValuesAndValueParts)
+            return success, featureIDsAndnewIndexValues
         else:
             indexOfValuePart = currentIndexValueParts.index(valuePart)
 
@@ -437,26 +456,34 @@ class UpdateIndexingOfFeatures:
 
             if currentIndexValueParts[0] == 'a':
                 countOfValuesToGet = len(currentIndexValueParts) - indexOfValuePart
-                grownIndexValues = self.getAlphaValuesFromLetter(indexOfValuePart, currentIndexValueParts, countOfValuesToGet, value.islower())
+                featureIDsAndGrownIndexValues = self.getFeatureIDsAndAlphaValuesFromLetter(indexOfValuePart, sortedValidFeatureIDsAndValuesAndValueParts, countOfValuesToGet, value.islower())
                 success = True
-                newIndexValues = currentIndexValues[:indexOfValuePart] + [value] + grownIndexValues
-                return success, newIndexValues
+                addedFeatureIDAndIndexValue = [{
+                    "id": featureID,
+                    "value": value,
+                    "valuePart": valuePart
+                }]
+                featureIDsAndnewIndexValues = sortedValidFeatureIDsAndValuesAndValueParts[:indexOfValuePart] + addedFeatureIDAndIndexValue + featureIDsAndGrownIndexValues
+                return success, featureIDsAndnewIndexValues
     
-        return success, newIndexValues
+        return success, featureIDsAndnewIndexValues
 
 
-    def getAlphaValuesFromLetter(self, indexOfValuePart, currentIndexValueParts, countOfValuesToGet, isLower):
-        grownIndexValues = []
+    def getFeatureIDsAndAlphaValuesFromLetter(self, indexOfValuePart, sortedValidFeatureIDsAndValuesAndValueParts, countOfValuesToGet, isLower):
+        featureIDsAndGrownIndexValues = []
         prefix = self.dialogUpdateIndexingOfFeatures.lineEditPrefix.text()
         postfix = self.dialogUpdateIndexingOfFeatures.lineEditPostfix.text()
 
         for i in range(countOfValuesToGet):
-            letter = self.getNextLetterFromLetter(currentIndexValueParts[indexOfValuePart + i])
+            letter = self.getNextLetterFromLetter(sortedValidFeatureIDsAndValuesAndValueParts[indexOfValuePart + i]["valuePart"])
             if not isLower:
                 letter = letter.upper()
-            grownIndexValues.append(prefix + letter + postfix)
+            featureIDsAndGrownIndexValues.append({
+                "id": sortedValidFeatureIDsAndValuesAndValueParts[indexOfValuePart + i]["id"],
+                "value": prefix + letter + postfix,
+                "valuePart": letter })
 
-        return grownIndexValues
+        return featureIDsAndGrownIndexValues
 
 
     def getNextLetterFromLetter(self, letter):
@@ -467,22 +494,22 @@ class UpdateIndexingOfFeatures:
             return UpdateIndexingOfFeatures.LETTERS[indexOfLetter]
 
 
-    def addExistingIndexValueToFloatValues(self, value, valuePart, sortedValidValuesAndValueParts):
+    def addExistingIndexValueToFloatValues(self, featureID, value, valuePart, sortedFeatureIDsAndValidValuesAndValueParts):
         # TODO käsittele:
         # - 0.1, 0.2, 0.3, ..
         success = False
-        newIndexValues = []
-        return success, newIndexValues
+        featureIDsAndNewIndexValues = []
+        return success, featureIDsAndNewIndexValues
     
 
-    def addExistingIndexValueToIntValues(self, value, valuePart, sortedValidValuesAndValueParts):
+    def addExistingIndexValueToIntValues(self, featureID, value, valuePart, sortedFeatureIDsAndValidValuesAndValueParts):
         # käsittele:
         # - 1, 2, 3, ..
         success = False
-        newIndexValues = []
+        featureIDsAndNewIndexValues = []
 
-        currentIndexValues = [sortedValidValuesAndValuePart['value'] for sortedValidValuesAndValuePart in sortedValidValuesAndValueParts]
-        currentIndexValueParts = [sortedValidValuesAndValuePart['valuePart'] for sortedValidValuesAndValuePart in sortedValidValuesAndValueParts]
+        # currentIndexValues = [sortedValidValuesAndValuePart['value'] for sortedValidValuesAndValuePart in sortedValidValuesAndValueParts]
+        currentIndexValueParts = [sortedFeatureIDsAndValidValuesAndValuePart['valuePart'] for sortedFeatureIDsAndValidValuesAndValuePart in sortedFeatureIDsAndValidValuesAndValueParts]
 
         indexOfValuePart = currentIndexValueParts.index(valuePart)
         countOfValuesToGet = len(currentIndexValueParts) - indexOfValuePart
@@ -490,13 +517,32 @@ class UpdateIndexingOfFeatures:
         prefix = self.dialogUpdateIndexingOfFeatures.lineEditPrefix.text()
         postfix = self.dialogUpdateIndexingOfFeatures.lineEditPostfix.text()
 
-        grownIndexValues = []
+        featureIDsAndGrownIndexValues = []
         for i in range(countOfValuesToGet):
             grownValue = int(currentIndexValueParts[indexOfValuePart + i]) + 1
-            grownIndexValues.append(prefix + str(grownValue) + postfix)
+            featureIDsAndGrownIndexValues.append({
+                "id": sortedFeatureIDsAndValidValuesAndValueParts[indexOfValuePart + i]["id"],
+                "value": prefix + str(grownValue) + postfix,
+                "valuePart": str(grownValue) })
 
         success = True
-        newIndexValues = currentIndexValues[:indexOfValuePart] + [value] + grownIndexValues
-        return success, newIndexValues
+        addedFeatureIDAndIndexValue = [{
+            "id": featureID,
+            "value": value,
+            "valuePart": valuePart
+        }]
+        featureIDsAndnewIndexValues = sortedFeatureIDsAndValidValuesAndValueParts[:indexOfValuePart] + addedFeatureIDAndIndexValue + featureIDsAndGrownIndexValues
+        return success, featureIDsAndnewIndexValues
 
     
+    def updateFeatureValues(self):
+        success = self.yleiskaavaDatabase.updateSpatialFeaturesWithFieldValues(self.selectedLayer, self.featureIDsAndNewIndexValues, self.selectedFieldName)
+        if success:
+            self.iface.messageBar().pushMessage('Kaavakohteiden indeksointi päivitetty', Qgis.Info, 30)
+            self.clearForm()
+            self.yleiskaavaUtils.refreshTargetLayersInProject()
+            self.dialogUpdateIndexingOfFeatures.hide()
+        else:
+            self.iface.messageBar().pushMessage('Kaavakohteiden indeksointi ei onnistunut', Qgis.Critical)
+
+            
