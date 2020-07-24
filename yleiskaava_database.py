@@ -339,6 +339,51 @@ class YleiskaavaDatabase:
         return count
 
 
+    def getDistinctLandUseClassificationsOfLayer(self, userFriendlyTableName):
+        featureType = self.getFeatureTypeForUserFriendlyTargetSchemaTableName(userFriendlyTableName)
+        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_" + featureType, None)
+        layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+
+        classifications = []
+
+        for feature in layer.getFeatures():
+            if feature['kayttotarkoitus_lyhenne'] not in classifications:
+                classifications.append(feature['kayttotarkoitus_lyhenne'])
+
+        return classifications
+
+
+    def getLayerFieldValuesFeaturesHavingLanduseClassification(self, userFriendlyTableName, landUseClassification, fieldName):
+        values = []
+
+        featureType = self.getFeatureTypeForUserFriendlyTargetSchemaTableName(userFriendlyTableName)
+        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_" + featureType, None)
+        layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        for feature in layer.getFeatures():
+            if feature['kayttotarkoitus_lyhenne'] == landUseClassification:
+                if not QVariant(feature[fieldName]).isNull() and str(feature[fieldName]) != '':
+                    values.append(str(feature[fieldName]))
+
+        return values
+
+    # def getDistinctRegulationsOfLayer(self, userFriendlyTableName):
+    #     featureType = self.getFeatureTypeForUserFriendlyTargetSchemaTableName(userFriendlyTableName)
+    #     uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_" + featureType, None)
+    #     layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+
+    #     regulationIDs = []
+    #     regulations = []
+
+    #     for feature in layer.getFeatures():
+    #         featureRegulations = self.getRegulationsForSpatialFeature(feature["id"], featureType)
+    #         for featureRegulation in featureRegulations:
+    #             if not featureRegulation["id"] in regulationIDs:
+    #                 regulationIDs.append(featureRegulation["id"])
+    #                 regulations.append(featureRegulation)
+
+    #     return regulations
+
+
     def getRegulationsForSpatialFeature(self, featureID, featureType):
         regulationList = []
 
@@ -725,13 +770,29 @@ class YleiskaavaDatabase:
 
         return values
 
-
-    def getCodeListUUIDForPlanObjectFieldCodeValue(self, targetFieldName, value):
+    def getCodeListValueForPlanObjectFieldUUID(self, targetFieldName, value):
+        codeValue = None
+        
         schema, table_name = ("yk_koodiluettelot." + targetFieldName[3:]).split('.')
         uri = self.createDbURI(schema, table_name, None)
         targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
         features = targetLayer.getFeatures()
+
+        for feature in features:
+            if feature['id'] == value:
+                codeValue =  feature['koodi']
+                break
+        return codeValue
+
+
+    def getCodeListUUIDForPlanObjectFieldCodeValue(self, targetFieldName, value):
         uuid = None
+
+        schema, table_name = ("yk_koodiluettelot." + targetFieldName[3:]).split('.')
+        uri = self.createDbURI(schema, table_name, None)
+        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        features = targetLayer.getFeatures()
+        
         # if table_name == "kansallinen_prosessin_vaihe" or table_name == "prosessin_vaihe" or table_name == "kaavoitusprosessin_tila" or table_name == "laillinen_sitovuus":
         for feature in features:
             if feature['koodi'] == value:

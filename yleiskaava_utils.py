@@ -1,12 +1,12 @@
 
-from qgis.PyQt.QtCore import Qt, QVariant
+from qgis.PyQt.QtCore import Qt, QVariant, QDateTime
 from qgis.PyQt.QtWidgets import (
     QWidget,
     QLabel, QComboBox, QCheckBox,
     QGridLayout, QHBoxLayout)
     
 
-from qgis.core import (QgsProject, QgsMessageLog)
+from qgis.core import (Qgis, QgsProject, QgsMessageLog)
 from qgis.gui import QgsFilterLineEdit, QgsDateTimeEdit
 
 
@@ -160,6 +160,8 @@ class YleiskaavaUtils:
         elif fieldTypeName == 'uuid':
             values = self.yleiskaavaDatabase.getCodeListValuesForPlanObjectField(fieldName)
             values.insert(0, "")
+            # for value in values:
+            #     QgsMessageLog.logMessage('getWidgetForSpatialFeatureFieldType - value: ' + str(value), 'Yleiskaava-työkalu', Qgis.Info)
             widget = QComboBox()
             widget.addItems(values)
 
@@ -228,6 +230,35 @@ class YleiskaavaUtils:
                 return None
             else:
                 return text
+
+
+    def setWidgetValueWithFieldType(self, widget, targetFieldType, value, fieldName):
+        # QgsMessageLog.logMessage('setWidgetValueWithFieldType - fieldName: ' + str(fieldName) + ', targetFieldType: ' + targetFieldType, 'Yleiskaava-työkalu', Qgis.Info)
+        # variantValue = QVariant(value)
+        if value is not None and not QVariant(value).isNull():
+            if targetFieldType == "String": # QgsFilterLineEdit
+                widget.setText(value)
+            elif targetFieldType == "Int": # QgsFilterLineEdit
+                widget.setText(str(value))
+            elif targetFieldType == "Double": # QgsFilterLineEdit
+                widget.setText(str(value))
+            elif targetFieldType == "LongLong": # QgsFilterLineEdit
+                widget.setText(str(value))
+            elif targetFieldType == "Date": # QgsDateTimeEdit
+                widget.setDateTime(QDateTime(value))
+            elif targetFieldType == "Bool": # QComboBox
+                if value == True:
+                    widget.setCurrentText("Kyllä")
+                elif value == False:
+                    widget.setCurrentText("Ei")
+            else: #elif targetFieldType == "uuid": # QComboBox
+                codeListValue = self.yleiskaavaDatabase.getCodeListValueForPlanObjectFieldUUID(fieldName, value)
+                # QgsMessageLog.logMessage('setWidgetValueWithFieldType - codeListValue: ' + str(codeListValue) + ', value: ' + str(value), 'Yleiskaava-työkalu', Qgis.Info)
+                widget.setCurrentText(codeListValue)
+
+
+    def getIndexableTypes(self):
+        return ['String', 'Int', 'Double', 'LongLong']
 
 
     def createCenteredCheckBoxCellWidgetForTableWidget(self):
@@ -324,6 +355,15 @@ class YleiskaavaUtils:
             layers = QgsProject.instance().mapLayersByName(name)
             for layer in layers:
                 layer.reload()
+
+    def allStringsInListHaveEqualLength(self, stringList):
+        length = len(stringList[0])
+        for item in stringList[1:]:
+            if len(item) != length:
+                return False
+
+        return True
+
 
 
 class COPY_ERROR_REASONS:

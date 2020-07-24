@@ -88,6 +88,7 @@ class AddSourceDataLinks:
             for index, availableLayerName in enumerate(availableLayerNames):
                 text = self.getLayerTitleNameComboBoxText(availableLayerName, availableLayerTitles[index])
                 comboBoxTexts.append(text)
+            self.dialogAddSourceDataLinks.comboBoxChooseSourceDataLayer.clear()
             self.dialogAddSourceDataLinks.comboBoxChooseSourceDataLayer.addItems(comboBoxTexts)
 
 

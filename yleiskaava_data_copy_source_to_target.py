@@ -567,9 +567,6 @@ class DataCopySourceToTarget:
             self.iface.messageBar().pushMessage('Sama kohdekenttä valittu usealla lähdekentälle', Qgis.Critical)
 
 
-
-
-
     def copySourceFeaturesToTargetLayer(self):
 
         self.planNumber = self.yleiskaavaDatabase.getPlanNumberForName(self.getPlanNameFromCopySettings())
