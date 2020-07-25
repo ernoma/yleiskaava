@@ -1238,3 +1238,32 @@ class YleiskaavaDatabase:
             apis = json.load(f)
 
         return apis
+
+
+    def getSourceDataFeatures(self, linkType):
+        #layer = QgsProject.instance().mapLayersByName("lahtoaineisto")[0] <- jos filteröity UI:ssa, niin ei toimi
+        uri = self.createDbURI("yk_prosessi", "lahtoaineisto", None)
+        layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        
+        features = []
+
+        for feature in layer.getFeatures():
+            if feature["linkitys_tyyppi"] == linkType:
+                features.append(feature)
+
+        return features
+
+
+    def getLinkedSourceDataFeatureAndLinkData(self, sourceLayerFeature, linkType):
+        # TODO huomio jos useita linkitettyjä kaavakohteita (voi olla myös poistettuja /versionloppumis_pvm is null)
+        linkedFeature = None
+        linkData = None
+        features = self.getSourceDataFeatures(linkType)
+        for feature in features:
+            if linkType == "tre_siiri":
+                if sourceLayerFeature["LINKKIULKOINEN"] == feature["linkki_data"]:
+                     linkedFeature = feature
+                     linkData = feature["linkki_data"]
+                     break
+
+        return linkedFeature, linkData

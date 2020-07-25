@@ -21,7 +21,8 @@ class YleiskaavaSourceDataAPIs:
         self.sourceDataAPIs = None
         self.sourceDataAPIs = self.yleiskaavaDatabase.getSourceDataAPIs()
 
-        self.currentApiID = None
+        self.currentAPIID = None
+        self.currentAPIInfo = None
         self.currentLayerName = None
         self.currentLayer = None
         self.currentLayerInfo = None
@@ -77,10 +78,10 @@ class YleiskaavaSourceDataAPIs:
 
     def getLayerAndLayerInfo(self, apiID, name):
 
-        if self.currentApiID != apiID or self.currentLayerName != name:
-            self.currentApiID = apiID
+        if self.currentAPIID != apiID or self.currentLayerName != name:
+            self.currentAPIID = apiID
             self.currentLayerName = name
-            self.currentLayer = self.createVectorLayer(self.currentApiID, self.currentLayerName)
+            self.currentLayer = self.createVectorLayer(self.currentAPIID, self.currentLayerName)
 
         return self.currentLayer, self.currentLayerInfo
 
@@ -92,6 +93,7 @@ class YleiskaavaSourceDataAPIs:
 
         for api in self.sourceDataAPIs['sources']:
             if api['id'] == apiID:
+                self.currentAPIInfo = api
                 if api['service'] == 'WFS':
                     uri.setParam('service', 'WFS')
                     uri.setParam('version', api['version'])
@@ -121,5 +123,10 @@ class YleiskaavaSourceDataAPIs:
         return layer
 
 
-    def getLinkedDatabaseFeature(self, currentSourceLayerFeature):
-        return None
+    def getLinkedDatabaseFeature(self, sourceLayerFeature):
+        linkedFeature = None
+        linkData = None
+        if self.currentAPIInfo != None:
+            # features = self.yleiskaavaDatabase.getSourceDataFeatures(self.currentAPIInfo["linkitys_tyyppi"])
+            linkedFeature, linkData = self.yleiskaavaDatabase.getLinkedSourceDataFeatureAndLinkData(sourceLayerFeature, self.currentAPIInfo["linkitys_tyyppi"])
+        return linkedFeature, linkData
