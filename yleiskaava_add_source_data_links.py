@@ -1,6 +1,6 @@
 
 from qgis.PyQt import uic
-from qgis.PyQt.QtCore import QVariant, QUrl
+from qgis.PyQt.QtCore import Qt, QVariant, QUrl, QDateTime
 from qgis.PyQt.QtGui import QDesktopServices
 from qgis.PyQt.QtWidgets import QLabel, QPushButton
 
@@ -61,8 +61,22 @@ class AddSourceDataLinks:
 
         self.setupTableWidgetSourceTargetMatches()
 
+    def reset(self):
+
+        self.setupTableWidgetSourceTargetMatches()
+
+        self.dialogAddSourceDataLinks.comboBoxChooseTargetLayer.setCurrentIndex(0)
+        self.dialogAddSourceDataLinks.comboBoxChooseSourceDataAPI.setCurrentIndex(0)
+        self.dialogAddSourceDataLinks.comboBoxChooseSourceDataLayer.setCurrentIndex(0)
+
+        self.dialogAddSourceDataLinks.pushButtonChooseFeatures.setEnabled(False)
+
+        self.selectedTargetLayer = None
+        # self.apis = None
+
 
     def openDialogAddSourceDataLinks(self):
+        self.reset()
         self.dialogAddSourceDataLinks.show()
 
 
@@ -87,24 +101,31 @@ class AddSourceDataLinks:
             #"Lähdetietoikkuna",
             "Lähdetietosivu",
             "Yhdistetty kohde",
-            "Yhdistä kohteeseen"#,
+            "Yhdistä valittuun kohteeseen"#,
+            #"Yhdistetään"#,
             #"Tiedot päivitettävissä"
         ])
 
         self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.resizeColumnsToContents()
 
 
-    def handleComboBoxChooseSourceDataLayerIndexChanged(self, index):
+    def updateTableWidgetSourceTargetMatches(self):
         self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.clearContents()
 
-        if index > 0:
+        comboBoxChooseSourceDataLayerIndex = self.dialogAddSourceDataLinks.comboBoxChooseSourceDataLayer.currentIndex()
 
-            text = self.dialogAddSourceDataLinks.comboBoxChooseSourceDataLayer.itemText(index)
+        selectedFeatureCount = 0
+        if self.selectedTargetLayer is not None:
+            selectedFeatureCount = self.selectedTargetLayer.selectedFeatureCount()
+
+        if comboBoxChooseSourceDataLayerIndex > 0 and selectedFeatureCount > 0:
+
+            text = self.dialogAddSourceDataLinks.comboBoxChooseSourceDataLayer.itemText(comboBoxChooseSourceDataLayerIndex)
             title, name = self.getLayerTitleAndNameFromComboBoxText(text)
 
             apiIndex = self.dialogAddSourceDataLinks.comboBoxChooseSourceDataAPI.currentIndex() - 1
             apiID = self.apis[apiIndex]["id"]
-            QgsMessageLog.logMessage('handleComboBoxChooseSourceDataLayerIndexChanged, apiID: ' + str(apiID) + ', name: ' + name, 'Yleiskaava-työkalu', Qgis.Info)
+            QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, apiID: ' + str(apiID) + ', name: ' + name, 'Yleiskaava-työkalu', Qgis.Info)
             layer, layerInfo = self.yleiskaavaSourceDataAPIs.getLayerAndLayerInfo(apiID, name)
 
             # TODO listaa kohteen nimi ja painikkeet, tms. taulukossa
@@ -114,48 +135,54 @@ class AddSourceDataLinks:
             else:
                 fields = layer.fields()
                 for field in fields:
-                    QgsMessageLog.logMessage('handleComboBoxChooseSourceDataLayerIndexChanged, field.name(): ' + str(field.name()) + ', name: ' + name, 'Yleiskaava-työkalu', Qgis.Info)
+                    QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, field.name(): ' + str(field.name()) + ', name: ' + name, 'Yleiskaava-työkalu', Qgis.Info)
 
-                QgsMessageLog.logMessage('handleComboBoxChooseSourceDataLayerIndexChanged, layer.featureCount(): ' + str(layer.featureCount()), 'Yleiskaava-työkalu', Qgis.Info)
+                QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, layer.featureCount(): ' + str(layer.featureCount()), 'Yleiskaava-työkalu', Qgis.Info)
 
                 if self.selectedTargetLayer.selectedFeatureCount() > 0:
-                    featureRequest = self.createFeatureRequestForSelectedFeatures(layer.crs())
+                    featureRequest = self.createFeatureRequestForSelectedFeatures(layer, layerInfo)
                     if featureRequest != None:
 
                         featureCount = 0
+                        featureInfos = []
                         for index, feature in enumerate(layer.getFeatures(featureRequest)):
                             featureCount += 1 # layer.featureCount() ei luotettava
+                            featureInfos.append({
+                                "feature": feature,
+                                "nimi": feature[layerInfo["nimi"]],
+                                "linkki_data": feature[layerInfo["linkki_data"]]
+                            })
                         self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setRowCount(featureCount)
-                        QgsMessageLog.logMessage('handleComboBoxChooseSourceDataLayerIndexChanged - featureCount: ' + str(featureCount), 'Yleiskaava-työkalu', Qgis.Info)
+                        QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches - featureCount: ' + str(featureCount), 'Yleiskaava-työkalu', Qgis.Info)
 
                         if featureCount == 0:
-                            self.iface.messageBar().pushMessage('Lähdeaineistokarttatasolta ei löytynyt valittuista kohteista määritetyn rajaussuorakulmion sisältä kohteita', Qgis.Info, 10)
+                            self.iface.messageBar().pushMessage('Lähdeaineistokarttatasolta ei löytynyt valituista kohteista määritetyn rajaussuorakulmion sisältä kohteita', Qgis.Info, 10)
 
-                        for index, feature in enumerate(layer.getFeatures(featureRequest)):
+                        for index, featureInfo in enumerate(featureInfos):
                             # TODO lähdeaineiston mukaan nimi/tunniste UI:hin
-                            QgsMessageLog.logMessage('handleComboBoxChooseSourceDataLayerIndexChanged, feature_user_friendly_identifier_field: ' + str(feature[layerInfo["feature_user_friendly_identifier_field"]]) + ', feature_info_url_field: ' + feature[layerInfo["feature_info_url_field"]], 'Yleiskaava-työkalu', Qgis.Info)
+                            QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, nimi: ' + str(featureInfo["nimi"]) + ', linkki_data: ' + str(featureInfo["linkki_data"]), 'Yleiskaava-työkalu', Qgis.Info)
                             
-
-                            userFriendlyFieldNameLabel = QLabel(str(feature[layerInfo["feature_user_friendly_identifier_field"]]))
+                            userFriendlyFieldNameLabel = QLabel(str(featureInfo["nimi"]))
 
                             infoLinkButton = QPushButton()
                             infoLinkButton.setText("Näytä lähdetietosivu")
-                            infoLinkButton.clicked.connect(partial(self.showInfoPage, feature[layerInfo["feature_info_url_field"]]))
+                            infoLinkButton.clicked.connect(partial(self.showInfoPage, str(featureInfo["linkki_data"])))
 
                             linkedFeatureWidget = None
-                            # TODO yhdistä tietokannan data
-                            linkedFeature, linkData = self.yleiskaavaSourceDataAPIs.getLinkedDatabaseFeature(feature)
-                            if linkedFeature != None:
+                            # yhdistä tietokannan data
+                            linkedFeatureID, linkedSourceDataFeature = self.yleiskaavaSourceDataAPIs.getLinkedDatabaseFeatureIDAndSourceDataFeature(self.selectedTargetLayer, featureInfo)
+                            if linkedFeatureID != None:
                                 linkedFeatureWidget = QPushButton()
                                 linkedFeatureWidget.setText("Näytä yhdistetty kohde")
-                                linkedFeatureWidget.clicked.connect(partial(self.showLinkedFeature, linkedFeature, linkData))
+                                linkedFeatureWidget.clicked.connect(partial(self.showLinkedFeature, self.selectedTargetLayer, linkedFeatureID))
                             else:
                                 linkedFeatureWidget = QLabel()
+                                linkedFeatureWidget.setAlignment(Qt.AlignCenter)
                                 linkedFeatureWidget.setText("-")
 
                             linkToFeatureButton = QPushButton()
                             linkToFeatureButton.setText("Yhdistä")
-                            # linkToFeatureButton.clicked.connect(partial(self.showInfoPage, feature[layerInfo["feature_info_url_field"]]))
+                            linkToFeatureButton.clicked.connect(partial(self.addLinkBetweenSourceFeatureAndSelectedTargetFeature, index, featureInfo))
 
                             self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(index, AddSourceDataLinks.FIELD_USER_FRIENDLY_NAME_INDEX, userFriendlyFieldNameLabel)
                             self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(index, AddSourceDataLinks.INFO_LINK_INDEX, infoLinkButton)
@@ -169,11 +196,49 @@ class AddSourceDataLinks:
         QDesktopServices.openUrl(QUrl(infoPageURL))
 
 
-    def showLinkedFeature(self, linkedFeature, linkData):
-        pass
+    def showLinkedFeature(self, layer, linkedFeatureID):
+        # TODO siiry kohteeseen kartalla, vilkuta kohdetta ja avaa kohteen tietoikkuna
+        mapCanvas = self.iface.mapCanvas()
+        linkedFeature = None
+        for feature in layer.getFeatures():
+            if feature["id"] == linkedFeatureID:
+                linkedFeature = feature
+                break
+
+        mapCanvas.panToFeatureIds(layer, [linkedFeature.id()])
+        mapCanvas.flashGeometries([linkedFeature.geometry()], layer.crs())
+        self.iface.openFeatureForm(layer, linkedFeature)
 
 
     def handleComboBoxChooseTargetLayerIndexChanged(self, index):
+        # if self.selectedTargetLayer is not None:
+        #     try:
+        #         self.selectedTargetLayer.selectionChanged.disconnect(self.handleFeatureSelectionChanged)
+        #     except TypeError:
+        #         pass
+        #     except RuntimeError:
+        #         pass
+
+        self.setupTableWidgetSourceTargetMatches()
+        self.dialogAddSourceDataLinks.comboBoxChooseSourceDataAPI.setCurrentIndex(0)
+        self.dialogAddSourceDataLinks.comboBoxChooseSourceDataLayer.setCurrentIndex(0)
+        self.dialogAddSourceDataLinks.pushButtonChooseFeatures.setEnabled(False)
+        self.selectedTargetLayer = None
+
+        if index > 0:
+            self.dialogAddSourceDataLinks.pushButtonChooseFeatures.setEnabled(True)
+
+            userFriendlyTableName = self.dialogAddSourceDataLinks.comboBoxChooseTargetLayer.currentText()
+            self.selectedTargetLayer = QgsProject.instance().mapLayersByName(userFriendlyTableName)[0]
+            if self.selectedTargetLayer.selectedFeatureCount() > 0:
+                self.iface.messageBar().pushMessage('' + userFriendlyTableName + ' karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
+            # self.selectedTargetLayer.selectionChanged.connect(self.handleFeatureSelectionChanged)
+
+            self.updateTableWidgetSourceTargetMatches()
+
+
+    def handlePushButtonChooseFeatureClicked(self):
+        userFriendlyTableName = self.dialogAddSourceDataLinks.comboBoxChooseTargetLayer.currentText()
         if self.selectedTargetLayer is not None:
             try:
                 self.selectedTargetLayer.selectionChanged.disconnect(self.handleFeatureSelectionChanged)
@@ -181,36 +246,35 @@ class AddSourceDataLinks:
                 pass
             except RuntimeError:
                 pass
-        if index == 0:
-            self.dialogAddSourceDataLinks.pushButtonChooseFeatures.setEnabled(False)
-            self.selectedTargetLayer = None
-        else:
-            self.dialogAddSourceDataLinks.pushButtonChooseFeatures.setEnabled(True)
+        self.selectedTargetLayer = QgsProject.instance().mapLayersByName(userFriendlyTableName)[0]
+        if self.selectedTargetLayer.selectedFeatureCount() > 0:
+             self.iface.messageBar().pushMessage('' + userFriendlyTableName + ' karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
+        self.selectedTargetLayer.selectionChanged.connect(self.handleFeatureSelectionChanged)
+        
+        if self.selectedTargetLayer.selectedFeatureCount() == 1:
+            self.handleFeatureSelectionChanged()
 
-            userFriendlyTableName = self.dialogAddSourceDataLinks.comboBoxChooseTargetLayer.currentText()
-            self.selectedTargetLayer = QgsProject.instance().mapLayersByName(userFriendlyTableName)[0]
-            if self.selectedTargetLayer.selectedFeatureCount() > 0:
-                self.iface.messageBar().pushMessage('' + userFriendlyTableName + ' karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
-            self.selectedTargetLayer.selectionChanged.connect(self.handleFeatureSelectionChanged)
-
-
-    def handlePushButtonChooseFeatureClicked(self):
         self.iface.showAttributeTable(self.selectedTargetLayer)
 
 
     def handleFeatureSelectionChanged(self):
-        index = self.dialogAddSourceDataLinks.comboBoxChooseSourceDataLayer.currentIndex()
-        self.handleComboBoxChooseSourceDataLayerIndexChanged(index)
+        self.updateTableWidgetSourceTargetMatches()
 
 
     def handleSpinBoxMaxSearchDistanceChanged(self, value):
-        index = self.dialogAddSourceDataLinks.comboBoxChooseSourceDataLayer.currentIndex()
-        self.handleComboBoxChooseSourceDataLayerIndexChanged(index)
+        self.updateTableWidgetSourceTargetMatches()
+
+
+    def handleComboBoxChooseSourceDataLayerIndexChanged(self, index):
+        if index == 0:
+            self.setupTableWidgetSourceTargetMatches()
+        else:
+            self.updateTableWidgetSourceTargetMatches()
 
 
     def handleComboBoxChooseSourceDataAPIIndexChanged(self, index):
         if index == 0:
-            pass
+            self.dialogAddSourceDataLinks.comboBoxChooseSourceDataLayer.setCurrentIndex(0)
         else:
             availableLayerNames, availableLayerTitles = self.yleiskaavaSourceDataAPIs.getSourceDataAPILayerNamesAndTitles(self.apis[index - 1]['id'])
             comboBoxTexts = []
@@ -232,13 +296,13 @@ class AddSourceDataLinks:
         name = namePart[0:-1]
         return title, name
 
-    def createFeatureRequestForSelectedFeatures(self, CRS):
+    def createFeatureRequestForSelectedFeatures(self, layer, layerInfo):
         featureRequest = None
 
         transform = None
         selectedTargetLayerCRS = self.selectedTargetLayer.crs()
-        if CRS != selectedTargetLayerCRS:
-            transform = QgsCoordinateTransform(selectedTargetLayerCRS, CRS, QgsProject.instance())
+        if layer.crs() != selectedTargetLayerCRS:
+            transform = QgsCoordinateTransform(selectedTargetLayerCRS, layer.crs(), QgsProject.instance())
         
 
         features = self.selectedTargetLayer.selectedFeatures()
@@ -272,10 +336,69 @@ class AddSourceDataLinks:
                 if yMax is None or bbox.yMaximum() < yMax:
                     yMax = bbox.yMaximum()
 
-        QgsMessageLog.logMessage('createFeatureRequestForSelectedFeatures - xMin: ' + str(xMin) + ", yMin: " + str(yMin) + ", yMin: " + str(xMax) + ", yMax: " + str(yMax), 'Yleiskaava-työkalu', Qgis.Info)
+        QgsMessageLog.logMessage('createFeatureRequestForSelectedFeatures - xMin: ' + str(xMin) + ", yMin: " + str(yMin) + ", xMax: " + str(xMax) + ", yMax: " + str(yMax), 'Yleiskaava-työkalu', Qgis.Info)
 
         if xMin is not None and yMin is not None and xMax is not None and yMax is not None:
             bboxAllFeatures = QgsRectangle(xMin, yMin, xMax, yMax)
-            featureRequest = QgsFeatureRequest(bboxAllFeatures)
+            featureRequest = QgsFeatureRequest().setFilterRect(bboxAllFeatures).setFlags(QgsFeatureRequest.NoGeometry)
+            # featureRequest = QgsFeatureRequest().setFilterRect(bboxAllFeatures).setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes([layerInfo["nimi"], layerInfo["linkki_data"]], layer.fields())
 
         return featureRequest
+
+    def addLinkBetweenSourceFeatureAndSelectedTargetFeature(self, tableWidgetSourceTargetMatchesRowIndex, sourceDataFeatureInfo):
+        selectedFeatures = self.selectedTargetLayer.selectedFeatures()
+
+        if len(selectedFeatures) == 0:
+            self.iface.messageBar().pushMessage('' + userFriendlyTableName + ' karttatasolla ei ole valittua kaavakohdetta, joten linkkiä lähtöaineistoon ei voida listätä', Qgis.Info, 20)
+        if len(selectedFeatures) > 1:
+            self.iface.messageBar().pushMessage('' + userFriendlyTableName + ' karttatasolla on useita valittuja kaavakohteita, joten linkkiä lähtöaineistoon ei voida listätä', Qgis.Info, 20)
+        else:
+            # lisää tarvittaessa uusi lähdeaineistorivi tietokantaan,
+            # lisää relaatio kaavakohteen ja lähdeaineistorivin välille ja
+            # TODO päivitä käyttöliittymän tauluun "Näytä yhdistetty kohde"-infopainike
+
+            selectedFeatureID = selectedFeatures[0]["id"]
+
+            apiIndex = self.dialogAddSourceDataLinks.comboBoxChooseSourceDataAPI.currentIndex() - 1
+            sourceName = sourceDataFeatureInfo["nimi"]
+            sourceReferenceAPIName = self.apis[apiIndex]["name"]
+            #QgsMessageLog.logMessage('addLinkBetweenSourceFeatureAndSelectedTargetFeature, field.name(): ' + str(field.name()) + ', name: ' + name, 'Yleiskaava-työkalu', Qgis.Info)
+            sourceDescription = ""
+            for field in sourceDataFeatureInfo["feature"].fields():
+                fieldName = field.name()
+                fieldTypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
+                if fieldTypeName != "uuid" and fieldTypeName != "Bool":
+                    value = sourceDataFeatureInfo["feature"][fieldName]
+                    if value is not None:
+                        sourceDescription += fieldName.lower() + ": "
+                        if fieldTypeName == "Date" or fieldTypeName == "DateTime":
+                            sourceDescription += QDateTime(value).toString("dd.MM.yyyy")
+                        else:
+                            sourceDescription += str(value)
+                        
+                        sourceDescription += "; "
+            if sourceDescription != "":
+                sourceDescription = sourceDescription[:-2]
+            sourceLinkType = self.apis[apiIndex]["linkitys_tyyppi"]
+            sourceLinkData = sourceDataFeatureInfo["linkki_data"]
+
+            sourceData = {
+                "nimi": sourceName,
+                "lahde": sourceReferenceAPIName,
+                "kuvaus": sourceDescription,
+                "linkitys_tyyppi": sourceLinkType,
+                "linkki_data": sourceLinkData
+            }
+
+            success = self.yleiskaavaDatabase.createSourceDataFeatureAndRelationToSpatialFeature(sourceData, self.selectedTargetLayer, selectedFeatureID)
+
+            if success:
+                self.iface.messageBar().pushMessage('Lähdelinkki lisätty', Qgis.Info, 20)
+                # päivitä käyttöliittymän tauluun "Näytä yhdistetty kohde"-infopainike
+                linkedFeatureWidget = QPushButton()
+                linkedFeatureWidget.setText("Näytä yhdistetty kohde")
+                linkedFeatureWidget.clicked.connect(partial(self.showLinkedFeature, self.selectedTargetLayer, selectedFeatureID))
+                self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(tableWidgetSourceTargetMatchesRowIndex, AddSourceDataLinks.LINKED_FEATURE_INDEX, linkedFeatureWidget)
+                self.yleiskaavaUtils.refreshTargetLayersInProject()
+            else:
+                self.iface.messageBar().pushMessage('Lähdelinkin lisääminen epäonnistui', Qgis.Critical)

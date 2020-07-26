@@ -104,6 +104,8 @@ class YleiskaavaUtils:
             return 'Double'
         elif field.type() == QVariant.Date:
             return 'Date'
+        elif field.type() == QVariant.DateTime:
+            return 'DateTime'
         if field.type() == QVariant.Bool:
             return 'Bool'
         else:
@@ -148,7 +150,7 @@ class YleiskaavaUtils:
             widget = QgsFilterLineEdit() 
             #widget.setLayer(layer) # QgsFieldValuesLineEdit seems to crash occasionally and does not anyway seem to list values...
             # widget.setAttributeIndex(fieldIndex)
-        elif fieldTypeName == 'Date':
+        elif fieldTypeName == 'Date' or fieldTypeName == 'DateTime':
             widget = QgsDateTimeEdit()
             widget.setAllowNull(True)
             widget.clear()
@@ -176,7 +178,7 @@ class YleiskaavaUtils:
             return QgsFilterLineEdit
         elif targetFieldType == "LongLong": # QgsFilterLineEdit
             return QgsFilterLineEdit
-        elif targetFieldType == "Date": # QgsDateTimeEdit
+        elif targetFieldType == "Date" or targetFieldType == "DateTime": # QgsDateTimeEdit
             return QgsDateTimeEdit
         elif targetFieldType == "Bool": # QComboBox
             return QComboBox
@@ -210,7 +212,7 @@ class YleiskaavaUtils:
                 return None
             else:
                 return int(text)
-        elif targetFieldType == "Date": # QgsDateTimeEdit
+        elif targetFieldType == "Date" or targetFieldType == "DateTime": # QgsDateTimeEdit
             dateValue = widget.date()
             if dateValue.isNull():
                 return None
@@ -244,7 +246,7 @@ class YleiskaavaUtils:
                 widget.setText(str(value))
             elif targetFieldType == "LongLong": # QgsFilterLineEdit
                 widget.setText(str(value))
-            elif targetFieldType == "Date": # QgsDateTimeEdit
+            elif targetFieldType == "Date" or targetFieldType == "DateTime": # QgsDateTimeEdit
                 widget.setDateTime(QDateTime(value))
             elif targetFieldType == "Bool": # QComboBox
                 if value == True:

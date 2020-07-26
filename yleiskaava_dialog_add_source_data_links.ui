@@ -39,7 +39,7 @@
         <bool>false</bool>
        </property>
        <property name="text">
-        <string>Valitse päivtettävät kohteet</string>
+        <string>Valitse päivtettävä kohde</string>
        </property>
       </widget>
      </item>
@@ -92,7 +92,7 @@
      <item>
       <widget class="QLabel" name="label_4">
        <property name="text">
-        <string>Suurin hakuetäisyys päivitettävistä kohteista (bounding box):</string>
+        <string>Suurin hakuetäisyys päivitettävästä kohteesta (bounding box):</string>
        </property>
       </widget>
      </item>
@@ -125,7 +125,7 @@
      <item>
       <widget class="QPushButton" name="pushButtonCancel">
        <property name="text">
-        <string>Peruuta</string>
+        <string>Sulje</string>
        </property>
       </widget>
      </item>
@@ -141,13 +141,6 @@
         </size>
        </property>
       </spacer>
-     </item>
-     <item>
-      <widget class="QPushButton" name="pushButtonUpdateFeatures">
-       <property name="text">
-        <string>Tee päivitykset</string>
-       </property>
-      </widget>
      </item>
     </layout>
    </item>

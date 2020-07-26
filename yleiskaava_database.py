@@ -1254,16 +1254,139 @@ class YleiskaavaDatabase:
         return features
 
 
-    def getLinkedSourceDataFeatureAndLinkData(self, sourceLayerFeature, linkType):
+    def getLinkedFeatureIDAndSourceDataFeature(self, spatialFeatureLayer, sourceLayerFeatureInfo, linkType):
         # TODO huomio jos useita linkitettyjä kaavakohteita (voi olla myös poistettuja /versionloppumis_pvm is null)
-        linkedFeature = None
-        linkData = None
-        features = self.getSourceDataFeatures(linkType)
-        for feature in features:
+        linkedFeatureID = None
+        linkedSourceDataFeature = self.getLinkedSourceDataFeature(linkType, sourceLayerFeatureInfo)
+
+        if linkedSourceDataFeature is not None:
+            featureIDs = self.getLinkedFeatureIDsForSourceDataFeature(spatialFeatureLayer, linkedSourceDataFeature)
+            if len(featureIDs) > 1:
+                self.iface.messageBar().pushMessage('Löydettiin useita lähdeaineistokohteeseen "' + sourceLayerFeatureInfo["nimi"] + '" linkitettyjä kaavakohteita', Qgis.Warning)
+            if len(featureIDs) >= 1:
+                linkedFeatureID = featureIDs[0]
+
+        return linkedFeatureID, linkedSourceDataFeature
+
+
+    def getLinkedSourceDataFeature(self, linkType, sourceLayerFeatureInfo):
+        linkedSourceDataFeature = None
+        sourceDataFeatures = self.getSourceDataFeatures(linkType)
+        for feature in sourceDataFeatures:
             if linkType == "tre_siiri":
-                if sourceLayerFeature["LINKKIULKOINEN"] == feature["linkki_data"]:
-                     linkedFeature = feature
-                     linkData = feature["linkki_data"]
+                if sourceLayerFeatureInfo["linkki_data"] == feature["linkki_data"]:
+                     linkedSourceDataFeature = feature
                      break
 
-        return linkedFeature, linkData
+        return linkedSourceDataFeature
+
+
+    def getLinkedFeatureIDsForSourceDataFeature(self, spatialFeatureLayer, linkedSourceDataFeature):
+        linkedFeatureIDs = []
+
+        #relationLayer = QgsProject.instance().mapLayersByName("lahtoaineisto_yleiskaava_yhteys")[0] <- jos filteröity UI:ssa, niin ei toimi
+        uri = self.createDbURI("yk_prosessi", "lahtoaineisto_yleiskaava_yhteys", None)
+        relationLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+
+        targetSchemaTableName = self.getTargetSchemaTableNameForUserFriendlyTableName(spatialFeatureLayer.name())
+        schema, table_name = targetSchemaTableName.split('.')
+
+        for relationFeature in relationLayer.getFeatures():
+            if relationFeature["id_lahtoaineisto"] == linkedSourceDataFeature["id"] and relationFeature["id_" + table_name] is not None:
+                linkedFeatureIDs.append(relationFeature["id_" + table_name])
+
+        return linkedFeatureIDs
+
+
+    def createSourceDataFeature(self, sourceData):
+        #layer = QgsProject.instance().mapLayersByName("lahtoaineisto")[0] <- jos filteröity UI:ssa, niin ei toimi
+        uri = self.createDbURI("yk_prosessi", "lahtoaineisto", None)
+        sourceDataLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+
+        sourceDataFeatureID = str(uuid.uuid4())
+
+        sourceDataFeature = QgsFeature()
+        sourceDataFeature.setFields(sourceDataLayer.fields())
+        sourceDataFeature.setAttribute("id", sourceDataFeatureID)
+        for key in sourceData.keys():
+            sourceDataFeature.setAttribute(key, sourceData[key])
+        sourceDataLayer.startEditing()
+        provider = sourceDataLayer.dataProvider()
+        success = provider.addFeatures([sourceDataFeature])
+        if not success:
+            self.iface.messageBar().pushMessage('Bugi koodissa: createSourceDataFeature - addFeatures() failed"', Qgis.Critical)
+        else:
+            success = sourceDataLayer.commitChanges()
+            if not success:
+                self.iface.messageBar().pushMessage('Bugi koodissa: createSourceDataFeature - commitChanges() failed, reason(s): "', Qgis.Critical)
+                # QgsMessageLog.logMessage("createFeatureThemeRelationWithThemeID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
+                for error in sourceDataLayer.commitErrors():
+                    self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
+                    # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
+            else:
+                pass
+                # QgsMessageLog.logMessage("createFeatureThemeRelationWithThemeID - relationLayer.commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
+        if success:
+            return sourceDataFeatureID
+        else:
+            return None
+
+
+    def createSourceDataFeatureAndRelationToSpatialFeature(self, sourceData, spatialFeatureLayer, targetFeatureID):
+        # lisää tarvittaessa uusi lähdeaineistorivi tietokantaan,
+        # TODO lisää relaatio kaavakohteen ja lähdeaineistorivin välille
+
+        linkedSourceDataFeatureID = None
+
+        linkedSourceDataFeature = self.getLinkedSourceDataFeature(sourceData["linkitys_tyyppi"], sourceData)
+        if linkedSourceDataFeature is not None:
+            linkedSourceDataFeatureID = linkedSourceDataFeature["id"]
+        else:
+            linkedSourceDataFeatureID = self.createSourceDataFeature(sourceData)
+
+        success = False
+
+        if linkedSourceDataFeatureID is not None:
+            relationFeatureID = self.createSourceDataRelationToSpatialFeature(linkedSourceDataFeatureID, spatialFeatureLayer, targetFeatureID)
+            if relationFeatureID is not None:
+                success = True
+        
+        return success
+
+
+    def createSourceDataRelationToSpatialFeature(self, linkedSourceDataFeatureID, spatialFeatureLayer, targetFeatureID):
+        #relationLayer = QgsProject.instance().mapLayersByName("lahtoaineisto_yleiskaava_yhteys")[0] <- jos filteröity UI:ssa, niin ei toimi
+        uri = self.createDbURI("yk_prosessi", "lahtoaineisto_yleiskaava_yhteys", None)
+        relationLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+
+        targetSchemaTableName = self.getTargetSchemaTableNameForUserFriendlyTableName(spatialFeatureLayer.name())
+        schema, table_name = targetSchemaTableName.split('.')
+
+        relationFeatureID = str(uuid.uuid4())
+
+        relationFeature = QgsFeature()
+        relationFeature.setFields(relationLayer.fields())
+        relationFeature.setAttribute("id", relationFeatureID)
+        relationFeature.setAttribute("id_lahtoaineisto", linkedSourceDataFeatureID)
+        relationFeature.setAttribute("id_" + table_name, targetFeatureID)
+        relationLayer.startEditing()
+        provider = relationLayer.dataProvider()
+        success = provider.addFeatures([relationFeature])
+        if not success:
+            self.iface.messageBar().pushMessage('Bugi koodissa: createSourceDataFeature - addFeatures() failed"', Qgis.Critical)
+        else:
+            success = relationLayer.commitChanges()
+            if not success:
+                self.iface.messageBar().pushMessage('Bugi koodissa: createSourceDataFeature - commitChanges() failed, reason(s): "', Qgis.Critical)
+                # QgsMessageLog.logMessage("createFeatureThemeRelationWithThemeID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
+                for error in relationLayer.commitErrors():
+                    self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
+                    # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
+            else:
+                pass
+                # QgsMessageLog.logMessage("createFeatureThemeRelationWithThemeID - relationLayer.commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
+
+        if success:
+            return relationFeatureID
+        else:
+            return None
