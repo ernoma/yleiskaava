@@ -282,7 +282,7 @@ class Yleiskaava:
         self.dockwidget.pushButtonUpdateIndexingForLayer.clicked.connect(self.updateIndexingOfFeatures.openDialogUpdateIndexingOfFeatures)
         self.dockwidget.pushButtonAddSourceDataLinks.clicked.connect(self.addSourceDataLinks.openDialogAddSourceDataLinks)
 
-        self.dockwidget.pushButtonSettings.clicked.connect(self.yleiskaavaDatabase.displaySettingsDialog)
+        self.dockwidget.pushButtonSettings.clicked.connect(self.yleiskaavaUtils.displaySettingsDialog)
 
         self.dockwidget.pushButtonHelp.clicked.connect(self.showHelp)
 

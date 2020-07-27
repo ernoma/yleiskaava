@@ -5,10 +5,8 @@ from qgis.PyQt.QtGui import QTextCursor
 
 
 from qgis.core import (
-    Qgis, QgsProject, QgsFeature,
-    QgsMessageLog, QgsMapLayer,
-    QgsVectorLayer, QgsGeometry,
-    QgsWkbTypes)
+    Qgis, QgsProject,
+    QgsMessageLog)
 
 import os.path
 from functools import partial
@@ -225,9 +223,9 @@ class GeometryEditSettings:
 
     def handleCheckBoxPreventFeaturesWithTinyGeometriesStateChanged(self):
         if self.dockWidgetGeometryEditSettings.checkBoxPreventFeaturesWithTinyGeometries.isChecked():
-            self.dockWidgetGeometryEditSettings.spinBoxPreventFeaturesWithTinyGeometries.setEnabled(True)
+            self.dockWidgetGeometryEditSettings.doubleSpinBoxPreventFeaturesWithTinyGeometries.setEnabled(True)
         else:
-            self.dockWidgetGeometryEditSettings.spinBoxPreventFeaturesWithTinyGeometries.setEnabled(False)
+            self.dockWidgetGeometryEditSettings.doubleSpinBoxPreventFeaturesWithTinyGeometries.setEnabled(False)
 
 
     def areaFeatureGeometryChanged(self, fid, geometry):
@@ -344,34 +342,34 @@ class GeometryEditSettings:
 
                     if self.dockWidgetGeometryEditSettings.checkBoxPreventFeaturesWithTinyGeometries.isChecked():
                         if featureType == 'alue' or featureType == 'alue_taydentava':
-                            if (targetFeature.geometry().area() / (targetFeature.geometry().area() + sourceFeature.geometry().area()) * 100) < self.dockWidgetGeometryEditSettings.spinBoxPreventFeaturesWithTinyGeometries.value():
+                            if (targetFeature.geometry().area() / (targetFeature.geometry().area() + sourceFeature.geometry().area()) * 100) < self.dockWidgetGeometryEditSettings.doubleSpinBoxPreventFeaturesWithTinyGeometries.value():
                                 # remove feature
                                 self.yleiskaavaDatabase.deleteSpatialFeature(targetFeatureUUID, featureType)
                                 ratio = targetFeature.geometry().area() / (targetFeature.geometry().area() + sourceFeature.geometry().area()) * 100
-                                self.iface.messageBar().pushMessage('Kohteen pinta-ala verrattuna alkuperäiseen oli ' + str(round(ratio, 1)) + '%, joten se poistettiin', Qgis.Warning)
-                                self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText('Kohteen pinta-ala verrattuna alkuperäiseen oli ' + str(round(ratio, 1)) + '%, joten se poistettiin')
+                                self.iface.messageBar().pushMessage('Kohteen pinta-ala verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin', Qgis.Warning)
+                                self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText('Kohteen pinta-ala verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin')
                                 self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
-                            elif (sourceFeature.geometry().area() / (targetFeature.geometry().area() + sourceFeature.geometry().area()) * 100) < self.dockWidgetGeometryEditSettings.spinBoxPreventFeaturesWithTinyGeometries.value():
+                            elif (sourceFeature.geometry().area() / (targetFeature.geometry().area() + sourceFeature.geometry().area()) * 100) < self.dockWidgetGeometryEditSettings.doubleSpinBoxPreventFeaturesWithTinyGeometries.value():
                                 # remove feature
                                 self.yleiskaavaDatabase.deleteSpatialFeature(sourceFeatureUUID, featureType)
                                 ratio = sourceFeature.geometry().area() / (targetFeature.geometry().area() + sourceFeature.geometry().area()) * 100
-                                self.iface.messageBar().pushMessage('Kohteen pinta-ala verrattuna alkuperäiseen oli ' + str(round(ratio, 1)) + '%, joten se poistettiin', Qgis.Warning)
-                                self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText('Kohteen pinta-ala verrattuna alkuperäiseen oli ' + str(round(ratio, 1)) + '%, joten se poistettiin')
+                                self.iface.messageBar().pushMessage('Kohteen pinta-ala verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin', Qgis.Warning)
+                                self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText('Kohteen pinta-ala verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin')
                                 self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
                         elif featureType == 'viiva':
-                            if (targetFeature.geometry().length() / (targetFeature.geometry().length() + sourceFeature.geometry().length()) * 100) < self.dockWidgetGeometryEditSettings.spinBoxPreventFeaturesWithTinyGeometries.value():
+                            if (targetFeature.geometry().length() / (targetFeature.geometry().length() + sourceFeature.geometry().length()) * 100) < self.dockWidgetGeometryEditSettings.doubleSpinBoxPreventFeaturesWithTinyGeometries.value():
                                 # remove feature
                                 self.yleiskaavaDatabase.deleteSpatialFeature(targetFeatureUUID, featureType)
                                 ratio = targetFeature.geometry().length() / (targetFeature.geometry().length() + sourceFeature.geometry().length()) * 100
-                                self.iface.messageBar().pushMessage('Kohteen pituus verrattuna alkuperäiseen oli ' + str(round(ratio, 1)) + '%, joten se poistettiin', Qgis.Warning)
-                                self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText('Kohteen pituus verrattuna alkuperäiseen oli ' + str(round(ratio, 1)) + '%, joten se poistettiin')
+                                self.iface.messageBar().pushMessage('Kohteen pituus verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin', Qgis.Warning)
+                                self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText('Kohteen pituus verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin')
                                 self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
-                            elif (sourceFeature.geometry().length() / (targetFeature.geometry().length() + sourceFeature.geometry().length()) * 100) < self.dockWidgetGeometryEditSettings.spinBoxPreventFeaturesWithTinyGeometries.value():
+                            elif (sourceFeature.geometry().length() / (targetFeature.geometry().length() + sourceFeature.geometry().length()) * 100) < self.dockWidgetGeometryEditSettings.doubleSpinBoxPreventFeaturesWithTinyGeometries.value():
                                 # remove feature
                                 self.yleiskaavaDatabase.deleteSpatialFeature(sourceFeatureUUID, featureType)
                                 ratio = sourceFeature.geometry().length() / (targetFeature.geometry().length() + sourceFeature.geometry().length()) * 100
-                                self.iface.messageBar().pushMessage('Kohteen pituus verrattuna alkuperäiseen oli ' + str(round(ratio, 1)) + '%, joten se poistettiin', Qgis.Warning)
-                                self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText('Kohteen pituus verrattuna alkuperäiseen oli ' + str(round(ratio, 1)) + '%, joten se poistettiin')
+                                self.iface.messageBar().pushMessage('Kohteen pituus verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin', Qgis.Warning)
+                                self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText('Kohteen pituus verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin')
                                 self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
 
             self.changedFeatureIDs[featureType] = []

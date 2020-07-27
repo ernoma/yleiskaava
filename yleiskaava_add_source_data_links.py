@@ -371,8 +371,8 @@ class AddSourceDataLinks:
                     value = sourceDataFeatureInfo["feature"][fieldName]
                     if value is not None:
                         sourceDescription += fieldName.lower() + ": "
-                        if fieldTypeName == "Date" or fieldTypeName == "DateTime":
-                            sourceDescription += QDateTime(value).toString("dd.MM.yyyy")
+                        if (fieldTypeName == "Date" or fieldTypeName == "DateTime") and not QVariant(value).isNull():
+                            sourceDescription += QDateTime(QVariant(value).value()).toString("dd.MM.yyyy")
                         else:
                             sourceDescription += str(value)
                         

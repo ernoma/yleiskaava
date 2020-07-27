@@ -35,7 +35,6 @@ class UpdateIndexingOfFeatures:
         self.featureIDsAndNewIndexValues = None
 
     def setup(self):
-        # targetTableNames = sorted(self.yleiskaavaDatabase.getAllTargetSchemaTableNamesShownInCopySourceToTargetUI())
         targetTableNames = self.yleiskaavaDatabase.getAllTargetSchemaTableNamesShownInCopySourceToTargetUI()
         targetTableNames.insert(0, "Valitse kohdekarttataso")
         self.dialogUpdateIndexingOfFeatures.comboBoxChooseTargetLayer.addItems(targetTableNames)
@@ -102,7 +101,6 @@ class UpdateIndexingOfFeatures:
 
     def fillComboBoxChooseRegulation(self):
         userFriendlyTableName = self.dialogUpdateIndexingOfFeatures.comboBoxChooseTargetLayer.currentText()
-        self.yleiskaavaDatabase.getDistinctLandUseClassificationsOfLayer(userFriendlyTableName)
         landUseClassificationNames = sorted(self.yleiskaavaDatabase.getDistinctLandUseClassificationsOfLayer(userFriendlyTableName))
         landUseClassificationNames.insert(0, "Valitse")
         self.dialogUpdateIndexingOfFeatures.comboBoxChooseLandUseClassification.clear()

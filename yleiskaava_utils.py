@@ -296,7 +296,7 @@ class YleiskaavaUtils:
     def getShownFieldNameCount(self, fields):
         count = 0
 
-        for field in spatialTargetTableFields:
+        for field in fields:
             targetFieldName = field.name()
 
             if self.isShownTargetFieldName(targetFieldName):
@@ -366,6 +366,9 @@ class YleiskaavaUtils:
 
         return True
 
+
+    def displaySettingsDialog(self):
+        pass
 
 
 class COPY_ERROR_REASONS:

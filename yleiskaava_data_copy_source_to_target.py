@@ -4,7 +4,7 @@ from qgis.PyQt.QtCore import Qt, QVariant, QSize
 from qgis.PyQt.QtWidgets import QWidget, QGridLayout, QLabel, QComboBox, QCheckBox
 
 from qgis.core import (
-    Qgis, QgsProject, QgsFeature, QgsField, QgsWkbTypes, QgsMessageLog, QgsMapLayer, QgsVectorLayer,  QgsMapLayerProxyModel, QgsGeometry, QgsCoordinateReferenceSystem, QgsCoordinateTransform)
+    Qgis, QgsProject, QgsFeature, QgsWkbTypes, QgsMessageLog, QgsMapLayer,  QgsMapLayerProxyModel, QgsGeometry, QgsCoordinateReferenceSystem, QgsCoordinateTransform)
 
 from qgis.gui import QgsFilterLineEdit, QgsDateTimeEdit
 
@@ -15,7 +15,6 @@ import uuid
 
 
 from .yleiskaava_dialog_copy_source_data_to_database import Ui_DialogCopySourceDataToDatabase
-#from .yleiskaava_dialog_copy_settings import Ui_DialogCopySettings
 from .yleiskaava_utils import COPY_ERROR_REASONS
 
 class DataCopySourceToTarget:
@@ -104,23 +103,6 @@ class DataCopySourceToTarget:
 
 
     def openDialogCopySourceDataToDatabase(self):
-        # layers = QgsProject.instance().mapLayers()
-        # vectorLayers = []
-
-        # for layer_id, layer in layers.items():
-        #     # QgsMessageLog.logMessage(layer_id, 'Yleiskaava-työkalu', Qgis.Info)
-        #     # QgsMessageLog.logMessage(layer.name(), 'Yleiskaava-työkalu', Qgis.Info)
-            
-        #     if isinstance(layer, QgsVectorLayer) and not isinstance(layer, QgsAuxiliaryLayer):
-        #         vectorLayers.append(layer.name())
-        #         #QgsMessageLog.logMessage(layer_id, 'Yleiskaava-työkalu', Qgis.Info)
-        #         #QgsMessageLog.logMessage(layer.name(), 'Yleiskaava-työkalu', Qgis.Info)
-        #     else:
-        #         QgsMessageLog.logMessage(layer_id, 'Yleiskaava-työkalu', Qgis.Info)
-        #         QgsMessageLog.logMessage(layer.name(), 'Yleiskaava-työkalu', Qgis.Info)
-        # self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.clear()
-        # #self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.addItems(sorted(vectorLayers))
-
         self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.setFilters(QgsMapLayerProxyModel.HasGeometry)
         self.dialogCopySourceDataToDatabaseWidget.resize(QSize(DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_WIDTH, DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_HEIGHT))
         self.dialogCopySourceDataToDatabaseWidget.show()
@@ -211,48 +193,53 @@ class DataCopySourceToTarget:
 
     def handleTargetTableSelectChanged(self, rowIndex, sourceFieldTypeName, targetTableComboBox, targetFieldNameComboBox):
 
-        # QgsMessageLog.logMessage('handleTargetTableSelectChanged', 'Yleiskaava-työkalu', Qgis.Info)
-        self.targetSchemaTableName = self.yleiskaavaDatabase.getTargetSchemaTableNameForUserFriendlyTableName(targetTableComboBox.currentText())
-        # QgsMessageLog.logMessage('targetTableName: ' + self.targetSchemaTableName + ', rowIndex: ' + str(rowIndex), 'Yleiskaava-työkalu', Qgis.Info)
+        text = targetTableComboBox.currentText()
+        if text != "Valitse kohdekarttataso":
 
-        if self.targetSchemaTableName != "Valitse kohdekarttataso":
-            self.targetLayer = self.yleiskaavaDatabase.createLayerByTargetSchemaTableName(self.targetSchemaTableName)
+            # QgsMessageLog.logMessage('handleTargetTableSelectChanged', 'Yleiskaava-työkalu', Qgis.Info)
+            self.targetSchemaTableName = self.yleiskaavaDatabase.getTargetSchemaTableNameForUserFriendlyTableName(text)
+            # QgsMessageLog.logMessage('handleTargetTableSelectChanged - targetTableName: ' + self.targetSchemaTableName + ', rowIndex: ' + str(rowIndex), 'Yleiskaava-työkalu', Qgis.Info)
 
-            #colnames = [desc.name for desc in curs.description]
+            if self.targetSchemaTableName is not None:
+                self.targetLayer = self.yleiskaavaDatabase.getProjectLayer(self.targetSchemaTableName)
 
-            # näytä kohdekentissä vain lähdekentän kanssa tyypiltään yhteensopivat kentät
+                #colnames = [desc.name for desc in curs.description]
 
-            targetFieldComboBoxTexts = ['']
+                # näytä kohdekentissä vain lähdekentän kanssa tyypiltään yhteensopivat kentät
 
-            for index, field in enumerate(self.targetLayer.fields().toList()):
-                targetFieldName = field.name()
-                targetFieldTypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
-                if self.yleiskaavaUtils.compatibleTypes(sourceFieldTypeName, targetFieldTypeName):
-                    targetFieldComboBoxTexts.append(self.getTargetFieldComboBoxText(targetFieldName, targetFieldTypeName))
-                    #QgsMessageLog.logMessage(targetFieldNames[index], 'Yleiskaava-työkalu', Qgis.Info)
+                targetFieldComboBoxTexts = ['']
 
-            targetFieldNameComboBox.clear()
-            targetFieldNameComboBox.addItems(targetFieldComboBoxTexts)
+                # QgsMessageLog.logMessage('handleTargetTableSelectChanged - self.targetLayer.name(): ' + self.targetLayer.name() + ', rowIndex: ' + str(rowIndex), 'Yleiskaava-työkalu', Qgis.Info)
 
-            sourceFieldName = self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.cellWidget(rowIndex, DataCopySourceToTarget.SOURCE_FIELD_NAME_INDEX).text()
-            sourceFieldTypeName = self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.cellWidget(rowIndex, DataCopySourceToTarget.SOURCE_FIELD_TYPE_NAME_INDEX).text()
+                for index, field in enumerate(self.targetLayer.fields().toList()):
+                    targetFieldName = field.name()
+                    targetFieldTypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
+                    if self.yleiskaavaUtils.compatibleTypes(sourceFieldTypeName, targetFieldTypeName):
+                        targetFieldComboBoxTexts.append(self.getTargetFieldComboBoxText(targetFieldName, targetFieldTypeName))
+                        #QgsMessageLog.logMessage(targetFieldNames[index], 'Yleiskaava-työkalu', Qgis.Info)
 
-            self.selectBestFittingTargetField(sourceFieldName, sourceFieldTypeName, self.targetLayer.fields(), targetFieldNameComboBox)
+                targetFieldNameComboBox.clear()
+                targetFieldNameComboBox.addItems(targetFieldComboBoxTexts)
 
-            #
-            # Helpfully guess values for other widgets
-            #
-            for index, tempTargetTableComboBox in enumerate(self.targetTableComboBoxes):
-                #tempTargetTableName = tempTargetTableComboBox.currentText()
-                #if tempTargetTableName == "Valitse kohdekarttataso":
-                tempTargetTableComboBox.setCurrentText(self.yleiskaavaDatabase.getUserFriendlyTableNameForTargetSchemaTableName(self.targetSchemaTableName))
-                # self.targetFieldNameComboBoxes[index].clear()
-                # self.targetFieldNameComboBoxes[index].addItems(targetFieldNames)
+                sourceFieldName = self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.cellWidget(rowIndex, DataCopySourceToTarget.SOURCE_FIELD_NAME_INDEX).text()
+                sourceFieldTypeName = self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.cellWidget(rowIndex, DataCopySourceToTarget.SOURCE_FIELD_TYPE_NAME_INDEX).text()
 
-                # tempSourceFieldName = self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.itemAtPosition(index, DataCopySourceToTarget.SOURCE_FIELD_NAME_INDEX).widget().text()
-                # tempSourceFieldTypeName = self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.itemAtPosition(index, DataCopySourceToTarget.SOURCE_FIELD_TYPE_NAME_INDEX).widget().text()
-                # self.selectBestFittingTargetField(tempSourceFieldName, tempSourceFieldTypeName, targetLayer.fields(), self.targetFieldNameComboBoxes[index])
-                # self.selectBestFittingTargetField(sourceFieldName, sourceFieldTypeName, targetLayer.fields(),  self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.itemAtPosition(index, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX).widget())
+                self.selectBestFittingTargetField(sourceFieldName, sourceFieldTypeName, self.targetLayer.fields(), targetFieldNameComboBox)
+
+                #
+                # Helpfully guess values for other widgets
+                #
+                for index, tempTargetTableComboBox in enumerate(self.targetTableComboBoxes):
+                    #tempTargetTableName = tempTargetTableComboBox.currentText()
+                    #if tempTargetTableName == "Valitse kohdekarttataso":
+                    tempTargetTableComboBox.setCurrentText(self.yleiskaavaDatabase.getUserFriendlyTableNameForTargetSchemaTableName(self.targetSchemaTableName))
+                    # self.targetFieldNameComboBoxes[index].clear()
+                    # self.targetFieldNameComboBoxes[index].addItems(targetFieldNames)
+
+                    # tempSourceFieldName = self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.itemAtPosition(index, DataCopySourceToTarget.SOURCE_FIELD_NAME_INDEX).widget().text()
+                    # tempSourceFieldTypeName = self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.itemAtPosition(index, DataCopySourceToTarget.SOURCE_FIELD_TYPE_NAME_INDEX).widget().text()
+                    # self.selectBestFittingTargetField(tempSourceFieldName, tempSourceFieldTypeName, targetLayer.fields(), self.targetFieldNameComboBoxes[index])
+                    # self.selectBestFittingTargetField(sourceFieldName, sourceFieldTypeName, targetLayer.fields(),  self.dialogCopySourceDataToDatabase.gridLayoutSourceTargetMatch.itemAtPosition(index, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX).widget())
         else:
             targetFieldNameComboBox.clear()
 
@@ -478,7 +465,7 @@ class DataCopySourceToTarget:
 
 
         if self.targetSchemaTableName is not None:
-            spatialTargetTableLayer = self.yleiskaavaDatabase.createLayerByTargetSchemaTableName(self.targetSchemaTableName)
+            spatialTargetTableLayer = self.yleiskaavaDatabase.getProjectLayer(self.targetSchemaTableName)
 
             spatialTargetTableFields = self.yleiskaavaDatabase.getSchemaTableFields(self.targetSchemaTableName)
 

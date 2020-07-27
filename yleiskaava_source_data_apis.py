@@ -6,8 +6,13 @@ import re
 from urllib.request import urlopen
 from xml.dom.minidom import parse
 import xml.dom.minidom
+import json
+
 
 class YleiskaavaSourceDataAPIs:
+
+    SOURCE_DATA_API_SETTINGS_FILE_PATH = 'T:\kaavadat\Yleiskaava\_Yleiskaava_Tietomallityö\kaavoitustyön_tuki\ohjelmistokehitys\kaava_tyokalu\lahderajapinnat.json'
+
 
     def __init__(self, iface, yleiskaavaDatabase, yleiskaavaUtils):
 
@@ -18,8 +23,7 @@ class YleiskaavaSourceDataAPIs:
 
         self.plugin_dir = os.path.dirname(__file__)
 
-        self.sourceDataAPIs = None
-        self.sourceDataAPIs = self.yleiskaavaDatabase.getSourceDataAPIs()
+        self.sourceDataAPIs = self.readSourceDataAPIs()
 
         self.currentAPIID = None
         self.currentAPIInfo = None
@@ -130,3 +134,20 @@ class YleiskaavaSourceDataAPIs:
             # features = self.yleiskaavaDatabase.getSourceDataFeatures(self.currentAPIInfo["linkitys_tyyppi"])
             linkedFeatureID, linkedSourceDataFeature = self.yleiskaavaDatabase.getLinkedFeatureIDAndSourceDataFeature(spatialFeatureLayer, sourceLayerFeatureInfo, self.currentAPIInfo["linkitys_tyyppi"])
         return linkedFeatureID, linkedSourceDataFeature
+
+
+    def readSourceDataAPIs(self):
+        filePath = YleiskaavaSourceDataAPIs.SOURCE_DATA_API_SETTINGS_FILE_PATH
+
+        if not os.path.exists(filePath):
+            self.iface.messageBar().pushMessage('Virhe', 'Lähderajapintatiedostoa ei voitu lukea',\
+                Qgis.Warning)
+            return
+
+        apis = None
+
+        with open(filePath) as f:
+            apis = json.load(f)
+
+        return apis
+

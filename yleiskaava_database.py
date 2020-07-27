@@ -1,12 +1,9 @@
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QSettings, QVariant
-from qgis.core import (Qgis, QgsProject, QgsDataSourceUri, QgsVectorLayer, QgsFeature, QgsWkbTypes, QgsMessageLog)
+from qgis.core import (Qgis, QgsProject, QgsFeature, QgsWkbTypes, QgsMessageLog)
 from qgis.gui import QgsFileWidget
 
 import os.path
-#import psycopg2
-from configparser import ConfigParser
-import json
 import uuid
 
 class YleiskaavaDatabase:
@@ -19,10 +16,6 @@ class YleiskaavaDatabase:
 
         self.plugin_dir = os.path.dirname(__file__)
 
-        self.settingsDialog = uic.loadUi(os.path.join(self.plugin_dir, 'db_settings.ui'))
-
-        self.connParams = None
-
         self.yleiskaava_target_tables = [
             {"name": "yk_yleiskaava.yleiskaava", "userFriendlyTableName": 'Yleiskaavan ulkorajaus (yleiskaava)', "geomFieldName": "kaavan_ulkorajaus", "geometryType": QgsWkbTypes.PolygonGeometry, "showInCopySourceToTargetUI": False},
             {"name": "yk_yleiskaava.kaavaobjekti_alue", "userFriendlyTableName": 'Aluevaraukset', "featureType": "alue", "geomFieldName": "geom", "geometryType": QgsWkbTypes.PolygonGeometry, "showInCopySourceToTargetUI": True},
@@ -33,7 +26,26 @@ class YleiskaavaDatabase:
             {"name": "yk_yleiskaava.kaavamaarays", "userFriendlyTableName": 'kaavamääräykset', "geomFieldName": None, "showInCopySourceToTargetUI": False},
             {"name": "yk_kuvaustekniikka.teema", "userFriendlyTableName": 'teemat', "geomFieldName": None, "showInCopySourceToTargetUI": False},
             {"name": "yk_prosessi.lahtoaineisto", "userFriendlyTableName": 'lahtoaineisto', "geomFieldName": None, "showInCopySourceToTargetUI": False},
-            {"name": "yk_prosessi.dokumentti", "userFriendlyTableName": 'kaavaan liittyvät dokumentit', "geomFieldName": None, "showInCopySourceToTargetUI": False}
+            {"name": "yk_prosessi.dokumentti", "userFriendlyTableName": 'kaavaan liittyvät dokumentit', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_koodiluettelot.kaavan_taso", "userFriendlyTableName": 'kaavan_taso', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_koodiluettelot.kansallinen_kaavatyyppi", "userFriendlyTableName": 'kansallinen_kaavatyyppi', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_koodiluettelot.laillinen_sitovuus", "userFriendlyTableName": 'laillinen_sitovuus', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_koodiluettelot.kaavoitusprosessin_tila", "userFriendlyTableName": 'kaavoitusprosessin_tila', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_koodiluettelot.prosessin_vaihe", "userFriendlyTableName": 'prosessin_vaihe', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_koodiluettelot.kansallinen_prosessin_vaihe", "userFriendlyTableName": 'kansallinen_prosessin_vaihe', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_koodiluettelot.kaavakohde_luokka", "userFriendlyTableName": 'kaavakohde_luokka  / HILUCS', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_koodiluettelot.kansallinen_kaavakohde_luokka", "userFriendlyTableName": 'kansallinen_kaavakohde_luokka', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_koodiluettelot.taydentava_kaavamerkinta_luokka", "userFriendlyTableName": 'taydentava_kaavamerkinta_luokka  / HSRCL', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_koodiluettelot.kansallinen_taydentava_kaavamerkinta_luokka", "userFriendlyTableName": 'kansallinen_taydentava_kaavamerkinta_luokka', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_inspire.kaavakohteen_olemassaolo", "userFriendlyTableName": 'kaavakohteen_olemassaolo', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_inspire.kansallisen_kaavakohteen_olemassaolo", "userFriendlyTableName": 'kansallisen_kaavakohteen_olemassaolo', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_inspire.kaavakohde", "userFriendlyTableName": 'kaavakohde', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_inspire.kansallinen_kaavakohde", "userFriendlyTableName": 'kansallinen_kaavakohde', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_inspire.taydentava_kaavamerkinta", "userFriendlyTableName": 'taydentava_kaavamerkinta', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_inspire.kansallinen_taydentava_kaavamerkinta", "userFriendlyTableName": 'kansallinen_taydentava_kaavamerkinta-yhteys', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys", "userFriendlyTableName": 'kaavaobjekti_kaavamaarays_yhteys', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_kuvaustekniikka.kaavaobjekti_teema_yhteys", "userFriendlyTableName": 'kaavaobjekti_teema_yhteys', "geomFieldName": None, "showInCopySourceToTargetUI": False},
+            {"name": "yk_kuvaustekniikka.lahtoaineisto_yleiskaava_yhteys", "userFriendlyTableName": 'lahtoaineisto_yleiskaava_yhteys', "geomFieldName": None, "showInCopySourceToTargetUI": False}
         ]
 
         self.yleiskaava_spatial_target_fields = [
@@ -70,6 +82,19 @@ class YleiskaavaDatabase:
         self.yleiskaavaUtils = yleiskaavaUtils
 
 
+    def getProjectLayer(self, name):
+        layer = None
+
+        for targetTableInfo in self.yleiskaava_target_tables:
+            # QgsMessageLog.logMessage('getProjectLayer - name: ' + name + ', targetTableInfo["name"]: ' + str(targetTableInfo["name"]), 'Yleiskaava-työkalu', Qgis.Info)
+            if targetTableInfo["name"] == name:
+                # QgsMessageLog.logMessage('getProjectLayer - name: ' + name + ', targetTableInfo["userFriendlyTableName"]: ' + str(targetTableInfo["userFriendlyTableName"]), 'Yleiskaava-työkalu', Qgis.Info)
+                layer = QgsProject.instance().mapLayersByName(targetTableInfo["userFriendlyTableName"])[0]
+                break
+
+        return layer
+
+
     def getUserFriendlyTargetSchemaTableNames(self):
         return [item["userFriendlyTableName"] for item in self.yleiskaava_target_tables]
 
@@ -95,7 +120,7 @@ class YleiskaavaDatabase:
 
         for item in self.yleiskaava_target_tables:
             if item["geometryType"] != None:
-                layer = self.createLayerByTargetSchemaTableName(item["name"])
+                layer = self.getLayerByTargetSchemaTableName(item["name"])
                 layers.append(layer)
 
         return layers
@@ -132,24 +157,8 @@ class YleiskaavaDatabase:
         return table_item
 
 
-    # def getPolgyonFeatureLayer(self):
-    #     return self.createLayerByTargetSchemaTableName("yk_yleiskaava.kaavaobjekti_alue")
-
-    # def getSupplementaryPolgyonFeatureLayer(self):
-    #     return self.createLayerByTargetSchemaTableName("yk_yleiskaava.kaavaobjekti_alue_taydentava")
-
-    # def getLineFeatureLayer(self):
-    #     return self.createLayerByTargetSchemaTableName("yk_yleiskaava.kaavaobjekti_viiva")
-
-    # def getPointFeatureLayer(self):
-    #     return self.createLayerByTargetSchemaTableName("yk_yleiskaava.kaavaobjekti_piste")
-
-
-    def createLayerByTargetSchemaTableName(self, name):
-        table_item = self.getTargetSchemaTableByName(name)
-        schema, table_name = name.split('.')
-        uri = self.createDbURI(schema, table_name, table_item["geomFieldName"])
-        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+    def getLayerByTargetSchemaTableName(self, name):
+        targetLayer = self.getProjectLayer(name)
         #if targetLayer.isValid():
         return targetLayer
         #else:
@@ -157,7 +166,7 @@ class YleiskaavaDatabase:
 
 
     def getSpatialPlans(self):
-        layer = self.createLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
+        layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
         features = layer.getFeatures()
 
         plans = []
@@ -179,7 +188,7 @@ class YleiskaavaDatabase:
     def getPlanNumberForName(self, planName):
         planNumber = None
 
-        layer = self.createLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
+        layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
         features = layer.getFeatures()
 
         plans = []
@@ -195,7 +204,7 @@ class YleiskaavaDatabase:
     def getPlanNumberForPlanID(self, planID):
         planNumber = None
 
-        layer = self.createLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
+        layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
         features = layer.getFeatures()
 
         plans = []
@@ -211,7 +220,7 @@ class YleiskaavaDatabase:
     def getPlanNameForPlanID(self, planID):
         planName = None
 
-        layer = self.createLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
+        layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
         features = layer.getFeatures()
 
         plans = []
@@ -227,7 +236,7 @@ class YleiskaavaDatabase:
     def getYleiskaavaPlanLevelCodeWithPlanName(self, planName):
         planLevelCode = None
 
-        layer = self.createLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
+        layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
         features = layer.getFeatures()
 
         plans = []
@@ -253,8 +262,8 @@ class YleiskaavaDatabase:
 
 
     def getYleiskaavaPlanLevelList(self):
-        uri = self.createDbURI("yk_koodiluettelot", "kaavan_taso", None)
-        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+
+        targetLayer = self.getProjectLayer("yk_koodiluettelot.kaavan_taso")
 
         features = targetLayer.getFeatures()
         planLevelList = []
@@ -270,7 +279,7 @@ class YleiskaavaDatabase:
     def getSpatialPlanIDForPlanName(self, planName):
         planID = None
 
-        layer = self.createLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
+        layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
         features = layer.getFeatures()
 
         plans = []
@@ -283,8 +292,7 @@ class YleiskaavaDatabase:
 
 
     def getSpatialFeaturesWithRegulationForType(self, regulationID, featureType):
-        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_kaavamaarays_yhteys", None)
-        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        targetLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
 
         spatialFeatures = []
 
@@ -312,8 +320,7 @@ class YleiskaavaDatabase:
 
     
     def getSpatialFeature(self, featureID, featureType):
-        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_" + featureType, None)
-        layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        layer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_" + featureType)
         feature = self.findSpatialFeatureFromFeatureLayerWithID(layer, featureID)
         return feature
 
@@ -327,8 +334,7 @@ class YleiskaavaDatabase:
 
 
     def getRegulationCountForSpatialFeature(self, featureID, featureType):
-        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_kaavamaarays_yhteys", None)
-        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres") 
+        targetLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
 
         count = 0
 
@@ -341,8 +347,7 @@ class YleiskaavaDatabase:
 
     def getDistinctLandUseClassificationsOfLayer(self, userFriendlyTableName):
         featureType = self.getFeatureTypeForUserFriendlyTargetSchemaTableName(userFriendlyTableName)
-        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_" + featureType, None)
-        layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        layer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_" + featureType)
 
         classifications = []
 
@@ -357,8 +362,7 @@ class YleiskaavaDatabase:
         featureIDsAndValues = []
 
         featureType = self.getFeatureTypeForUserFriendlyTargetSchemaTableName(userFriendlyTableName)
-        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_" + featureType, None)
-        layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        layer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_" + featureType)
         for feature in layer.getFeatures():
             if feature['kayttotarkoitus_lyhenne'] == landUseClassification:
                 if not QVariant(feature[fieldName]).isNull() and str(feature[fieldName]) != '':
@@ -369,31 +373,13 @@ class YleiskaavaDatabase:
 
         return featureIDsAndValues
 
-    # def getDistinctRegulationsOfLayer(self, userFriendlyTableName):
-    #     featureType = self.getFeatureTypeForUserFriendlyTargetSchemaTableName(userFriendlyTableName)
-    #     uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_" + featureType, None)
-    #     layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
-
-    #     regulationIDs = []
-    #     regulations = []
-
-    #     for feature in layer.getFeatures():
-    #         featureRegulations = self.getRegulationsForSpatialFeature(feature["id"], featureType)
-    #         for featureRegulation in featureRegulations:
-    #             if not featureRegulation["id"] in regulationIDs:
-    #                 regulationIDs.append(featureRegulation["id"])
-    #                 regulations.append(featureRegulation)
-
-    #     return regulations
-
 
     def getRegulationsForSpatialFeature(self, featureID, featureType):
         regulationList = []
 
         regulations = self.getSpecificRegulations()
 
-        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_kaavamaarays_yhteys", None)
-        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres") 
+        targetLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
         #targetLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_kaavamaarays_yhteys")[0]
 
 
@@ -412,8 +398,7 @@ class YleiskaavaDatabase:
 
 
     def getSpecificRegulations(self):
-        uri = self.createDbURI("yk_yleiskaava", "kaavamaarays", None)
-        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        targetLayer = self.getProjectLayer("yk_yleiskaava.kaavamaarays")
 
         features = targetLayer.getFeatures()
         regulationList = []
@@ -435,8 +420,7 @@ class YleiskaavaDatabase:
 
 
     def updateRegulation(self, regulationID, regulationTitle, regulationText, regulationDescription):
-        uri = self.createDbURI("yk_yleiskaava", "kaavamaarays", None)
-        layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        layer = self.getProjectLayer("yk_yleiskaava.kaavamaarays")
 
         layer.startEditing()
 
@@ -473,8 +457,7 @@ class YleiskaavaDatabase:
     def removeSpatialFeatureRegulationAndLandUseClassification(self, featureID, featureType, shouldUpdateOnlyRelation):
         self.removeRegulationRelationsFromSpatialFeature(featureID, featureType)
 
-        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_" + featureType, None)
-        layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        layer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_" + featureType)
         feature = self.findSpatialFeatureFromFeatureLayerWithID(layer, featureID)
 
         if not shouldUpdateOnlyRelation:
@@ -522,8 +505,7 @@ class YleiskaavaDatabase:
         if not self.existsFeatureRegulationRelation(featureID, featureType, regulationID):
             self.createFeatureRegulationRelationWithRegulationID("yk_yleiskaava.kaavaobjekti_" + featureType, featureID, regulationID)
 
-        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_" + featureType, None)
-        layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        layer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_" + featureType)
         feature = self.findSpatialFeatureFromFeatureLayerWithID(layer, featureID)
 
         if not shouldUpdateOnlyRelation:
@@ -556,8 +538,7 @@ class YleiskaavaDatabase:
 
 
     def existsFeatureRegulationRelation(self, featureID, featureType, regulationID):
-        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_kaavamaarays_yhteys", None)
-        relationLayer = QgsVectorLayer(uri.uri(False), "temp relation layer", "postgres")
+        relationLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
 
         for feature in relationLayer.getFeatures():
             if (feature["id_kaavamaarays"] == regulationID and feature["id_kaavaobjekti_" + featureType] == featureID):
@@ -567,8 +548,7 @@ class YleiskaavaDatabase:
 
 
     def removeRegulationRelationsFromSpatialFeature(self, featureID, featureType):
-        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_kaavamaarays_yhteys", None)
-        relationLayer = QgsVectorLayer(uri.uri(False), "temp relation layer", "postgres")
+        relationLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
 
         relationLayer.startEditing()
 
@@ -580,7 +560,7 @@ class YleiskaavaDatabase:
 
 
     def deleteSpatialFeature(self, featureID, featureType):
-        layer = self.createLayerByTargetSchemaTableName("yk_yleiskaava.kaavaobjekti_" + featureType)
+        layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.kaavaobjekti_" + featureType)
         layer.startEditing()
         for feature in layer.getFeatures():
             if (feature["id"] == featureID):
@@ -598,12 +578,10 @@ class YleiskaavaDatabase:
     def createFeatureRegulationRelationWithRegulationID(self, targetSchemaTableName, targetFeatureID, regulationID):
         # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - targetSchemaTableName: " + targetSchemaTableName + ", targetFeatureID: " + str(targetFeatureID) + ", regulationID: " + str(regulationID), 'Yleiskaava-työkalu', Qgis.Info)
 
-        uri = self.createDbURI("yk_yleiskaava", "kaavaobjekti_kaavamaarays_yhteys", None)
-        relationLayer = QgsVectorLayer(uri.uri(False), "temp relation layer", "postgres")
+        relationLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
         #relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_kaavamaarays_yhteys")[0]
 
         schema, table_name = targetSchemaTableName.split('.')
-
 
         relationLayer.startEditing()
 
@@ -642,8 +620,7 @@ class YleiskaavaDatabase:
 
 
     def getThemes(self):
-        uri = self.createDbURI("yk_kuvaustekniikka", "teema", None)
-        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        targetLayer = self.getProjectLayer("yk_kuvaustekniikka.teema")
 
         features = targetLayer.getFeatures()
         themeList = []
@@ -670,8 +647,7 @@ class YleiskaavaDatabase:
 
         themes = self.getThemes()
 
-        uri = self.createDbURI("yk_kuvaustekniikka", "kaavaobjekti_teema_yhteys", None)
-        themeRelationLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres") 
+        themeRelationLayer = self.getProjectLayer("yk_kuvaustekniikka.kaavaobjekti_teema_yhteys")
         #targetLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_kaavamaarays_yhteys")[0]
 
         for feature in themeRelationLayer.getFeatures():
@@ -691,8 +667,7 @@ class YleiskaavaDatabase:
     def createFeatureThemeRelationWithThemeID(self, targetSchemaTableName, targetFeatureID, themeID):
         # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - targetSchemaTableName: " + targetSchemaTableName + ", targetFeatureID: " + str(targetFeatureID) + ", regulationID: " + str(regulationID), 'Yleiskaava-työkalu', Qgis.Info)
 
-        uri = self.createDbURI("yk_kuvaustekniikka", "kaavaobjekti_teema_yhteys", None)
-        relationLayer = QgsVectorLayer(uri.uri(False), "temp relation layer", "postgres")
+        relationLayer = self.getProjectLayer("yk_kuvaustekniikka.kaavaobjekti_teema_yhteys")
         #relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_kaavamaarays_yhteys")[0]
 
         schema, table_name = targetSchemaTableName.split('.')
@@ -745,8 +720,7 @@ class YleiskaavaDatabase:
 
 
     def createSpecificRegulationAndFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationName):
-        uri = self.createDbURI("yk_yleiskaava", "kaavamaarays", None)
-        regulationLayer = QgsVectorLayer(uri.uri(False), "temp regulation layer", "postgres")
+        regulationLayer = self.getProjectLayer("yk_yleiskaava.kaavamaarays")
 
         regulationID = str(uuid.uuid4())
 
@@ -763,9 +737,10 @@ class YleiskaavaDatabase:
 
 
     def getCodeListValuesForPlanObjectField(self, targetFieldName):
-        schema, table_name = ("yk_koodiluettelot." + targetFieldName[3:]).split('.')
-        uri = self.createDbURI(schema, table_name, None)
-        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        name = "yk_koodiluettelot." + targetFieldName[3:]
+        # QgsMessageLog.logMessage('getCodeListValuesForPlanObjectField - targetFieldName: ' + targetFieldName + ', name: ' + str(name), 'Yleiskaava-työkalu', Qgis.Info)
+        
+        targetLayer = self.getProjectLayer(name)
         features = targetLayer.getFeatures()
         values = None
         # if table_name == "kansallinen_prosessin_vaihe" or table_name == "prosessin_vaihe" or table_name == "kaavoitusprosessin_tila" or table_name == "laillinen_sitovuus":
@@ -775,10 +750,8 @@ class YleiskaavaDatabase:
 
     def getCodeListValueForPlanObjectFieldUUID(self, targetFieldName, value):
         codeValue = None
-        
-        schema, table_name = ("yk_koodiluettelot." + targetFieldName[3:]).split('.')
-        uri = self.createDbURI(schema, table_name, None)
-        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        name = "yk_koodiluettelot." + targetFieldName[3:]
+        targetLayer = self.getProjectLayer(name)
         features = targetLayer.getFeatures()
 
         for feature in features:
@@ -790,10 +763,8 @@ class YleiskaavaDatabase:
 
     def getCodeListUUIDForPlanObjectFieldCodeValue(self, targetFieldName, value):
         uuid = None
-
-        schema, table_name = ("yk_koodiluettelot." + targetFieldName[3:]).split('.')
-        uri = self.createDbURI(schema, table_name, None)
-        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        name = "yk_koodiluettelot." + targetFieldName[3:]
+        targetLayer = self.getProjectLayer(name)
         features = targetLayer.getFeatures()
         
         # if table_name == "kansallinen_prosessin_vaihe" or table_name == "prosessin_vaihe" or table_name == "kaavoitusprosessin_tila" or table_name == "laillinen_sitovuus":
@@ -805,17 +776,14 @@ class YleiskaavaDatabase:
 
 
     def getSchemaTableFields(self, name):
-        table_item = self.getTargetSchemaTableByName(name)
-        schema, table_name = name.split('.')
-        uri = self.createDbURI(schema, table_name, table_item["geomFieldName"])
-        layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        layer = self.getProjectLayer(name)
         return layer.fields().toList()
 
 
     def getFieldNamesAndTypes(self, featureType):
         fieldNamesAndTypes = []
 
-        layer = self.createLayerByTargetSchemaTableName("yk_yleiskaava.kaavaobjekti_" + featureType)
+        layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.kaavaobjekti_" + featureType)
 
         for index, field in enumerate(layer.fields().toList()):
             fieldName = field.name()
@@ -826,116 +794,6 @@ class YleiskaavaDatabase:
             })
 
         return fieldNamesAndTypes
-
-
-    def createDbURI(self, schema, table_name, geomFieldName):
-        self.connParams = self.readConnectionParamsFromInput()
-
-        uri = QgsDataSourceUri()
-        uri.setConnection(self.connParams['host'],\
-            self.connParams['port'], self.connParams['database'],\
-            self.connParams['user'], self.connParams['password'])
-
-        uri.setDataSource(schema, table_name, geomFieldName)
-
-        return uri
-
-
-    # def createDbConnection(self):
-    #     '''Creates a database connection and cursor based on connection params'''
-
-    #     self.connParams = self.readConnectionParamsFromInput()
-    #     # QgsMessageLog.logMessage(self.connParams['host'], 'Yleiskaava-työkalu', Qgis.Info)
-    #     # QgsMessageLog.logMessage(self.connParams['port'], 'Yleiskaava-työkalu', Qgis.Info)
-    #     # QgsMessageLog.logMessage(self.connParams['database'], 'Yleiskaava-työkalu', Qgis.Info)
-    #     # QgsMessageLog.logMessage(self.connParams['user'], 'Yleiskaava-työkalu', Qgis.Info)
-    #     # QgsMessageLog.logMessage(self.connParams['password'], 'Yleiskaava-työkalu', Qgis.Info)
-
-    #     if '' in list(self.connParams.values()):
-    #         raise Exception('Virhe yhdistäessä tietokantaan: täytä puuttuvat yhteystiedot')
-    #     try:
-    #         conn = psycopg2.connect(host=self.connParams['host'],\
-    #             port=self.connParams['port'], database=self.connParams['database'],\
-    #             user=self.connParams['user'], password=self.connParams['password'],\
-    #             connect_timeout=3)
-    #         return conn
-    #     except Exception as e:
-    #         raise e
-
-    def displaySettingsDialog(self):
-            '''Sets up and displays the settings dialog'''
-            self.settingsDialog.show()
-            self.settingsDialog.configFileInput.setStorageMode(QgsFileWidget.GetFile)
-            self.settingsDialog.configFileInput.setFilePath(QSettings().value\
-                ("/yleiskaava_tyokalu/configFilePath", "", type=str))
-            self.settingsDialog.loadFileButton.clicked.connect(self.setConnectionParamsFromFile)
-
-            #result = self.settingsDialog.show()
-            #if result:
-            #    self.connParams = self.readConnectionParamsFromInput()
-
-
-    def setConnectionParamsFromFile(self):
-        '''Reads connection parameters from file and sets them to the input fields'''
-        filePath = self.settingsDialog.configFileInput.filePath()
-        QSettings().setValue("/yleiskaava_tyokalu/configFilePath", filePath)
-
-        try:
-            dbParams = self.parseConfigFile(filePath)
-        except Exception as e:
-            self.iface.messageBar().pushMessage('Virhe luettaessa tiedostoa',\
-                str(e), Qgis.Warning, duration=10)
-
-        self.setConnectionParamsFromInput(dbParams)
-        self.connParams = self.readConnectionParamsFromInput()
-
-
-    def parseConfigFile(self, filePath):
-        '''Reads configuration file and returns parameters as a dict'''
-        # Setup an empty dict with correct keys to avoid keyerrors
-        dbParams = {
-            'host': '',
-            'port': '',
-            'database': '',
-            'user': '',
-            'password': ''
-        }
-        if not os.path.exists(filePath):
-            self.iface.messageBar().pushMessage('Virhe', 'Tiedostoa ei voitu lukea',\
-                Qgis.Warning)
-            return dbParams
-
-        parser = ConfigParser()
-        parser.read(filePath)
-        if parser.has_section('postgresql'):
-            params = parser.items('postgresql')
-            for param in params:
-                dbParams[param[0]] = param[1]
-        else:
-            self.iface.messageBar().pushMessage('Virhe', 'Tiedosto ei sisällä\
-                tietokannan yhteystietoja', Qgis.Warning)
-
-        return dbParams
-
-
-    def setConnectionParamsFromInput(self, params):
-        '''Sets connection parameters to input fields'''
-        self.settingsDialog.dbHost.setValue(params['host'])
-        self.settingsDialog.dbPort.setValue(params['port'])
-        self.settingsDialog.dbName.setValue(params['database'])
-        self.settingsDialog.dbUser.setValue(params['user'])
-        self.settingsDialog.dbPass.setText(params['password'])
-
-
-    def readConnectionParamsFromInput(self):
-        '''Reads connection parameters from user input and returns a dictionary'''
-        params = {}
-        params['host'] = self.settingsDialog.dbHost.value()
-        params['port'] = self.settingsDialog.dbPort.value()
-        params['database'] = self.settingsDialog.dbName.value()
-        params['user'] = self.settingsDialog.dbUser.value()
-        params['password'] = self.settingsDialog.dbPass.text()
-        return params
 
 
     def getUserFriendlyschemaTableName(self, schemaTableName):
@@ -1008,16 +866,7 @@ class YleiskaavaDatabase:
 
 
     def getSelectedFeatures(self, featureType):
-        layer = None
-
-        if featureType == "alue":
-            layer = QgsProject.instance().mapLayersByName("Aluevaraukset")[0]
-        elif featureType == "alue_taydentava":
-            layer = QgsProject.instance().mapLayersByName("Täydentävät aluekohteet (osa-alueet)")[0]
-        elif featureType == "viiva":
-            layer = QgsProject.instance().mapLayersByName("Viivamaiset kaavakohteet")[0]
-        elif featureType == "piste":
-            layer = QgsProject.instance().mapLayersByName("Pistemäiset kaavakohteet")[0]
+        layer = self.getTargetLayer(featureType)
 
         # QgsMessageLog.logMessage("getSelectedFeatures - layer.selectedFeatureCount(): " + str(layer.selectedFeatureCount()), 'Yleiskaava-työkalu', Qgis.Info)
 
@@ -1094,8 +943,7 @@ class YleiskaavaDatabase:
 
 
     def updateTheme(self, themeID, themeName, themeDescription):
-        uri = self.createDbURI("yk_kuvaustekniikka", "teema", None)
-        layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        layer = QgsProject.instance().mapLayersByName("teema")[0]
 
         layer.startEditing()
 
@@ -1126,12 +974,11 @@ class YleiskaavaDatabase:
 
     
     def getThemeCountForSpatialFeature(self, featureID, featureType):
-        uri = self.createDbURI("yk_kuvaustekniikka", "kaavaobjekti_teema_yhteys", None)
-        targetLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres") 
+        relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_teema_yhteys")[0]
 
         count = 0
 
-        for feature in targetLayer.getFeatures():
+        for feature in relationLayer.getFeatures():
             if feature["id_kaavaobjekti_" + featureType] == featureID:
                 count += 1
 
@@ -1154,9 +1001,7 @@ class YleiskaavaDatabase:
     def createFeatureThemeRelationWithThemeID(self, targetSchemaTableName, targetFeatureID, themeID):
         # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - targetSchemaTableName: " + targetSchemaTableName + ", targetFeatureID: " + str(targetFeatureID) + ", regulationID: " + str(regulationID), 'Yleiskaava-työkalu', Qgis.Info)
 
-        uri = self.createDbURI("yk_kuvaustekniikka", "kaavaobjekti_teema_yhteys", None)
-        relationLayer = QgsVectorLayer(uri.uri(False), "temp relation layer", "postgres")
-        #relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_kaavamaarays_yhteys")[0]
+        relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_teema_yhteys")[0]
 
         schema, table_name = targetSchemaTableName.split('.')
 
@@ -1189,8 +1034,7 @@ class YleiskaavaDatabase:
 
 
     def existsFeatureThemeRelation(self, featureID, featureType, themeID):
-        uri = self.createDbURI("yk_kuvaustekniikka", "kaavaobjekti_teema_yhteys", None)
-        relationLayer = QgsVectorLayer(uri.uri(False), "temp relation layer", "postgres")
+        relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_teema_yhteys")[0]
 
         for feature in relationLayer.getFeatures():
             if (feature["id_teema"] == themeID and feature["id_kaavaobjekti_" + featureType] == featureID):
@@ -1200,8 +1044,7 @@ class YleiskaavaDatabase:
 
 
     def removeThemeRelationsFromSpatialFeature(self, featureID, featureType):
-        uri = self.createDbURI("yk_kuvaustekniikka", "kaavaobjekti_teema_yhteys", None)
-        relationLayer = QgsVectorLayer(uri.uri(False), "temp relation layer", "postgres")
+        relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_teema_yhteys")[0]
 
         relationLayer.startEditing()
 
@@ -1212,38 +1055,8 @@ class YleiskaavaDatabase:
         relationLayer.commitChanges()
 
 
-    def getSourceDataAPIs(self):
-        # uri = self.createDbURI("yk_prosessi", "lahderajapinta", None)
-        # layer = QgsVectorLayer(uri.uri(False), "temp regulation layer", "postgres")
-
-        # apis = []
-
-        # for features in layer:
-        #     apis.append({
-        #         "id": feature['id'],
-        #         "nimi": feature['nimi'],
-        #         "url": url
-        #         })
-
-        filePath = 'T:\kaavadat\Yleiskaava\_Yleiskaava_Tietomallityö\kaavoitustyön_tuki\ohjelmistokehitys\kaava_tyokalu\lahderajapinnat.json'
-
-        if not os.path.exists(filePath):
-            self.iface.messageBar().pushMessage('Virhe', 'Lähderajapintatiedostoa ei voitu lukea',\
-                Qgis.Warning)
-            return
-
-        apis = None
-
-        with open(filePath) as f:
-            apis = json.load(f)
-
-        return apis
-
-
     def getSourceDataFeatures(self, linkType):
-        #layer = QgsProject.instance().mapLayersByName("lahtoaineisto")[0] <- jos filteröity UI:ssa, niin ei toimi
-        uri = self.createDbURI("yk_prosessi", "lahtoaineisto", None)
-        layer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        layer = QgsProject.instance().mapLayersByName("lahtoaineisto")[0] # <- jos filteröity UI:ssa, niin ei toimi
         
         features = []
 
@@ -1284,9 +1097,7 @@ class YleiskaavaDatabase:
     def getLinkedFeatureIDsForSourceDataFeature(self, spatialFeatureLayer, linkedSourceDataFeature):
         linkedFeatureIDs = []
 
-        #relationLayer = QgsProject.instance().mapLayersByName("lahtoaineisto_yleiskaava_yhteys")[0] <- jos filteröity UI:ssa, niin ei toimi
-        uri = self.createDbURI("yk_prosessi", "lahtoaineisto_yleiskaava_yhteys", None)
-        relationLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        relationLayer = QgsProject.instance().mapLayersByName("lahtoaineisto_yleiskaava_yhteys")[0] # <- jos filteröity UI:ssa, niin ei toimi
 
         targetSchemaTableName = self.getTargetSchemaTableNameForUserFriendlyTableName(spatialFeatureLayer.name())
         schema, table_name = targetSchemaTableName.split('.')
@@ -1299,9 +1110,7 @@ class YleiskaavaDatabase:
 
 
     def createSourceDataFeature(self, sourceData):
-        #layer = QgsProject.instance().mapLayersByName("lahtoaineisto")[0] <- jos filteröity UI:ssa, niin ei toimi
-        uri = self.createDbURI("yk_prosessi", "lahtoaineisto", None)
-        sourceDataLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        sourceDataLayer = QgsProject.instance().mapLayersByName("lahtoaineisto")[0] # <- jos filteröity UI:ssa, niin ei toimi
 
         sourceDataFeatureID = str(uuid.uuid4())
 
@@ -1355,9 +1164,7 @@ class YleiskaavaDatabase:
 
 
     def createSourceDataRelationToSpatialFeature(self, linkedSourceDataFeatureID, spatialFeatureLayer, targetFeatureID):
-        #relationLayer = QgsProject.instance().mapLayersByName("lahtoaineisto_yleiskaava_yhteys")[0] <- jos filteröity UI:ssa, niin ei toimi
-        uri = self.createDbURI("yk_prosessi", "lahtoaineisto_yleiskaava_yhteys", None)
-        relationLayer = QgsVectorLayer(uri.uri(False), "temp layer", "postgres")
+        relationLayer = QgsProject.instance().mapLayersByName("lahtoaineisto_yleiskaava_yhteys")[0] # <- jos filteröity UI:ssa, niin ei toimi
 
         targetSchemaTableName = self.getTargetSchemaTableNameForUserFriendlyTableName(spatialFeatureLayer.name())
         schema, table_name = targetSchemaTableName.split('.')
