@@ -169,6 +169,18 @@ class YleiskaavaUtils:
 
         return widget
 
+
+    def connectWidgetValueChangeHandler(self, widget, handler, fieldTypeName):
+        if fieldTypeName == 'String' or fieldTypeName == 'Int' or fieldTypeName == 'Double' or fieldTypeName == 'LongLong':
+            widget.valueChanged.connect(handler)
+        elif fieldTypeName == 'Date' or fieldTypeName == 'DateTime':
+            widget.valueChanged.connect(handler)
+        elif fieldTypeName == 'Bool':
+            widget.currentIndexChanged.connect(handler)
+        elif fieldTypeName == 'uuid':
+            widget.currentIndexChanged.connect(handler)
+
+
     def getClassOftargetFieldType(self, targetFieldType):
         if targetFieldType == "String": # QgsFilterLineEdit
             return QgsFilterLineEdit

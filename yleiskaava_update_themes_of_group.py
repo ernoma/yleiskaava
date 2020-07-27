@@ -128,7 +128,6 @@ class UpdateThemesOfGroup:
     def updateTheme(self, shouldHide):
         # Päivitä teema ja siihen liitetyt kaavakohteet ja huomio asetukset, sekä mahd. useat teemat kohteella
         # Tarkista, onko teeman lomaketiedoissa eroa ja jos ei, niin ilmoita käyttäjälle.
-        # TODO kokonaan uusien teemoje tuki
         # Lisää teema sellaisille kaavakohteille, joilla sitä ei vielä ole, mutta käyttäjä on ko. kaavakohteen valinnut / valitsee
         # Anna käyttäjän valita kaavakohteet, joille teema päivitetään.
         # Varmista, että käyttäjä ei voi vahingossa päivittää jo aiemmin valitsemiaan kaavaobjekteja.
@@ -136,7 +135,7 @@ class UpdateThemesOfGroup:
         # Ilmoita käyttäjälle, että valitse kohteet, tms., jos ei ole valinnut.
         # Varmista, että self.currentTheme != None jo vaikka käyttäjä ei ole valinnut dialogista kohteita / lisää ensimmäiseksi vaihtoehdoksi comboboxiin "Valitse teema"
         # Huomioi, "Poista kaavakohteilta vanhat teemat"-asetuksen pois päältä olo, kun käyttäjä vain päivittää kohteilla jo olevaa teemaa -> ei siis tehdä duplikaattirelaatiota
-        # TODO yleiskaavan id, nimi, nro
+        # näytä käyttöliittymässä yleiskaavan id, nimi, nro
         if self.currentTheme != None:
             themeID = self.currentTheme["id"]
             themeName = self.dialogUpdateThemeOfGroup.lineEditThemeName.text()

@@ -128,7 +128,6 @@ class UpdateRegulationOfGroup:
     def updateRegulation(self, shouldHide):
         # Päivitä kaavamääräys ja siihen liitetyt kaavakohteet ja huomio asetukset, sekä mahd. useat määräykset kohteella kayttotarkoitus_lyhenne-päivityksessä.
         # Tarkista, onko kaavamääräyksen lomaketiedoissa eroa ja jos ei, niin ilmoita käyttäjälle.
-        # TODO kokonaan uusien kaavamääräysten tuki
         # Lisää kaavamääräys sellaisille kaavakohteille, joilla sitä ei vielä ole, mutta käyttäjä on ko. kaavakohteen valinnut / valitsee
         # Anna käyttäjän valita kaavakohteet, joille kaavamääräys päivitetään.
         # Varmista, että käyttäjä ei voi vahingossa päivittää jo aiemmin valitsemiaan kaavaobjekteja.

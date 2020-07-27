@@ -92,16 +92,22 @@ class GeometryEditSettings:
         self.iface.currentLayerChanged.connect(self.updateEditableFeatureClassesCountUIInfo)
 
         if self.featureLayer['alue'] != None:
+            self.featureLayer['alue'].subsetStringChanged.connect(self.updateEditableFeatureClassesCountUIInfo)
+
             self.featureLayer['alue'].editingStarted.connect(partial(self.followFeatureLayerEdits, 'alue'))
             self.featureLayer['alue'].editingStopped.connect(partial(self.stopFollowingFeatureLayerEdits, 'alue'))
             self.featureLayer['alue'].editCommandEnded.connect(partial(self.updateFeatureAttributesAfterEditCommandEnded, 'alue'))
     
         if self.featureLayer['alue_taydentava'] != None:
+            self.featureLayer['alue_taydentava'].subsetStringChanged.connect(self.updateEditableFeatureClassesCountUIInfo)
+
             self.featureLayer['alue_taydentava'].editingStarted.connect(partial(self.followFeatureLayerEdits, 'alue_taydentava'))
             self.featureLayer['alue_taydentava'].editingStopped.connect(partial(self.stopFollowingFeatureLayerEdits, 'alue_taydentava'))
             self.featureLayer['alue_taydentava'].editCommandEnded.connect(partial(self.updateFeatureAttributesAfterEditCommandEnded, 'alue_taydentava'))
 
         if self.featureLayer['viiva'] != None:
+            self.featureLayer['viiva'].subsetStringChanged.connect(self.updateEditableFeatureClassesCountUIInfo)
+
             # receiversCount = self.lineFeatureLayer.receivers(self.lineFeatureLayer.editingStarted)
             # QgsMessageLog.logMessage("followEdits - before receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
             # QgsMessageLog.logMessage("followEdits - connect(self.followLineFeatureLayerEdits)", 'Yleiskaava-työkalu', Qgis.Info)
@@ -124,6 +130,8 @@ class GeometryEditSettings:
 
         if self.featureLayer['alue'] != None:
             try:
+                self.featureLayer['alue'].subsetStringChanged.disconnect(self.updateEditableFeatureClassesCountUIInfo)
+
                 self.featureLayer['alue'].editingStarted.disconnect(partial(self.followFeatureLayerEdits, 'alue'))
                 # receiversCount = self.lineFeatureLayer.receivers(self.lineFeatureLayer.editingStarted)
                 # QgsMessageLog.logMessage("disconnectAll - receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
@@ -136,6 +144,8 @@ class GeometryEditSettings:
 
         if self.featureLayer['alue_taydentava'] != None:
             try:
+                self.featureLayer['alue_taydentava'].subsetStringChanged.disconnect(self.updateEditableFeatureClassesCountUIInfo)
+                
                 self.featureLayer['alue_taydentava'].editingStarted.disconnect(partial(self.followFeatureLayerEdits, 'alue_taydentava'))
                 # receiversCount = self.lineFeatureLayer.receivers(self.lineFeatureLayer.editingStarted)
                 # QgsMessageLog.logMessage("disconnectAll - receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
@@ -148,6 +158,8 @@ class GeometryEditSettings:
 
         if self.featureLayer['viiva'] != None:
             try:
+                self.featureLayer['viiva'].subsetStringChanged.disconnect(self.updateEditableFeatureClassesCountUIInfo)
+
                 self.featureLayer['viiva'].editingStarted.disconnect(partial(self.followFeatureLayerEdits, 'viiva'))
                 # receiversCount = self.lineFeatureLayer.receivers(self.lineFeatureLayer.editingStarted)
                 # QgsMessageLog.logMessage("disconnectAll - receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
@@ -302,9 +314,6 @@ class GeometryEditSettings:
 
 
     def addRegulationAndThemeRelationsToFeature(self, featureType):
-        # TODO ota undo huomioon
-        # TODO copy-pastessa voisi myös kaavamääräys ja teema kopioitua
-        # TODO varoita käyttäjää, jos valittu taso ei ole näkyvissä
 
         self.featureLayer[featureType].commitChanges()
 

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>401</width>
     <height>319</height>
    </rect>
   </property>
@@ -232,6 +232,16 @@
        </property>
        <property name="text">
         <string>Päivitä indeksointi</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonUpdateAndClose">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Päivitä indeksointi ja sulje</string>
        </property>
       </widget>
      </item>

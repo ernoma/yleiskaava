@@ -82,16 +82,14 @@ class AddSourceDataLinks:
 
     def setupTableWidgetSourceTargetMatches(self):
         
-        # TODO Kun käyttäjä valitsee lähdetason, niin lisää taulukkoon
-        #  * painike kohteen kaikkien tietojen katsomiseen dialogista,
-        #  * painike kohdesivun avaamiseen ja
-        #  * perustiedot sekä
-        #  * painike kohdetason kohteen valintaan
+        # Kun käyttäjä valitsee lähdetasolta kohteen, niin lisää taulukkoon
+        #  * lähdeaineiston nimi,
+        #  * painike lähdetietosivun avaamiseen ja
+        #  * painike lähdetason tietojen yhdistämiseen kohdetason kohteeseen
         # ? miten jo tietokannassa ko. rajapinnan kohteet huomioidaan?
         #   - voisi olla taulukossa jokin täppä, joka kertoo, että on jo tietokannassa eli
         #     kuitenkin samaan taulukkoon rajapinnalta jo tuodut tiedot ja tuomattomat tiedot
         #     -> itseasiassa kohde-tieto kertoo onko jo tietokannassa
-        # TODO tuotujen tietojen osalta olisi hyvä olla päivitys mahdollisuus
 
         self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.clearContents()
         # self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setRowCount(self.getSourceTargetMatchRowCount())
@@ -128,8 +126,8 @@ class AddSourceDataLinks:
             QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, apiID: ' + str(apiID) + ', name: ' + name, 'Yleiskaava-työkalu', Qgis.Info)
             layer, layerInfo = self.yleiskaavaSourceDataAPIs.getLayerAndLayerInfo(apiID, name)
 
-            # TODO listaa kohteen nimi ja painikkeet, tms. taulukossa
-            # TODO listaa myös jo tietokannassa olevat kohteet
+            # listaa kohteen nimi ja painikkeet, tms. taulukossa
+            # listaa myös jo tietokannassa olevat kohteet (lähtöaineistorajapinnan osalta)
             if layer is None:
                 self.iface.messageBar().pushMessage('Lähdekarttason kohteiden hakeminen ei onnistunut', Qgis.Critical)
             else:
@@ -159,7 +157,7 @@ class AddSourceDataLinks:
                             self.iface.messageBar().pushMessage('Lähdeaineistokarttatasolta ei löytynyt valituista kohteista määritetyn rajaussuorakulmion sisältä kohteita', Qgis.Info, 10)
 
                         for index, featureInfo in enumerate(featureInfos):
-                            # TODO lähdeaineiston mukaan nimi/tunniste UI:hin
+                            # lähdeaineiston mukaan nimi/tunniste UI:hin
                             QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, nimi: ' + str(featureInfo["nimi"]) + ', linkki_data: ' + str(featureInfo["linkki_data"]), 'Yleiskaava-työkalu', Qgis.Info)
                             
                             userFriendlyFieldNameLabel = QLabel(str(featureInfo["nimi"]))
@@ -197,7 +195,7 @@ class AddSourceDataLinks:
 
 
     def showLinkedFeature(self, layer, linkedFeatureID):
-        # TODO siiry kohteeseen kartalla, vilkuta kohdetta ja avaa kohteen tietoikkuna
+        # siiry kohteeseen kartalla, vilkuta kohdetta ja avaa kohteen tietoikkuna
         mapCanvas = self.iface.mapCanvas()
         linkedFeature = None
         for feature in layer.getFeatures():
@@ -355,7 +353,7 @@ class AddSourceDataLinks:
         else:
             # lisää tarvittaessa uusi lähdeaineistorivi tietokantaan,
             # lisää relaatio kaavakohteen ja lähdeaineistorivin välille ja
-            # TODO päivitä käyttöliittymän tauluun "Näytä yhdistetty kohde"-infopainike
+            # päivitä käyttöliittymän tauluun "Näytä yhdistetty kohde"-infopainike
 
             selectedFeatureID = selectedFeatures[0]["id"]
 

@@ -49,6 +49,7 @@ class UpdateIndexingOfFeatures:
         self.dialogUpdateIndexingOfFeatures.comboBoxIndexDirection.currentIndexChanged.connect(self.handleComboBoxIndexDirectionCurrentIndexChanged)
         
         self.dialogUpdateIndexingOfFeatures.pushButtonUpdate.clicked.connect(self.handlePushButtonUpdateClicked)
+        self.dialogUpdateIndexingOfFeatures.pushButtonUpdateAndClose.clicked.connect(self.handlePushButtonUpdateAndCloseClicked)
         self.dialogUpdateIndexingOfFeatures.pushButtonClose.clicked.connect(self.dialogUpdateIndexingOfFeatures.hide)
         
 
@@ -75,6 +76,7 @@ class UpdateIndexingOfFeatures:
         self.reset()
         # päivitä kaikki lomakkeeen osat
         self.dialogUpdateIndexingOfFeatures.pushButtonUpdate.setEnabled(False)
+        self.dialogUpdateIndexingOfFeatures.pushButtonUpdateAndClose.setEnabled(False)
         self.dialogUpdateIndexingOfFeatures.pushButtonChooseFeatureToAddBetween.setEnabled(False)
         self.dialogUpdateIndexingOfFeatures.comboBoxChooseIndexFieldToUpdate.clear()
         self.dialogUpdateIndexingOfFeatures.comboBoxChooseLandUseClassification.clear()
@@ -140,7 +142,6 @@ class UpdateIndexingOfFeatures:
     def handleComboBoxChooseLandUseClassificationIndexChanged(self, index):
         self.fillComboBoxTargetLayerFeatureIndexValuesCurrent()
         if index == 0:
-            # TODO tyhjennä lomake tarvittavin osin
             pass
         else:
             pass
@@ -254,6 +255,10 @@ class UpdateIndexingOfFeatures:
 
     def handlePushButtonUpdateClicked(self):
         self.updateFeatureValues()
+
+    def handlePushButtonUpdateAndCloseClicked(self):
+        self.updateFeatureValues()
+        self.dialogUpdateIndexingOfFeatures.hide()
 
 
     def shouldReverse(self):
@@ -394,13 +399,16 @@ class UpdateIndexingOfFeatures:
                 self.dialogUpdateIndexingOfFeatures.comboBoxTargetLayerFeatureIndexValuesAfterUpdate.addItems([item["value"] for item in self.featureIDsAndNewIndexValues])
 
                 self.dialogUpdateIndexingOfFeatures.pushButtonUpdate.setEnabled(True)
+                self.dialogUpdateIndexingOfFeatures.pushButtonUpdateAndClose.setEnabled(True)
             else:
                 self.dialogUpdateIndexingOfFeatures.pushButtonUpdate.setEnabled(False)
+                self.dialogUpdateIndexingOfFeatures.pushButtonUpdateAndClose.setEnabled(False)
 
         else: # ei validi
             self.featureIDsAndNewIndexValues = None
             # self.dialogUpdateIndexingOfFeatures.lineEditNewIndexValueForFeatureToAddBetween.clear()
             self.dialogUpdateIndexingOfFeatures.pushButtonUpdate.setEnabled(False)
+            self.dialogUpdateIndexingOfFeatures.pushButtonUpdateAndClose.setEnabled(False)
 
 
     def getFeatureIDsAndNewIndexValuesSorted(self, value, valuePart, currentFeatureIDsAndIndexValues):
@@ -431,8 +439,6 @@ class UpdateIndexingOfFeatures:
     def addExistingIndexValueToStringValues(self, featureID, value, valuePart, sortedValidFeatureIDsAndValuesAndValueParts):
         # käsittele isoilla ja pienillä kirjaimilla:
         #  - a, b, c, ..
-        #  TODO - aa, bb, cc, ..
-        #  TODO - i, ii, iii, ..
         success = False
         featureIDsAndnewIndexValues = []
 
@@ -450,7 +456,7 @@ class UpdateIndexingOfFeatures:
         else:
             indexOfValuePart = currentIndexValueParts.index(valuePart)
 
-            # TODO shouldReverse = self.shouldReverse()
+            # shouldReverse = self.shouldReverse()
 
             if currentIndexValueParts[0] == 'a':
                 countOfValuesToGet = len(currentIndexValueParts) - indexOfValuePart
@@ -493,8 +499,6 @@ class UpdateIndexingOfFeatures:
 
 
     def addExistingIndexValueToFloatValues(self, featureID, value, valuePart, sortedFeatureIDsAndValidValuesAndValueParts):
-        # TODO käsittele:
-        # - 0.1, 0.2, 0.3, ..
         success = False
         featureIDsAndNewIndexValues = []
         return success, featureIDsAndNewIndexValues
@@ -539,7 +543,6 @@ class UpdateIndexingOfFeatures:
             self.iface.messageBar().pushMessage('Kaavakohteiden indeksointi päivitetty', Qgis.Info, 30)
             self.clearForm()
             self.yleiskaavaUtils.refreshTargetLayersInProject()
-            self.dialogUpdateIndexingOfFeatures.hide()
         else:
             self.iface.messageBar().pushMessage('Kaavakohteiden indeksointi ei onnistunut', Qgis.Critical)
 

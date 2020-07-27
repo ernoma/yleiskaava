@@ -6,6 +6,7 @@ from qgis.PyQt.QtWidgets import QWidget, QGridLayout, QLabel, QComboBox, QCheckB
 from qgis.core import (Qgis, QgsProject, QgsMessageLog)
 
 import os.path
+from functools import partial
 
 
 class ChangeFieldValuesOfGroup:
@@ -97,8 +98,7 @@ class ChangeFieldValuesOfGroup:
         self.dialogChangeFieldValuesOfGroup.show()
 
 
-    def handleChooseUpdatedAttributesAndValuesForSpatialFeatures(self):
-        # TODO salli valita ensin päivitettävät arvot ja sitten kohteet 
+    def handleChooseUpdatedAttributesAndValuesForSpatialFeatures(self): 
         if not self.hasUserSelectedPolygonFeaturesForUpdate:
             self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä aluevarauksia', Qgis.Warning)
         else:
@@ -151,6 +151,7 @@ class ChangeFieldValuesOfGroup:
             widget = self.yleiskaavaUtils.getWidgetForSpatialFeatureFieldType(fieldTypeName, fieldName)
 
             if widget != None:
+                self.yleiskaavaUtils.connectWidgetValueChangeHandler(widget, partial(self.widgetFieldValueChanged, index), fieldTypeName)
                 self.dialogChooseAndUpdateFieldValuesForFeatureType.tableWidgetFeatureAttributesAndValues.setCellWidget(index, ChangeFieldValuesOfGroup.FIELD_VALUE_INDEX, widget)
             else:
                 self.iface.messageBar().pushMessage('Bugi koodissa: showFieldInSettingsDialogDefaults widget == None', Qgis.Warning)
@@ -224,3 +225,9 @@ class ChangeFieldValuesOfGroup:
              self.iface.messageBar().pushMessage('Pistemäiset kaavakohteet karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedPointFeaturesForUpdate = True
+
+
+    def widgetFieldValueChanged(self, rowIndex):
+        # value = self.yleiskaavaUtils.getValueOfWidgetForType(widget, fieldTypeName)
+        # compatibleValue = self.yleiskaavaUtils.getAttributeValueInCompatibleType(fieldName, fieldTypeName, fieldTypeName, value)
+        shouldUpdate = self.dialogChooseAndUpdateFieldValuesForFeatureType.tableWidgetFeatureAttributesAndValues.cellWidget(rowIndex, ChangeFieldValuesOfGroup.FIELD_SHOULD_UPDATE_CHOICE_INDEX).findChildren(QCheckBox)[0].setChecked(True)

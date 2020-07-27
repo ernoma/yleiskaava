@@ -1068,7 +1068,6 @@ class YleiskaavaDatabase:
 
 
     def getLinkedFeatureIDAndSourceDataFeature(self, spatialFeatureLayer, sourceLayerFeatureInfo, linkType):
-        # TODO huomio jos useita linkitettyjä kaavakohteita (voi olla myös poistettuja /versionloppumis_pvm is null)
         linkedFeatureID = None
         linkedSourceDataFeature = self.getLinkedSourceDataFeature(linkType, sourceLayerFeatureInfo)
 
@@ -1143,7 +1142,7 @@ class YleiskaavaDatabase:
 
     def createSourceDataFeatureAndRelationToSpatialFeature(self, sourceData, spatialFeatureLayer, targetFeatureID):
         # lisää tarvittaessa uusi lähdeaineistorivi tietokantaan,
-        # TODO lisää relaatio kaavakohteen ja lähdeaineistorivin välille
+        # lisää relaatio kaavakohteen ja lähdeaineistorivin välille
 
         linkedSourceDataFeatureID = None
 
