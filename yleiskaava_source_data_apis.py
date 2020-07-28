@@ -1,5 +1,7 @@
 
-from qgis.core import (Qgis, QgsDataSourceUri, QgsVectorLayer, QgsMessageLog)
+from qgis.core import (Qgis, QgsDataSourceUri,
+    QgsVectorLayer, QgsMessageLog,
+    QgsWkbTypes)
 
 import os.path
 import re
@@ -151,3 +153,27 @@ class YleiskaavaSourceDataAPIs:
 
         return apis
 
+
+    def createMemoryLayer(self, layer, layerInfo, features):
+        memoryLayer = None
+
+        geomType = layer.geometryType()
+
+        if geomType == QgsWkbTypes.PointGeometry:
+            memoryLayer = QgsVectorLayer("MultiPoint?crs=" + layer.crs().authid(), layerInfo['user_friendly_title'], "memory")
+        elif geomType == QgsWkbTypes.LineGeometry:
+            memoryLayer = QgsVectorLayer("MultiLineString?crs=" + layer.crs().authid(), layerInfo['user_friendly_title'], "memory")
+        elif geomType == QgsWkbTypes.PolygonGeometry:
+            memoryLayer = QgsVectorLayer("MultiPolygon?crs=" + layer.crs().authid(), layerInfo['user_friendly_title'], "memory")
+        
+        if memoryLayer is not None:
+            fields = layer.dataProvider().fields().toList()
+            memoryLayer.startEditing()
+            for field in fields:
+                memoryLayer.addAttribute(field)
+            memoryLayer.commitChanges()
+            memoryLayer.startEditing()
+            memoryLayer.addFeatures(features)
+            memoryLayer.commitChanges()
+
+        return memoryLayer

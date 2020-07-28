@@ -123,7 +123,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
-      <widget class="QPushButton" name="pushButtonCancel">
+      <widget class="QPushButton" name="pushButtonClose">
        <property name="text">
         <string>Sulje</string>
        </property>

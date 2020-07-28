@@ -5,7 +5,9 @@ from qgis.PyQt.QtGui import QDesktopServices
 from qgis.PyQt.QtWidgets import QLabel, QPushButton
 
 from qgis.core import (Qgis, QgsProject, QgsMessageLog,
-    QgsGeometry, QgsCoordinateTransform, QgsFeatureRequest, QgsRectangle)
+    QgsGeometry, QgsCoordinateTransform,
+    QgsFeatureRequest, QgsRectangle,
+    QgsWkbTypes, QgsLayerTreeLayer)
 
 import os.path
 from operator import itemgetter
@@ -18,8 +20,10 @@ class AddSourceDataLinks:
 
     FIELD_USER_FRIENDLY_NAME_INDEX = 0
     INFO_LINK_INDEX = 1
-    LINKED_FEATURE_INDEX = 2
-    LINK_TO_FEATURE_INDEX = 3
+    SOURCE_FEATURE_INDEX = 2
+    DISTANCE_INFO_INDEX = 3
+    LINKED_FEATURE_INDEX = 4
+    LINK_TO_FEATURE_INDEX = 5
 
     def __init__(self, iface, yleiskaavaDatabase, yleiskaavaUtils):
         
@@ -36,6 +40,7 @@ class AddSourceDataLinks:
 
         self.selectedTargetLayer = None
         self.apis = None
+        self.shownSourceLayer = None
 
 
     def setup(self):
@@ -57,7 +62,7 @@ class AddSourceDataLinks:
 
         self.dialogAddSourceDataLinks.spinBoxMaxSearchDistance.valueChanged.connect(self.handleSpinBoxMaxSearchDistanceChanged)
 
-        self.dialogAddSourceDataLinks.pushButtonCancel.clicked.connect(self.dialogAddSourceDataLinks.hide)
+        self.dialogAddSourceDataLinks.pushButtonClose.clicked.connect(self.handlePushButtonCloseClicked)
 
         self.setupTableWidgetSourceTargetMatches()
 
@@ -73,6 +78,14 @@ class AddSourceDataLinks:
 
         self.selectedTargetLayer = None
         # self.apis = None
+        self.removeShownSourceLayer()
+
+        self.shownSourceLayer = None
+
+
+    def handlePushButtonCloseClicked(self):
+        self.removeShownSourceLayer()
+        self.dialogAddSourceDataLinks.hide
 
 
     def openDialogAddSourceDataLinks(self):
@@ -93,11 +106,13 @@ class AddSourceDataLinks:
 
         self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.clearContents()
         # self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setRowCount(self.getSourceTargetMatchRowCount())
-        self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setColumnCount(4)
+        self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setColumnCount(6)
         self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setHorizontalHeaderLabels([
             "Lähdenimi / tunniste",
             #"Lähdetietoikkuna",
             "Lähdetietosivu",
+            "Lähde kartalla",
+            "Etäisyys (m)",
             "Yhdistetty kohde",
             "Yhdistä valittuun kohteeseen"#,
             #"Yhdistetään"#,
@@ -108,6 +123,8 @@ class AddSourceDataLinks:
 
 
     def updateTableWidgetSourceTargetMatches(self):
+        self.removeShownSourceLayer()
+
         self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.clearContents()
 
         comboBoxChooseSourceDataLayerIndex = self.dialogAddSourceDataLinks.comboBoxChooseSourceDataLayer.currentIndex()
@@ -126,6 +143,8 @@ class AddSourceDataLinks:
             QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, apiID: ' + str(apiID) + ', name: ' + name, 'Yleiskaava-työkalu', Qgis.Info)
             layer, layerInfo = self.yleiskaavaSourceDataAPIs.getLayerAndLayerInfo(apiID, name)
 
+            # QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches - layer.geometryType(): ' + str(layer.geometryType()), 'Yleiskaava-työkalu', Qgis.Info)
+
             # listaa kohteen nimi ja painikkeet, tms. taulukossa
             # listaa myös jo tietokannassa olevat kohteet (lähtöaineistorajapinnan osalta)
             if layer is None:
@@ -138,15 +157,23 @@ class AddSourceDataLinks:
                 QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, layer.featureCount(): ' + str(layer.featureCount()), 'Yleiskaava-työkalu', Qgis.Info)
 
                 if self.selectedTargetLayer.selectedFeatureCount() > 0:
+                    self.iface.messageBar().pushMessage('Haetaan lähdeaineiston kohteita', Qgis.Info, 5)
+
                     featureRequest = self.createFeatureRequestForSelectedFeatures(layer, layerInfo)
                     if featureRequest != None:
 
                         featureCount = 0
                         featureInfos = []
-                        for index, feature in enumerate(layer.getFeatures(featureRequest)):
+
+                        self.shownSourceLayer = self.yleiskaavaSourceDataAPIs.createMemoryLayer(layer, layerInfo, layer.getFeatures(featureRequest))
+                        if self.shownSourceLayer is not None and self.shownSourceLayer.featureCount() > 0:
+                            self.showSourceLayer()
+
+                        for index, feature in enumerate(self.shownSourceLayer.getFeatures()):
                             featureCount += 1 # layer.featureCount() ei luotettava
                             featureInfos.append({
                                 "feature": feature,
+                                "distance": self.getDistance(self.shownSourceLayer, feature, self.selectedTargetLayer, self.selectedTargetLayer.selectedFeatures()[0]),
                                 "nimi": feature[layerInfo["nimi"]],
                                 "linkki_data": feature[layerInfo["linkki_data"]]
                             })
@@ -156,7 +183,7 @@ class AddSourceDataLinks:
                         if featureCount == 0:
                             self.iface.messageBar().pushMessage('Lähdeaineistokarttatasolta ei löytynyt valituista kohteista määritetyn rajaussuorakulmion sisältä kohteita', Qgis.Info, 10)
 
-                        for index, featureInfo in enumerate(featureInfos):
+                        for index, featureInfo in enumerate(sorted(featureInfos, key=itemgetter("distance"))):
                             # lähdeaineiston mukaan nimi/tunniste UI:hin
                             QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, nimi: ' + str(featureInfo["nimi"]) + ', linkki_data: ' + str(featureInfo["linkki_data"]), 'Yleiskaava-työkalu', Qgis.Info)
                             
@@ -165,6 +192,14 @@ class AddSourceDataLinks:
                             infoLinkButton = QPushButton()
                             infoLinkButton.setText("Näytä lähdetietosivu")
                             infoLinkButton.clicked.connect(partial(self.showInfoPage, str(featureInfo["linkki_data"])))
+
+                            sourceMapButton = QPushButton()
+                            sourceMapButton.setText("Näytä")
+                            sourceMapButton.clicked.connect(partial(self.showSourceFeature, self.shownSourceLayer, featureInfo["feature"].id()))
+
+                            distanceLabel = QLabel()
+                            distanceLabel.setAlignment(Qt.AlignCenter)
+                            distanceLabel.setText(str(featureInfo["distance"]))
 
                             linkedFeatureWidget = None
                             # yhdistä tietokannan data
@@ -184,22 +219,59 @@ class AddSourceDataLinks:
 
                             self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(index, AddSourceDataLinks.FIELD_USER_FRIENDLY_NAME_INDEX, userFriendlyFieldNameLabel)
                             self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(index, AddSourceDataLinks.INFO_LINK_INDEX, infoLinkButton)
+                            self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(index, AddSourceDataLinks.SOURCE_FEATURE_INDEX, sourceMapButton)
+                            self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(index, AddSourceDataLinks.DISTANCE_INFO_INDEX, distanceLabel)
                             self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(index, AddSourceDataLinks.LINKED_FEATURE_INDEX, linkedFeatureWidget)
                             self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(index, AddSourceDataLinks.LINK_TO_FEATURE_INDEX, linkToFeatureButton)
 
                 self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.resizeColumnsToContents()
 
 
+    def showSourceLayer(self):
+        QgsProject.instance().addMapLayer(self.shownSourceLayer, False)
+        layerTree = self.iface.layerTreeCanvasBridge().rootGroup()
+        # the position is a number starting from 0, with -1 an alias for the end
+        layerTree.insertChildNode(0, QgsLayerTreeLayer(self.shownSourceLayer))
+        self.shownSourceLayer.setOpacity(0.5)
+        self.shownSourceLayer.commitChanges()
+
+
+    def removeShownSourceLayer(self):
+        if self.shownSourceLayer is not None:
+            try:
+                # self.shownSourceLayer.commitChanges()
+                # layerTree = self.iface.layerTreeCanvasBridge().rootGroup()
+                # layerTree.removeLayer(self.shownSourceLayer)
+                # QgsProject.instance().takeMapLayer(self.shownSourceLayer)
+                QgsProject.instance().removeMapLayer(self.shownSourceLayer.id())
+            except RuntimeError:
+                pass
+
+
     def showInfoPage(self, infoPageURL):
         QDesktopServices.openUrl(QUrl(infoPageURL))
 
 
-    def showLinkedFeature(self, layer, linkedFeatureID):
+    def showLinkedFeature(self, layer, featureID):
         # siiry kohteeseen kartalla, vilkuta kohdetta ja avaa kohteen tietoikkuna
         mapCanvas = self.iface.mapCanvas()
         linkedFeature = None
         for feature in layer.getFeatures():
-            if feature["id"] == linkedFeatureID:
+            if feature["id"] == featureID:
+                linkedFeature = feature
+                break
+
+        mapCanvas.panToFeatureIds(layer, [linkedFeature.id()])
+        mapCanvas.flashGeometries([linkedFeature.geometry()], layer.crs())
+        self.iface.openFeatureForm(layer, linkedFeature)
+
+
+    def showSourceFeature(self, layer, fid):
+        # siiry kohteeseen kartalla, vilkuta kohdetta ja avaa kohteen tietoikkuna
+        mapCanvas = self.iface.mapCanvas()
+        linkedFeature = None
+        for feature in layer.getFeatures():
+            if feature.id() == fid:
                 linkedFeature = feature
                 break
 
@@ -338,7 +410,8 @@ class AddSourceDataLinks:
 
         if xMin is not None and yMin is not None and xMax is not None and yMax is not None:
             bboxAllFeatures = QgsRectangle(xMin, yMin, xMax, yMax)
-            featureRequest = QgsFeatureRequest().setFilterRect(bboxAllFeatures).setFlags(QgsFeatureRequest.NoGeometry)
+            featureRequest = QgsFeatureRequest().setFilterRect(bboxAllFeatures)
+            # featureRequest = QgsFeatureRequest().setFilterRect(bboxAllFeatures).setFlags(QgsFeatureRequest.NoGeometry)
             # featureRequest = QgsFeatureRequest().setFilterRect(bboxAllFeatures).setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes([layerInfo["nimi"], layerInfo["linkki_data"]], layer.fields())
 
         return featureRequest
@@ -395,8 +468,32 @@ class AddSourceDataLinks:
                 # päivitä käyttöliittymän tauluun "Näytä yhdistetty kohde"-infopainike
                 linkedFeatureWidget = QPushButton()
                 linkedFeatureWidget.setText("Näytä yhdistetty kohde")
-                linkedFeatureWidget.clicked.connect(partial(self.showLinkedFeature, self.selectedTargetLayer, selectedFeatureID))
+                linkedFeatureWidget.clicked.connect(partial(self.showLinkedFeature, self.selectedTargetLayer, selectedFeatures[0]["id"]))
                 self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(tableWidgetSourceTargetMatchesRowIndex, AddSourceDataLinks.LINKED_FEATURE_INDEX, linkedFeatureWidget)
                 self.yleiskaavaUtils.refreshTargetLayersInProject()
             else:
                 self.iface.messageBar().pushMessage('Lähdelinkin lisääminen epäonnistui', Qgis.Critical)
+
+
+    def getDistance(self, layer1, feature1, layer2, feature2):
+        distance = -1
+
+        transform = None
+        if layer1.crs() != layer2.crs():
+            transform = QgsCoordinateTransform(layer1.crs(), layer2.crs(), QgsProject.instance())
+
+        geom1 = feature1.geometry()
+        geom2 = feature2.geometry()
+
+        if not geom1.isNull() and not geom2.isNull():
+            transformedSourceGeom1 = None
+            if transform is not None:
+                transformedGeom1 = QgsGeometry(geom1)
+                transformedGeom1.transform(transform)
+            else:
+                transformedGeom1 = QgsGeometry(geom)
+
+            distance = int(round(transformedGeom1.distance(geom2)))
+
+        return distance
+                
