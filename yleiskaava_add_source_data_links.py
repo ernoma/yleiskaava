@@ -7,13 +7,15 @@ from qgis.PyQt.QtWidgets import QLabel, QPushButton
 from qgis.core import (Qgis, QgsProject, QgsMessageLog,
     QgsGeometry, QgsCoordinateTransform,
     QgsFeatureRequest, QgsRectangle,
-    QgsWkbTypes, QgsLayerTreeLayer)
+    QgsWkbTypes, QgsLayerTreeLayer,
+    QgsTask, QgsApplication)
 
 import os.path
 from operator import itemgetter
 from functools import partial
 
 from .yleiskaava_source_data_apis import YleiskaavaSourceDataAPIs
+from .yleiskaava_source_data_apis import FeatureRequestTask
 
 
 class AddSourceDataLinks:
@@ -41,6 +43,9 @@ class AddSourceDataLinks:
         self.selectedTargetLayer = None
         self.apis = None
         self.shownSourceLayer = None
+        self.featureRequestTask = None
+        self.originalSourceLayer = None
+        self.originalSourceLayerInfo = None
 
 
     def setup(self):
@@ -81,6 +86,9 @@ class AddSourceDataLinks:
         self.removeShownSourceLayer()
 
         self.shownSourceLayer = None
+        self.featureRequestTask = None
+        self.originalSourceLayer = None
+        self.originalSourceLayerInfo = None
 
 
     def handlePushButtonCloseClicked(self):
@@ -112,7 +120,7 @@ class AddSourceDataLinks:
             #"Lähdetietoikkuna",
             "Lähdetietosivu",
             "Lähde kartalla",
-            "Etäisyys (m)",
+            "Etäisyys valitusta kohteesta (m)",
             "Yhdistetty kohde",
             "Yhdistä valittuun kohteeseen"#,
             #"Yhdistetään"#,
@@ -151,80 +159,100 @@ class AddSourceDataLinks:
                 self.iface.messageBar().pushMessage('Lähdekarttason kohteiden hakeminen ei onnistunut', Qgis.Critical)
             else:
                 fields = layer.fields()
-                for field in fields:
-                    QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, field.name(): ' + str(field.name()) + ', name: ' + name, 'Yleiskaava-työkalu', Qgis.Info)
+                # for field in fields:
+                #     QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, field.name(): ' + str(field.name()) + ', name: ' + name, 'Yleiskaava-työkalu', Qgis.Info)
 
                 QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, layer.featureCount(): ' + str(layer.featureCount()), 'Yleiskaava-työkalu', Qgis.Info)
 
                 if self.selectedTargetLayer.selectedFeatureCount() > 0:
-                    self.iface.messageBar().pushMessage('Haetaan lähdeaineiston kohteita', Qgis.Info, 5)
 
                     featureRequest = self.createFeatureRequestForSelectedFeatures(layer, layerInfo)
                     if featureRequest != None:
 
-                        featureCount = 0
-                        featureInfos = []
+                        self.originalSourceLayer = layer
+                        self.originalSourceLayerInfo = layerInfo
 
-                        self.shownSourceLayer = self.yleiskaavaSourceDataAPIs.createMemoryLayer(layer, layerInfo, layer.getFeatures(featureRequest))
-                        if self.shownSourceLayer is not None and self.shownSourceLayer.featureCount() > 0:
-                            self.showSourceLayer()
+                        self.featureRequestTask = FeatureRequestTask(layer, featureRequest)
+                        self.featureRequestTask.taskCompleted.connect(self.postFeatureRequestTaskRun)
+                        self.featureRequestTask.taskTerminated.connect(self.postFeatureRequestTaskError)
+                        QgsApplication.taskManager().addTask(self.featureRequestTask)
+                        self.iface.messageBar().pushMessage('Haetaan lähdeaineiston kohteita', Qgis.Info, 5)
 
-                        for index, feature in enumerate(self.shownSourceLayer.getFeatures()):
-                            featureCount += 1 # layer.featureCount() ei luotettava
-                            featureInfos.append({
-                                "feature": feature,
-                                "distance": self.getDistance(self.shownSourceLayer, feature, self.selectedTargetLayer, self.selectedTargetLayer.selectedFeatures()[0]),
-                                "nimi": feature[layerInfo["nimi"]],
-                                "linkki_data": feature[layerInfo["linkki_data"]]
-                            })
-                        self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setRowCount(featureCount)
-                        QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches - featureCount: ' + str(featureCount), 'Yleiskaava-työkalu', Qgis.Info)
 
-                        if featureCount == 0:
-                            self.iface.messageBar().pushMessage('Lähdeaineistokarttatasolta ei löytynyt valituista kohteista määritetyn rajaussuorakulmion sisältä kohteita', Qgis.Info, 10)
+    def postFeatureRequestTaskError(self):
+        self.iface.messageBar().pushMessage('Lähdeaineiston kohteiden hakeminen epäonnistui', Qgis.Critical)
+        self.reset()
 
-                        for index, featureInfo in enumerate(sorted(featureInfos, key=itemgetter("distance"))):
-                            # lähdeaineiston mukaan nimi/tunniste UI:hin
-                            QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, nimi: ' + str(featureInfo["nimi"]) + ', linkki_data: ' + str(featureInfo["linkki_data"]), 'Yleiskaava-työkalu', Qgis.Info)
-                            
-                            userFriendlyFieldNameLabel = QLabel(str(featureInfo["nimi"]))
 
-                            infoLinkButton = QPushButton()
-                            infoLinkButton.setText("Näytä lähdetietosivu")
-                            infoLinkButton.clicked.connect(partial(self.showInfoPage, str(featureInfo["linkki_data"])))
+    def postFeatureRequestTaskRun(self):
+        
+        self.iface.messageBar().popWidget()
+        self.iface.messageBar().pushMessage('Lähdeaineiston kohteet haettu', Qgis.Info, 5)
 
-                            sourceMapButton = QPushButton()
-                            sourceMapButton.setText("Näytä")
-                            sourceMapButton.clicked.connect(partial(self.showSourceFeature, self.shownSourceLayer, featureInfo["feature"].id()))
+        self.shownSourceLayer = self.yleiskaavaSourceDataAPIs.createMemoryLayer(self.originalSourceLayer, self.originalSourceLayerInfo, self.featureRequestTask.features)
+        
+        if self.shownSourceLayer is not None and self.shownSourceLayer.featureCount() > 0:
+            self.showSourceLayer()
 
-                            distanceLabel = QLabel()
-                            distanceLabel.setAlignment(Qt.AlignCenter)
-                            distanceLabel.setText(str(featureInfo["distance"]))
+        featureCount = 0
+        featureInfos = []
 
-                            linkedFeatureWidget = None
-                            # yhdistä tietokannan data
-                            linkedFeatureID, linkedSourceDataFeature = self.yleiskaavaSourceDataAPIs.getLinkedDatabaseFeatureIDAndSourceDataFeature(self.selectedTargetLayer, featureInfo)
-                            if linkedFeatureID != None:
-                                linkedFeatureWidget = QPushButton()
-                                linkedFeatureWidget.setText("Näytä yhdistetty kohde")
-                                linkedFeatureWidget.clicked.connect(partial(self.showLinkedFeature, self.selectedTargetLayer, linkedFeatureID))
-                            else:
-                                linkedFeatureWidget = QLabel()
-                                linkedFeatureWidget.setAlignment(Qt.AlignCenter)
-                                linkedFeatureWidget.setText("-")
+        for index, feature in enumerate(self.shownSourceLayer.getFeatures()):
+            featureCount += 1 # layer.featureCount() ei luotettava
+            featureInfos.append({
+                "feature": feature,
+                "distance": self.getDistance(self.shownSourceLayer, feature, self.selectedTargetLayer, self.selectedTargetLayer.selectedFeatures()[0]),
+                "nimi": feature[self.originalSourceLayerInfo["nimi"]],
+                "linkki_data": feature[self.originalSourceLayerInfo["linkki_data"]]
+            })
+        self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setRowCount(featureCount)
+        QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches - featureCount: ' + str(featureCount), 'Yleiskaava-työkalu', Qgis.Info)
 
-                            linkToFeatureButton = QPushButton()
-                            linkToFeatureButton.setText("Yhdistä")
-                            linkToFeatureButton.clicked.connect(partial(self.addLinkBetweenSourceFeatureAndSelectedTargetFeature, index, featureInfo))
+        if featureCount == 0:
+            self.iface.messageBar().pushMessage('Lähdeaineistokarttatasolta ei löytynyt valituista kohteista määritetyn rajaussuorakulmion sisältä kohteita', Qgis.Info, 10)
 
-                            self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(index, AddSourceDataLinks.FIELD_USER_FRIENDLY_NAME_INDEX, userFriendlyFieldNameLabel)
-                            self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(index, AddSourceDataLinks.INFO_LINK_INDEX, infoLinkButton)
-                            self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(index, AddSourceDataLinks.SOURCE_FEATURE_INDEX, sourceMapButton)
-                            self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(index, AddSourceDataLinks.DISTANCE_INFO_INDEX, distanceLabel)
-                            self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(index, AddSourceDataLinks.LINKED_FEATURE_INDEX, linkedFeatureWidget)
-                            self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(index, AddSourceDataLinks.LINK_TO_FEATURE_INDEX, linkToFeatureButton)
+        for index, featureInfo in enumerate(sorted(featureInfos, key=itemgetter("distance"))):
+            # lähdeaineiston mukaan nimi/tunniste UI:hin
+            QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, nimi: ' + str(featureInfo["nimi"]) + ', linkki_data: ' + str(featureInfo["linkki_data"]), 'Yleiskaava-työkalu', Qgis.Info)
+            
+            userFriendlyFieldNameLabel = QLabel(str(featureInfo["nimi"]))
 
-                self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.resizeColumnsToContents()
+            infoLinkButton = QPushButton()
+            infoLinkButton.setText("Näytä lähdetietosivu")
+            infoLinkButton.clicked.connect(partial(self.showInfoPage, str(featureInfo["linkki_data"])))
+
+            sourceMapButton = QPushButton()
+            sourceMapButton.setText("Näytä")
+            sourceMapButton.clicked.connect(partial(self.showSourceFeature, self.shownSourceLayer, featureInfo["feature"].id()))
+
+            distanceLabel = QLabel()
+            distanceLabel.setAlignment(Qt.AlignCenter)
+            distanceLabel.setText(str(featureInfo["distance"]))
+
+            linkedFeatureWidget = None
+            # yhdistä tietokannan data
+            linkedFeatureID, linkedSourceDataFeature = self.yleiskaavaSourceDataAPIs.getLinkedDatabaseFeatureIDAndSourceDataFeature(self.selectedTargetLayer, featureInfo)
+            if linkedFeatureID != None:
+                linkedFeatureWidget = QPushButton()
+                linkedFeatureWidget.setText("Näytä yhdistetty kohde")
+                linkedFeatureWidget.clicked.connect(partial(self.showLinkedFeature, self.selectedTargetLayer, linkedFeatureID))
+            else:
+                linkedFeatureWidget = QLabel()
+                linkedFeatureWidget.setAlignment(Qt.AlignCenter)
+                linkedFeatureWidget.setText("-")
+
+            linkToFeatureButton = QPushButton()
+            linkToFeatureButton.setText("Yhdistä")
+            linkToFeatureButton.clicked.connect(partial(self.addLinkBetweenSourceFeatureAndSelectedTargetFeature, index, featureInfo))
+
+            self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(index, AddSourceDataLinks.FIELD_USER_FRIENDLY_NAME_INDEX, userFriendlyFieldNameLabel)
+            self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(index, AddSourceDataLinks.INFO_LINK_INDEX, infoLinkButton)
+            self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(index, AddSourceDataLinks.SOURCE_FEATURE_INDEX, sourceMapButton)
+            self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(index, AddSourceDataLinks.DISTANCE_INFO_INDEX, distanceLabel)
+            self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(index, AddSourceDataLinks.LINKED_FEATURE_INDEX, linkedFeatureWidget)
+            self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(index, AddSourceDataLinks.LINK_TO_FEATURE_INDEX, linkToFeatureButton)
+
+        self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.resizeColumnsToContents()
 
 
     def showSourceLayer(self):
@@ -366,6 +394,7 @@ class AddSourceDataLinks:
         name = namePart[0:-1]
         return title, name
 
+
     def createFeatureRequestForSelectedFeatures(self, layer, layerInfo):
         featureRequest = None
 
@@ -373,7 +402,6 @@ class AddSourceDataLinks:
         selectedTargetLayerCRS = self.selectedTargetLayer.crs()
         if layer.crs() != selectedTargetLayerCRS:
             transform = QgsCoordinateTransform(selectedTargetLayerCRS, layer.crs(), QgsProject.instance())
-        
 
         features = self.selectedTargetLayer.selectedFeatures()
 

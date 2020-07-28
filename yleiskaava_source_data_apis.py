@@ -1,7 +1,7 @@
 
 from qgis.core import (Qgis, QgsDataSourceUri,
     QgsVectorLayer, QgsMessageLog,
-    QgsWkbTypes)
+    QgsWkbTypes, QgsTask)
 
 import os.path
 import re
@@ -177,3 +177,38 @@ class YleiskaavaSourceDataAPIs:
             memoryLayer.commitChanges()
 
         return memoryLayer
+
+
+
+class FeatureRequestTask(QgsTask):
+    def __init__(self, layer, featureRequest):
+        super().__init__('Haetaan kohteita', QgsTask.CanCancel)
+        self.exception = None
+        self.layer = layer
+        self.featureRequest = featureRequest
+        self.features = None
+
+
+    def run(self):
+        if self.exception:
+            return False
+
+        self.features = self.layer.getFeatures(self.featureRequest)
+
+        return True
+
+
+    def finished(self, success):
+        if not success:
+            QgsMessageLog.logMessage('FeatureRequestTask - poikkeus: ' + str(self.exception), 'Yleiskaava-työkalu', Qgis.Critical)
+            # raise self.exception
+            self.cancel()
+
+
+    def cancel(self):
+        QgsMessageLog.logMessage(
+            'FeatureRequestTask "{name}" was canceled'.format(
+                name=self.description()),
+            'Yleiskaava-työkalu', Qgis.Info)
+        super().cancel()
+    
