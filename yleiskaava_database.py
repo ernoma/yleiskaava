@@ -569,16 +569,18 @@ class YleiskaavaDatabase:
         layer.commitChanges()
 
 
-    def createFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationTitle):
+    def createFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationTitle, shouldClone=False):
         regulationID = self.findRegulationID(regulationTitle)
 
-        self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulationID)
+        self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulationID, shouldClone)
 
 
-    def createFeatureRegulationRelationWithRegulationID(self, targetSchemaTableName, targetFeatureID, regulationID):
+    def createFeatureRegulationRelationWithRegulationID(self, targetSchemaTableName, targetFeatureID, regulationID, shouldClone=False):
         # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - targetSchemaTableName: " + targetSchemaTableName + ", targetFeatureID: " + str(targetFeatureID) + ", regulationID: " + str(regulationID), 'Yleiskaava-työkalu', Qgis.Info)
 
         relationLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
+        if shouldClone:
+            relationLayer = relationLayer.clone()
         #relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_kaavamaarays_yhteys")[0]
 
         schema, table_name = targetSchemaTableName.split('.')
@@ -719,8 +721,10 @@ class YleiskaavaDatabase:
         return regulationID
 
 
-    def createSpecificRegulationAndFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationName):
+    def createSpecificRegulationAndFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationName, shouldClone=False):
         regulationLayer = self.getProjectLayer("yk_yleiskaava.kaavamaarays")
+        if shouldClone:
+            regulationLayer = regulationLayer.clone()
 
         regulationID = str(uuid.uuid4())
 
@@ -733,7 +737,7 @@ class YleiskaavaDatabase:
         provider.addFeatures([regulationFeature])
         regulationLayer.commitChanges()
 
-        self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulationID)
+        self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulationID, shouldClone)
 
 
     def getCodeListValuesForPlanObjectField(self, targetFieldName):

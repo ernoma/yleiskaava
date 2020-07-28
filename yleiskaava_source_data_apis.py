@@ -207,7 +207,7 @@ class FeatureRequestTask(QgsTask):
 
     def cancel(self):
         QgsMessageLog.logMessage(
-            'FeatureRequestTask "{name}" was canceled'.format(
+            'FeatureRequestTask "{name}" keskeytettiin'.format(
                 name=self.description()),
             'Yleiskaava-työkalu', Qgis.Info)
         super().cancel()
