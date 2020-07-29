@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>482</width>
-    <height>393</height>
+    <width>492</width>
+    <height>495</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -28,16 +28,34 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QComboBox" name="comboBoxRegulationTitles"/>
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <item>
+            <widget class="QComboBox" name="comboBoxRegulationTitles">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="checkBoxShowOnlyUsedRegulations">
+             <property name="text">
+              <string>Listaa vain käytössä olevat määräykset</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
-         <item row="2" column="0">
+         <item row="3" column="0">
           <widget class="QLabel" name="label_2">
            <property name="text">
             <string>Kaavamääräyksen otsikko:</string>
            </property>
           </widget>
          </item>
-         <item row="2" column="1">
+         <item row="3" column="1">
           <widget class="QPlainTextEdit" name="plainTextEditRegulationTitle"/>
          </item>
          <item row="4" column="0">
@@ -59,6 +77,66 @@
          </item>
          <item row="5" column="1">
           <widget class="QPlainTextEdit" name="plainTextEditRegulationDescription"/>
+         </item>
+         <item row="1" column="0" colspan="2">
+          <layout class="QHBoxLayout" name="horizontalLayout_3">
+           <item>
+            <widget class="QCheckBox" name="checkBoxShowAreaRegulations">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Listaa aluevarausten kaavamääräykset</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="checkBoxShowSuplementaryAreaRegulations">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Listaa täydentävien aluekohteiden kaavamääräykset</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="2" column="0" colspan="2">
+          <layout class="QHBoxLayout" name="horizontalLayout_4">
+           <item>
+            <widget class="QCheckBox" name="checkBoxShowLineRegulations">
+             <property name="text">
+              <string>Listaa viivamaisten kohteiden kaavamääräykset</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="checkBoxShowPointRegulations">
+             <property name="text">
+              <string>Listaa pistemäisten kohteiden kaavamääräykset</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </item>

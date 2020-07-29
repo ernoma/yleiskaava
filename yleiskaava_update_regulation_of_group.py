@@ -42,6 +42,12 @@ class UpdateRegulationOfGroup:
 
         self.dialogUpdateRegulationOfGroup.comboBoxRegulationTitles.currentIndexChanged.connect(self.handleComboBoxRegulationTitleChanged)
 
+        self.dialogUpdateRegulationOfGroup.checkBoxShowOnlyUsedRegulations.stateChanged.connect(self.checkBoxShowOnlyUsedRegulationsStateChanged)
+        self.dialogUpdateRegulationOfGroup.checkBoxShowAreaRegulations.stateChanged.connect(self.checkBoxShowAreaRegulationsStateChanged)
+        self.dialogUpdateRegulationOfGroup.checkBoxShowSuplementaryAreaRegulations.stateChanged.connect(self.checkBoxShowSuplementaryAreaRegulationsStateChanged)
+        self.dialogUpdateRegulationOfGroup.checkBoxShowLineRegulations.stateChanged.connect(self.checkBoxShowLineRegulationsStateChanged)
+        self.dialogUpdateRegulationOfGroup.checkBoxShowPointRegulations.stateChanged.connect(self.checkBoxShowPointRegulationsStateChanged)
+
         self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPolygonFeatures.stateChanged.connect(self.checkBoxUpdateLandUseClassificationsForPolygonFeaturesStateChanged)
         self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForSupplementaryPolygonFeatures.stateChanged.connect(self.checkBoxUpdateLandUseClassificationsForSupplementaryPolygonFeaturesStateChanged)
         self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForLineFeatures.stateChanged.connect(self.checkBoxUpdateLandUseClassificationsForLineFeaturesStateChanged)
@@ -318,7 +324,23 @@ class UpdateRegulationOfGroup:
 
 
     def setupRegulationsInDialog(self):
-        self.regulations = sorted(self.yleiskaavaDatabase.getSpecificRegulations(), key=itemgetter('alpha_sort_key'))
+        shouldShowOnlyUsedRegulations = False
+        includeAreaRegulations = False
+        includeSuplementaryAreaRegulations = False
+        includeLineRegulations = False
+        includePointRegulations = False
+        if self.dialogUpdateRegulationOfGroup.checkBoxShowOnlyUsedRegulations.isChecked():
+            shouldShowOnlyUsedRegulations = True
+        if self.dialogUpdateRegulationOfGroup.checkBoxShowAreaRegulations.isChecked():
+            includeAreaRegulations = True
+        if self.dialogUpdateRegulationOfGroup.checkBoxShowSuplementaryAreaRegulations.isChecked():
+            includeSuplementaryAreaRegulations = True
+        if self.dialogUpdateRegulationOfGroup.checkBoxShowLineRegulations.isChecked():
+            includeLineRegulations = True
+        if self.dialogUpdateRegulationOfGroup.checkBoxShowPointRegulations.isChecked():
+            includePointRegulations = True
+
+        self.regulations = sorted(self.yleiskaavaDatabase.getSpecificRegulations(shouldShowOnlyUsedRegulations, includeAreaRegulations, includeSuplementaryAreaRegulations, includeLineRegulations, includePointRegulations), key=itemgetter('alpha_sort_key'))
         self.regulationTitles = []
         for index, regulation in enumerate(self.regulations):
             #QgsMessageLog.logMessage("setupRegulationsInDialog - index: " + str(index) + ", regulation['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()) + ", regulation['maaraysteksti']: " + str(regulation['maaraysteksti'].value()) + ", regulation['kuvaus_teksti']: " + str(regulation['kuvaus_teksti'].value()), 'Yleiskaava-työkalu', Qgis.Info)
@@ -333,9 +355,10 @@ class UpdateRegulationOfGroup:
 
     
     def handleComboBoxRegulationTitleChanged(self, currentIndex):
-        self.currentRegulation = self.regulations[currentIndex - 1]
+        # QgsMessageLog.logMessage("handleComboBoxRegulationTitleChanged - currentIndex: " + str(currentIndex) + ", len(self.regulations): " + str(len(self.regulations)), 'Yleiskaava-työkalu', Qgis.Info)
+        if currentIndex > 0 and self.regulations is not None and len(self.regulations) >= (currentIndex - 1):
+            self.currentRegulation = self.regulations[currentIndex - 1]
 
-        if currentIndex > 0:
             self.dialogUpdateRegulationOfGroup.plainTextEditRegulationTitle.setPlainText(self.currentRegulation["kaavamaarays_otsikko"].value())
             if not self.currentRegulation["maaraysteksti"].isNull():
                 self.dialogUpdateRegulationOfGroup.plainTextEditRegulationText.setPlainText(self.currentRegulation["maaraysteksti"].value())
@@ -350,3 +373,20 @@ class UpdateRegulationOfGroup:
             self.dialogUpdateRegulationOfGroup.plainTextEditRegulationTitle.setPlainText("")
             self.dialogUpdateRegulationOfGroup.plainTextEditRegulationText.setPlainText("")
             self.dialogUpdateRegulationOfGroup.plainTextEditRegulationDescription.setPlainText("")
+
+
+    def checkBoxShowOnlyUsedRegulationsStateChanged(self):
+        self.setupRegulationsInDialog()
+
+            
+    def checkBoxShowAreaRegulationsStateChanged(self):
+        self.setupRegulationsInDialog()
+
+    def checkBoxShowSuplementaryAreaRegulationsStateChanged(self):
+        self.setupRegulationsInDialog()
+   
+    def checkBoxShowLineRegulationsStateChanged(self):
+        self.setupRegulationsInDialog()
+
+    def checkBoxShowPointRegulationsStateChanged(self):
+        self.setupRegulationsInDialog()

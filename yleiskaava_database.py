@@ -1,12 +1,19 @@
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QSettings, QVariant
-from qgis.core import (Qgis, QgsProject, QgsFeature, QgsWkbTypes, QgsMessageLog)
+from qgis.core import (Qgis, QgsProject,
+    QgsFeature, QgsWkbTypes,
+    QgsMessageLog, QgsFeatureRequest)
 from qgis.gui import QgsFileWidget
 
 import os.path
 import uuid
 
 class YleiskaavaDatabase:
+
+    KAAVAOBJEKTI_ALUE = "Aluevaraukset"
+    KAAVAOBJEKTI_ALUE_TAYDENTAVA = "Täydentävät aluekohteet (osa-alueet)"
+    KAAVAOBJEKTI_VIIVA = "Viivamaiset kaavakohteet"
+    KAAVAOBJEKTI_PISTE = "Pistemäiset kaavakohteet"
 
     def __init__(self, iface):
 
@@ -326,9 +333,11 @@ class YleiskaavaDatabase:
 
 
     def findSpatialFeatureFromFeatureLayerWithID(self, layer, featureID):
-        for feature in layer.getFeatures():
-            if feature['id'] == featureID:
-                return feature
+        featureRequest = QgsFeatureRequest().setFilterExpression("\"id\"='{}'".format(featureID))
+        features = layer.getFeatures(featureRequest)
+        featureList = list(features)
+        if len(featureList) > 0:
+            return featureList[0]
 
         return None
 
@@ -397,7 +406,7 @@ class YleiskaavaDatabase:
         return regulationList
 
 
-    def getSpecificRegulations(self):
+    def getSpecificRegulations(self, onlyUsedRegulations=False, includeAreaRegulations=True, includeSuplementaryAreaRegulations=True, includeLineRegulations=True, includePointRegulations=True):
         targetLayer = self.getProjectLayer("yk_yleiskaava.kaavamaarays")
 
         features = targetLayer.getFeatures()
@@ -408,15 +417,88 @@ class YleiskaavaDatabase:
             kuvausteksti = QVariant(feature['kuvaus_teksti'])
 
             if not kaavamaarays_otsikko.isNull():
-                regulationList.append({
-                    "id": feature['id'],
-                    "alpha_sort_key": str(kaavamaarays_otsikko.value()),
-                    "kaavamaarays_otsikko": kaavamaarays_otsikko,
-                    "maaraysteksti": maaraysteksti,
-                    "kuvaus_teksti": kuvausteksti
-                    })
+                shouldAdd = True
+                if onlyUsedRegulations or not includeAreaRegulations or not includeSuplementaryAreaRegulations or not includeLineRegulations or not includePointRegulations:
+                    shouldAdd = self.shouldAddRegulation(feature['id'], onlyUsedRegulations, includeAreaRegulations, includeSuplementaryAreaRegulations, includeLineRegulations, includePointRegulations)
+
+                if shouldAdd:
+                    regulationList.append({
+                        "id": feature['id'],
+                        "alpha_sort_key": str(kaavamaarays_otsikko.value()),
+                        "kaavamaarays_otsikko": kaavamaarays_otsikko,
+                        "maaraysteksti": maaraysteksti,
+                        "kuvaus_teksti": kuvausteksti
+                        })
 
         return regulationList
+
+
+    def shouldAddRegulation(self, regulationID, onlyUsedRegulations=False, includeAreaRegulations=True, includeSuplementaryAreaRegulations=True, includeLineRegulations=True, includePointRegulations=True):
+
+        # Käytössä, jos liittyy johonkin kaavakohteeseen, jonka version_loppumispvm is None
+        relationLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
+        featureRequest = QgsFeatureRequest().setFilterExpression("\"id_kaavamaarays\" = '{}'".format(regulationID))
+        for relationFeature in relationLayer.getFeatures(featureRequest):
+            if includeAreaRegulations and not QVariant(relationFeature["id_kaavaobjekti_alue"]).isNull():
+                if onlyUsedRegulations:
+                    layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE)[0]
+                    subsetString = layer.subsetString()
+                    layer.setSubsetString("")
+                    featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setNoAttributes().setFilterExpression("\"id\"='{}' AND \"version_loppumispvm\" IS NULL".format(relationFeature["id_kaavaobjekti_alue"]))
+                    features = layer.getFeatures(featureRequest)
+                    layer.setSubsetString(subsetString)
+                    # spatialFeature = self.getSpatialFeature(relationFeature["id_kaavaobjekti_alue"], "alue")
+                    
+                    # QgsMessageLog.logMessage('isRegulationInUse - spatialFeature["version_loppumispvm"]: ' + str(spatialFeature["version_loppumispvm"]), 'Yleiskaava-työkalu', Qgis.Info)
+                    for feature in features:
+                        return True
+                else:
+                    return True
+            # else:
+            #     QgsMessageLog.logMessage('isRegulationInUse - relationFeature["id_kaavaobjekti_alue"]: ' + str(relationFeature["id_kaavaobjekti_alue"]) + ', QVariant(relationFeature["id_kaavaobjekti_alue"]).isNull(): ' + str(QVariant(relationFeature["id_kaavaobjekti_alue"]).isNull()), 'Yleiskaava-työkalu', Qgis.Info)
+            elif includeSuplementaryAreaRegulations and not QVariant(relationFeature["id_kaavaobjekti_alue_taydentava"]).isNull():
+                if onlyUsedRegulations:
+                    layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE_TAYDENTAVA)[0]
+                    subsetString = layer.subsetString()
+                    layer.setSubsetString("")
+                    featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setNoAttributes().setFilterExpression("\"id\"='{}' AND \"version_loppumispvm\" IS NULL".format(relationFeature["id_kaavaobjekti_alue_taydentava"]))
+                    features = layer.getFeatures(featureRequest)
+                    layer.setSubsetString(subsetString)
+                    # spatialFeature = self.getSpatialFeature(relationFeature["id_kaavaobjekti_alue_taydentava"], "alue_taydentava")
+                    # QgsMessageLog.logMessage('isRegulationInUse - spatialFeature["version_loppumispvm"]: ' + str(spatialFeature["version_loppumispvm"]), 'Yleiskaava-työkalu', Qgis.Info)
+                    for feature in features:
+                        return True
+                else:
+                    return True
+            elif includeLineRegulations and not QVariant(relationFeature["id_kaavaobjekti_viiva"]).isNull():
+                if onlyUsedRegulations:
+                    layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA)[0]
+                    subsetString = layer.subsetString()
+                    layer.setSubsetString("")
+                    featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setNoAttributes().setFilterExpression("\"id\"='{}' AND \"version_loppumispvm\" IS NULL".format(relationFeature["id_kaavaobjekti_viiva"]))
+                    features = layer.getFeatures(featureRequest)
+                    layer.setSubsetString(subsetString)
+                    # QgsMessageLog.logMessage('isRegulationInUse - spatialFeature["version_loppumispvm"]: ' + str(spatialFeature["version_loppumispvm"]), 'Yleiskaava-työkalu', Qgis.Info)
+                    for feature in features:
+                        return True
+                else:
+                    return True
+            elif includePointRegulations and not QVariant(relationFeature["id_kaavaobjekti_piste"]).isNull():
+                if onlyUsedRegulations:
+                    layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_PISTE)[0]
+                    subsetString = layer.subsetString()
+                    layer.setSubsetString("")
+                    featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setNoAttributes().setFilterExpression("\"id\"='{}' AND \"version_loppumispvm\" IS NULL".format(relationFeature["id_kaavaobjekti_piste"]))
+                    features = layer.getFeatures(featureRequest)
+                    layer.setSubsetString(subsetString)
+                    # spatialFeature = self.getSpatialFeature(relationFeature["id_kaavaobjekti_piste"], "piste")
+                    # QgsMessageLog.logMessage('isRegulationInUse - spatialFeature["version_loppumispvm"]: ' + str(spatialFeature["version_loppumispvm"]), 'Yleiskaava-työkalu', Qgis.Info)
+                    for feature in features:
+                        return True
+                else:
+                    return True
+
+        return False
 
 
     def updateRegulation(self, regulationID, regulationTitle, regulationText, regulationDescription):
