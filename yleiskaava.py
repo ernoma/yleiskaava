@@ -289,7 +289,7 @@ class Yleiskaava:
 
 
     def canUse(self):
-        if len(QgsProject.instance().mapLayersByName("Aluevaraukset")) != 1 or len(QgsProject.instance().mapLayersByName("Täydentävät aluekohteet (osa-alueet)")) != 1 or len(QgsProject.instance().mapLayersByName("Viivamaiset kaavakohteet")) != 1:
+        if len(QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE)) != 1 or len(QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE_TAYDENTAVA)) != 1 or len(QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA)) != 1 or len(QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_PISTE)) != 1:
             return False
         
         return True

@@ -14,7 +14,7 @@ from collections import Counter
 import uuid
 
 
-from .yleiskaava_dialog_copy_source_data_to_database import Ui_DialogCopySourceDataToDatabase
+# from .yleiskaava_dialog_copy_source_data_to_database import Ui_DialogCopySourceDataToDatabase
 from .yleiskaava_copy_source_data_to_database_task import CopySourceDataToDatabaseTask
 from .yleiskaava_utils import COPY_ERROR_REASONS
 
@@ -53,15 +53,18 @@ class DataCopySourceToTarget:
 
         self.plugin_dir = os.path.dirname(__file__)
 
-        self.dialogCopySourceDataToDatabase = Ui_DialogCopySourceDataToDatabase()
-        self.dialogCopySourceDataToDatabaseWidget = QWidget()
-        self.dialogCopySourceDataToDatabase.setupUi(self.dialogCopySourceDataToDatabaseWidget)
+        self.dialogCopySourceDataToDatabase = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_copy_source_data_to_database.ui'))
+        self.dialogCopySourceDataToDatabase.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
 
-        self.dialogChooseFeatures = uic.loadUi(os.path.join(self.plugin_dir, 'yleiskaava_dialog_choose_features.ui'))
+        # self.dialogCopySourceDataToDatabase = Ui_DialogCopySourceDataToDatabase()
+        # self.dialogCopySourceDataToDatabaseWidget = QWidget()
+        # self.dialogCopySourceDataToDatabase.setupUi(self.dialogCopySourceDataToDatabaseWidget)
+
+        self.dialogChooseFeatures = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_choose_features.ui'))
         self.dialogChooseFeatures.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
 
-        self.dialogCopySettings = uic.loadUi(os.path.join(self.plugin_dir, 'yleiskaava_dialog_copy_settings.ui'))
-        self.dialogCopySettings.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
+        self.dialogCopySettings = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_copy_settings.ui'))
+        self.dialogCopySettings.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
 
         self.sourceLayer = None
 
@@ -97,15 +100,15 @@ class DataCopySourceToTarget:
 
 
     def hideAllDialogs(self):
-        self.dialogCopySourceDataToDatabaseWidget.hide()
+        self.dialogCopySourceDataToDatabase.hide()
         self.dialogChooseFeatures.hide()
         self.dialogCopySettings.hide()
 
 
     def openDialogCopySourceDataToDatabase(self):
         self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.setFilters(QgsMapLayerProxyModel.HasGeometry)
-        self.dialogCopySourceDataToDatabaseWidget.resize(QSize(DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_WIDTH, DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_HEIGHT))
-        self.dialogCopySourceDataToDatabaseWidget.show()
+        self.dialogCopySourceDataToDatabase.resize(QSize(DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_WIDTH, DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_HEIGHT))
+        self.dialogCopySourceDataToDatabase.show()
         self.sourceLayer = self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.currentLayer()
         if self.sourceLayer is not None:
             # QgsMessageLog.logMessage(layer.name(), 'Yleiskaava-työkalu', Qgis.Info)
@@ -113,11 +116,11 @@ class DataCopySourceToTarget:
 
 
     def showDialogCopySourceDataToDatabase(self):
-        #self.dialogCopySourceDataToDatabaseWidget.hide()
+        #self.dialogCopySourceDataToDatabase.hide()
         self.dialogChooseFeatures.hide()
         self.dialogCopySettings.hide()
-        self.dialogCopySourceDataToDatabaseWidget.resize(QSize(DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_WIDTH, DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_HEIGHT))
-        self.dialogCopySourceDataToDatabaseWidget.show()
+        self.dialogCopySourceDataToDatabase.resize(QSize(DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_WIDTH, DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_HEIGHT))
+        self.dialogCopySourceDataToDatabase.show()
 
 
     def handleMapLayerComboBoxSourceChanged(self, layer):
@@ -129,9 +132,9 @@ class DataCopySourceToTarget:
             geomType = self.sourceLayer.geometryType()
 
             if geomType == QgsWkbTypes.PointGeometry:
-                self.selectTargetLayer('Pistemäiset kaavakohteet')
+                self.selectTargetLayer(YleiskaavaDatabase.KAAVAOBJEKTI_PISTE)
             elif geomType == QgsWkbTypes.LineGeometry:
-                self.selectTargetLayer('Viivamaiset kaavakohteet')
+                self.selectTargetLayer(YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA)
         
 
     def selectTargetLayer(self, layerName):
@@ -361,7 +364,7 @@ class DataCopySourceToTarget:
         if fieldName != None:
             self.iface.messageBar().pushMessage('Sama kohdekenttä valittu usealla lähdekentälle: ' + fieldName, Qgis.Warning, duration=10)
 
-        self.dialogCopySourceDataToDatabaseWidget.hide()
+        self.dialogCopySourceDataToDatabase.hide()
         self.dialogCopySettings.hide()
         self.dialogChooseFeatures.show()
         self.iface.showAttributeTable(self.sourceLayer)
@@ -372,7 +375,7 @@ class DataCopySourceToTarget:
         if self.selectedSourceFeaturesCount() == 0:
             self.iface.messageBar().pushMessage('Yhtään lähdekarttatason kohdetta ei ole valittuna', Qgis.Warning, duration=10)
 
-        self.dialogCopySourceDataToDatabaseWidget.hide()
+        self.dialogCopySourceDataToDatabase.hide()
         self.dialogChooseFeatures.hide()
         self.showDialogCopySettings()
 

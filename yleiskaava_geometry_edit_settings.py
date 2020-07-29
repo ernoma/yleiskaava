@@ -11,6 +11,8 @@ from qgis.core import (
 import os.path
 from functools import partial
 
+from .yleiskaava_database import YleiskaavaDatabase
+
 
 class GeometryEditSettings:
 
@@ -23,7 +25,7 @@ class GeometryEditSettings:
 
         self.plugin_dir = os.path.dirname(__file__)
 
-        self.dockWidgetGeometryEditSettings = uic.loadUi(os.path.join(self.plugin_dir, 'yleiskaava_dockwidget_geometry_edit_settings.ui'))
+        self.dockWidgetGeometryEditSettings = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dockwidget_geometry_edit_settings.ui'))
 
         self.activeLayer = None
 
@@ -65,9 +67,9 @@ class GeometryEditSettings:
 
     def openDockWidgetGeometryEditSettings(self):
         # QgsMessageLog.logMessage("openDockWidgetGeometryEditSettings", 'Yleiskaava-työkalu', Qgis.Info)
-        self.featureLayer['alue'] = QgsProject.instance().mapLayersByName("Aluevaraukset")[0]
-        self.featureLayer['alue_taydentava'] = QgsProject.instance().mapLayersByName("Täydentävät aluekohteet (osa-alueet)")[0]
-        self.featureLayer['viiva'] = QgsProject.instance().mapLayersByName("Viivamaiset kaavakohteet")[0]
+        self.featureLayer['alue'] = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE)[0]
+        self.featureLayer['alue_taydentava'] = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE_TAYDENTAVA)[0]
+        self.featureLayer['viiva'] = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_PISTE)[0]
 
         self.followEdits()
 
@@ -173,10 +175,10 @@ class GeometryEditSettings:
 
     def updateEditableFeatureClassesCountUIInfo(self):
         self.activeLayer = self.iface.activeLayer()
-        if self.activeLayer is None or (self.activeLayer.name() != 'Aluevaraukset' and self.activeLayer.name() != 'Täydentävät aluekohteet (osa-alueet)' and self.activeLayer.name() != 'Viivamaiset kaavakohteet' and self.activeLayer.name() != 'Pistemäiset kaavakohteet'):
+        if self.activeLayer is None or (self.activeLayer.name() != YleiskaavaDatabase.KAAVAOBJEKTI_ALUE and self.activeLayer.name() != YleiskaavaDatabase.KAAVAOBJEKTI_ALUE_TAYDENTAVA and self.activeLayer.name() != YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA and self.activeLayer.name() != YleiskaavaDatabase.KAAVAOBJEKTI_PISTE):
             self.dockWidgetGeometryEditSettings.lineEditEditableFeatureClassesCount.setStyleSheet("background-color: rgb(255, 255, 255);")
             self.dockWidgetGeometryEditSettings.lineEditEditableFeatureClassesCount.setText('')
-        elif self.activeLayer.name() == 'Aluevaraukset' or self.activeLayer.name() == 'Täydentävät aluekohteet (osa-alueet)' or self.activeLayer.name() == 'Viivamaiset kaavakohteet' or self.activeLayer.name() == 'Pistemäiset kaavakohteet':
+        elif self.activeLayer.name() == YleiskaavaDatabase.KAAVAOBJEKTI_ALUE or self.activeLayer.name() == YleiskaavaDatabase.KAAVAOBJEKTI_ALUE_TAYDENTAVA or self.activeLayer.name() == YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA or self.activeLayer.name() == YleiskaavaDatabase.KAAVAOBJEKTI_PISTE:
             featureClasses = {}
             for feature in self.activeLayer.getFeatures():
                 featureClass = feature["kayttotarkoitus_lyhenne"]

@@ -28,7 +28,7 @@ from qgis.PyQt import QtGui, QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'yleiskaava_dockwidget_base.ui'))
+    os.path.dirname(__file__), 'ui', 'yleiskaava_dockwidget_base.ui'))
 
 
 class YleiskaavaDockWidget(QtWidgets.QDockWidget, FORM_CLASS):

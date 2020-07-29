@@ -38,7 +38,7 @@ class AddSourceDataLinks:
 
         self.plugin_dir = os.path.dirname(__file__)
 
-        self.dialogAddSourceDataLinks = uic.loadUi(os.path.join(self.plugin_dir, 'yleiskaava_dialog_add_source_data_links.ui'))
+        self.dialogAddSourceDataLinks = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_add_source_data_links.ui'))
 
         self.selectedTargetLayer = None
         self.apis = None

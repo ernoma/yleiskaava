@@ -8,6 +8,8 @@ from qgis.core import (Qgis, QgsProject, QgsMessageLog)
 import os.path
 from functools import partial
 
+from .yleiskaava_database import YleiskaavaDatabase
+
 
 class ChangeFieldValuesOfGroup:
 
@@ -31,9 +33,9 @@ class ChangeFieldValuesOfGroup:
 
         self.plugin_dir = os.path.dirname(__file__)
 
-        self.dialogChangeFieldValuesOfGroup = uic.loadUi(os.path.join(self.plugin_dir, 'yleiskaava_dialog_change_field_values_of_group.ui'))
+        self.dialogChangeFieldValuesOfGroup = uic.loadUi(os.path.join(self.plugin_dir, 'ui','yleiskaava_dialog_change_field_values_of_group.ui'))
 
-        self.dialogChooseAndUpdateFieldValuesForFeatureType = uic.loadUi(os.path.join(self.plugin_dir, 'yleiskaava_dialog_choose_and_update_field_values_for_feature_type.ui'))
+        self.dialogChooseAndUpdateFieldValuesForFeatureType = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_choose_and_update_field_values_for_feature_type.ui'))
         self.dialogChooseAndUpdateFieldValuesForFeatureType.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
 
         self.hasUserSelectedPolygonFeaturesForUpdate = False
@@ -199,28 +201,28 @@ class ChangeFieldValuesOfGroup:
 
 
     def selectPolygonFeatures(self):
-        layer = QgsProject.instance().mapLayersByName("Aluevaraukset")[0]
+        layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE)[0]
         if layer.selectedFeatureCount() > 0:
              self.iface.messageBar().pushMessage('Aluevaraukset karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedPolygonFeaturesForUpdate = True
 
     def selectSupplementaryPolygonFeatures(self):
-        layer = QgsProject.instance().mapLayersByName("Täydentävät aluekohteet (osa-alueet)")[0]
+        layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE_TAYDENTAVA)[0]
         if layer.selectedFeatureCount() > 0:
              self.iface.messageBar().pushMessage('Täydentävät aluekohteet karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate = True
 
     def selectLineFeatures(self):
-        layer = QgsProject.instance().mapLayersByName("Viivamaiset kaavakohteet")[0]
+        layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA)[0]
         if layer.selectedFeatureCount() > 0:
              self.iface.messageBar().pushMessage('Viivamaiset kaavakohteet karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedLineFeaturesForUpdate = True
 
     def selectPointFeatures(self):
-        layer = QgsProject.instance().mapLayersByName("Pistemäiset kaavakohteet")[0]
+        layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_PISTE)[0]
         if layer.selectedFeatureCount() > 0:
              self.iface.messageBar().pushMessage('Pistemäiset kaavakohteet karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
         self.iface.showAttributeTable(layer)

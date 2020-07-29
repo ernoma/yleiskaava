@@ -26,7 +26,7 @@ class UpdateIndexingOfFeatures:
 
         self.plugin_dir = os.path.dirname(__file__)
 
-        self.dialogUpdateIndexingOfFeatures = uic.loadUi(os.path.join(self.plugin_dir, 'yleiskaava_dialog_update_indexing_of_features.ui'))
+        self.dialogUpdateIndexingOfFeatures = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_update_indexing_of_features.ui'))
 
         self.selectedLayer = None
         self.selectedFeatureID = None
