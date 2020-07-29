@@ -6,7 +6,7 @@ from qgis.PyQt.QtGui import QTextCursor
 
 from qgis.core import (
     Qgis, QgsProject,
-    QgsMessageLog)
+    QgsMessageLog, QgsFeatureRequest)
 
 import os.path
 from functools import partial
@@ -180,7 +180,8 @@ class GeometryEditSettings:
             self.dockWidgetGeometryEditSettings.lineEditEditableFeatureClassesCount.setText('')
         elif self.activeLayer.name() == YleiskaavaDatabase.KAAVAOBJEKTI_ALUE or self.activeLayer.name() == YleiskaavaDatabase.KAAVAOBJEKTI_ALUE_TAYDENTAVA or self.activeLayer.name() == YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA or self.activeLayer.name() == YleiskaavaDatabase.KAAVAOBJEKTI_PISTE:
             featureClasses = {}
-            for feature in self.activeLayer.getFeatures():
+            featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["kayttotarkoitus_lyhenne"], self.activeLayer.fields())
+            for feature in self.activeLayer.getFeatures(featureRequest):
                 featureClass = feature["kayttotarkoitus_lyhenne"]
                 if featureClass not in featureClasses:
                     featureClasses[featureClass] = 1
@@ -265,15 +266,6 @@ class GeometryEditSettings:
     def lineFeatureGeometryChanged(self, fid, geometry):
         #QgsMessageLog.logMessage("lineFeatureGeometryChanged - fid: " + str(fid) + ", geometry.length(): " + str(geometry.length()), 'Yleiskaava-työkalu', Qgis.Info)
         # QgsMessageLog.logMessage("lineFeatureGeometryChanged - self.lineFeatureLayer.getFeature(fid).geometry().length(): " + str(self.lineFeatureLayer.getFeature(fid).geometry().length()), 'Yleiskaava-työkalu', Qgis.Info)
-        #QgsMessageLog.logMessage("lineFeatureGeometryChanged - self.lineFeatureLayer.featureCount(): " + str(self.lineFeatureLayer.featureCount()), 'Yleiskaava-työkalu', Qgis.Info)
-        #lineFeatures = self.lineFeatureLayer.getFeatures()
-        #QgsMessageLog.logMessage("lineFeatureGeometryChanged - len(lineFeatures): " + str(len(lineFeatures)), 'Yleiskaava-työkalu', Qgis.Info)
-        # QgsMessageLog.logMessage("lineFeatureGeometryChanged - feature['kayttotarkoitus_lyhenne']: " + str(self.lineFeatureLayer.getFeature(fid)['kayttotarkoitus_lyhenne']), 'Yleiskaava-työkalu', Qgis.Info)
-        # self.lineFeatureLayerEditBuffer = self.lineFeatureLayer.editBuffer()
-        # changedGeometries = self.lineFeatureLayerEditBuffer.changedGeometries()
-        # for key in changedGeometries.keys():
-        #     QgsMessageLog.logMessage("lineFeatureGeometryChanged - changedGeometries, key: " + str(key) + ", geometry.length(): " + str(geometry.length()), 'Yleiskaava-työkalu', Qgis.Info)
-        # addedFeatures = self.lineFeatureLayerEditBuffer.addedFeatures()
         # for key in addedFeatures.keys():
         #     QgsMessageLog.logMessage("lineFeatureGeometryChanged - addedFeatures, key: " + str(key) + ", feature.geometry.length(): " + str( addedFeatures[key].geometry().length()), 'Yleiskaava-työkalu', Qgis.Info)
         self.changedFeatureIDs['viiva'].append(fid)

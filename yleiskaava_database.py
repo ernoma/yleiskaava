@@ -175,7 +175,8 @@ class YleiskaavaDatabase:
 
     def getSpatialPlans(self):
         layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
-        features = layer.getFeatures()
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "nimi", "nro", "id_kaavan_taso"], layer.fields())
+        features = layer.getFeatures(featureRequest)
 
         plans = []
         for index, feature in enumerate(features):
@@ -197,7 +198,8 @@ class YleiskaavaDatabase:
         planNumber = None
 
         layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
-        features = layer.getFeatures()
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["nimi", "nro"], layer.fields())
+        features = layer.getFeatures(featureRequest)
 
         plans = []
         for index, feature in enumerate(features):
@@ -213,7 +215,8 @@ class YleiskaavaDatabase:
         planNumber = None
 
         layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
-        features = layer.getFeatures()
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "nro"], layer.fields())
+        features = layer.getFeatures(featureRequest)
 
         plans = []
         for index, feature in enumerate(features):
@@ -229,7 +232,8 @@ class YleiskaavaDatabase:
         planName = None
 
         layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
-        features = layer.getFeatures()
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "nimi"], layer.fields())
+        features = layer.getFeatures(featureRequest)
 
         plans = []
         for index, feature in enumerate(features):
@@ -245,7 +249,8 @@ class YleiskaavaDatabase:
         planLevelCode = None
 
         layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
-        features = layer.getFeatures()
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["nimi", "id_kaavan_taso"], layer.fields())
+        features = layer.getFeatures(featureRequest)
 
         plans = []
         for index, feature in enumerate(features):
@@ -272,8 +277,8 @@ class YleiskaavaDatabase:
     def getYleiskaavaPlanLevelList(self):
 
         targetLayer = self.getProjectLayer("yk_koodiluettelot.kaavan_taso")
-
-        features = targetLayer.getFeatures()
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "koodi", "kuvaus"], targetLayer.fields())
+        features = targetLayer.getFeatures(featureRequest)
         planLevelList = []
         for index, feature in enumerate(features):
             planLevelList.append({
@@ -288,7 +293,8 @@ class YleiskaavaDatabase:
         planID = None
 
         layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
-        features = layer.getFeatures()
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "nimi"], layer.fields())
+        features = layer.getFeatures(featureRequest)
 
         plans = []
         for index, feature in enumerate(features):
@@ -300,11 +306,11 @@ class YleiskaavaDatabase:
 
 
     def getSpatialFeaturesWithRegulationForType(self, regulationID, featureType):
-        targetLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
-
         spatialFeatures = []
 
-        for feature in targetLayer.getFeatures():
+        targetLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id_kaavamaarays", "id_kaavaobjekti_" + featureType], targetLayer.fields())
+        for feature in targetLayer.getFeatures(featureRequest):
 
             spatialFeature = None
             spatialFeatureType = None
@@ -344,11 +350,11 @@ class YleiskaavaDatabase:
 
 
     def getRegulationCountForSpatialFeature(self, featureID, featureType):
-        targetLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
-
         count = 0
 
-        for feature in targetLayer.getFeatures():
+        targetLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id_kaavaobjekti_" + featureType], targetLayer.fields())
+        for feature in targetLayer.getFeatures(featureRequest):
             if feature["id_kaavaobjekti_" + featureType] == featureID:
                 count += 1
 
@@ -356,12 +362,13 @@ class YleiskaavaDatabase:
 
 
     def getDistinctLandUseClassificationsOfLayer(self, userFriendlyTableName):
-        featureType = self.getFeatureTypeForUserFriendlyTargetSchemaTableName(userFriendlyTableName)
-        layer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_" + featureType)
-
         classifications = []
 
-        for feature in layer.getFeatures():
+        featureType = self.getFeatureTypeForUserFriendlyTargetSchemaTableName(userFriendlyTableName)
+        layer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_" + featureType)
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["kayttotarkoitus_lyhenne"], layer.fields())
+        
+        for feature in layer.getFeatures(featureRequest):
             if feature['kayttotarkoitus_lyhenne'] not in classifications:
                 classifications.append(feature['kayttotarkoitus_lyhenne'])
 
@@ -373,7 +380,8 @@ class YleiskaavaDatabase:
 
         featureType = self.getFeatureTypeForUserFriendlyTargetSchemaTableName(userFriendlyTableName)
         layer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_" + featureType)
-        for feature in layer.getFeatures():
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "kayttotarkoitus_lyhenne", fieldName], layer.fields())
+        for feature in layer.getFeatures(featureRequest):
             if feature['kayttotarkoitus_lyhenne'] == landUseClassification:
                 if not QVariant(feature[fieldName]).isNull() and str(feature[fieldName]) != '':
                     featureIDsAndValues.append({
@@ -391,9 +399,8 @@ class YleiskaavaDatabase:
 
         targetLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
         #targetLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_kaavamaarays_yhteys")[0]
-
-
-        for feature in targetLayer.getFeatures():
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id_kaavamaarays", "id_kaavaobjekti_" + featureType], targetLayer.fields())
+        for feature in targetLayer.getFeatures(featureRequest):
             if feature["id_kaavaobjekti_" + featureType] == featureID:
                 # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavakohde löytyi yhteyksistä, id_kaavaobjekti_*: " + str(feature["id_kaavaobjekti_" + featureType]), 'Yleiskaava-työkalu', Qgis.Info)
                 for regulation in regulations:
@@ -409,8 +416,8 @@ class YleiskaavaDatabase:
 
     def getSpecificRegulations(self, onlyUsedRegulations=False, includeAreaRegulations=True, includeSuplementaryAreaRegulations=True, includeLineRegulations=True, includePointRegulations=True):
         targetLayer = self.getProjectLayer("yk_yleiskaava.kaavamaarays")
-
-        features = targetLayer.getFeatures()
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "kaavamaarays_otsikko", "maaraysteksti", "kuvaus_teksti"], targetLayer.fields())
+        features = targetLayer.getFeatures(featureRequest)
         regulationList = []
         for index, feature in enumerate(features):
             kaavamaarays_otsikko = QVariant(feature["kaavamaarays_otsikko"])
@@ -506,8 +513,8 @@ class YleiskaavaDatabase:
         layer = self.getProjectLayer("yk_yleiskaava.kaavamaarays")
 
         layer.startEditing()
-
-        for feature in layer.getFeatures():
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "kaavamaarays_otsikko", "maaraysteksti", "kuvaus_teksti"], layer.fields())
+        for feature in layer.getFeatures(featureRequest):
             if feature["id"] == regulationID:
                 index = layer.fields().indexFromName("kaavamaarays_otsikko")
                 success = layer.changeAttributeValue(feature.id(), index, regulationTitle)
@@ -622,8 +629,8 @@ class YleiskaavaDatabase:
 
     def existsFeatureRegulationRelation(self, featureID, featureType, regulationID):
         relationLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
-
-        for feature in relationLayer.getFeatures():
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id_kaavamaarays", "id_kaavaobjekti_" + featureType], relationLayer.fields())
+        for feature in relationLayer.getFeatures(featureRequest):
             if (feature["id_kaavamaarays"] == regulationID and feature["id_kaavaobjekti_" + featureType] == featureID):
                 return True
 
@@ -634,8 +641,8 @@ class YleiskaavaDatabase:
         relationLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
 
         relationLayer.startEditing()
-
-        for feature in relationLayer.getFeatures():
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id_kaavaobjekti_" + featureType], relationLayer.fields())
+        for feature in relationLayer.getFeatures(featureRequest):
             if (feature["id_kaavaobjekti_" + featureType] == featureID):
                 relationLayer.deleteFeature(feature.id())
 
@@ -645,7 +652,8 @@ class YleiskaavaDatabase:
     def deleteSpatialFeature(self, featureID, featureType):
         layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.kaavaobjekti_" + featureType)
         layer.startEditing()
-        for feature in layer.getFeatures():
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id"], layer.fields())
+        for feature in layer.getFeatures(featureRequest):
             if (feature["id"] == featureID):
                 layer.deleteFeature(feature.id())
                 break
@@ -706,8 +714,8 @@ class YleiskaavaDatabase:
 
     def getThemes(self):
         targetLayer = self.getProjectLayer("yk_kuvaustekniikka.teema")
-
-        features = targetLayer.getFeatures()
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "nimi", "kuvaus", "id_yleiskaava"], targetLayer.fields())
+        features = targetLayer.getFeatures(featureRequest)
         themeList = []
         for index, feature in enumerate(features):
             nimi = QVariant(feature["nimi"])
@@ -734,8 +742,8 @@ class YleiskaavaDatabase:
 
         themeRelationLayer = self.getProjectLayer("yk_kuvaustekniikka.kaavaobjekti_teema_yhteys")
         #targetLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_kaavamaarays_yhteys")[0]
-
-        for feature in themeRelationLayer.getFeatures():
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id_teema", "id_kaavaobjekti_" + featureType], themeRelationLayer.fields())
+        for feature in themeRelationLayer.getFeatures(featureRequest):
             if feature["id_kaavaobjekti_" + featureType] == featureID:
                 # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavakohde löytyi yhteyksistä, id_kaavaobjekti_*: " + str(feature["id_kaavaobjekti_" + featureType]), 'Yleiskaava-työkalu', Qgis.Info)
                 for theme in themes:
@@ -828,7 +836,8 @@ class YleiskaavaDatabase:
         # QgsMessageLog.logMessage('getCodeListValuesForPlanObjectField - targetFieldName: ' + targetFieldName + ', name: ' + str(name), 'Yleiskaava-työkalu', Qgis.Info)
         
         targetLayer = self.getProjectLayer(name)
-        features = targetLayer.getFeatures()
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["koodi"], targetLayer.fields())
+        features = targetLayer.getFeatures(featureRequest)
         values = None
         # if table_name == "kansallinen_prosessin_vaihe" or table_name == "prosessin_vaihe" or table_name == "kaavoitusprosessin_tila" or table_name == "laillinen_sitovuus":
         values = [feature['koodi'] for feature in features]
@@ -839,7 +848,8 @@ class YleiskaavaDatabase:
         codeValue = None
         name = "yk_koodiluettelot." + targetFieldName[3:]
         targetLayer = self.getProjectLayer(name)
-        features = targetLayer.getFeatures()
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "koodi"], targetLayer.fields())
+        features = targetLayer.getFeatures(featureRequest)
 
         for feature in features:
             if feature['id'] == value:
@@ -852,7 +862,8 @@ class YleiskaavaDatabase:
         uuid = None
         name = "yk_koodiluettelot." + targetFieldName[3:]
         targetLayer = self.getProjectLayer(name)
-        features = targetLayer.getFeatures()
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "koodi"], targetLayer.fields())
+        features = targetLayer.getFeatures(featureRequest)
         
         # if table_name == "kansallinen_prosessin_vaihe" or table_name == "prosessin_vaihe" or table_name == "kaavoitusprosessin_tila" or table_name == "laillinen_sitovuus":
         for feature in features:
@@ -952,12 +963,14 @@ class YleiskaavaDatabase:
             return 'pistemäinen kohde'
 
 
-    def getSelectedFeatures(self, featureType):
+    def getSelectedFeatures(self, featureType, subsetOfAttributes=None):
         layer = self.getTargetLayer(featureType)
-
+        featureRequest = QgsFeatureRequest()
+        if subsetOfAttributes is not None:
+            featureRequest.setSubsetOfAttributes(subsetOfAttributes, layer.fields())
         # QgsMessageLog.logMessage("getSelectedFeatures - layer.selectedFeatureCount(): " + str(layer.selectedFeatureCount()), 'Yleiskaava-työkalu', Qgis.Info)
 
-        return layer.getSelectedFeatures()
+        return layer.getSelectedFeatures(featureRequest)
 
 
     def getTargetLayer(self, featureType):
@@ -976,7 +989,8 @@ class YleiskaavaDatabase:
 
     
     def updateSpatialFeaturesWithFieldValues(self, layer, featureIDsAndValues, fieldName):
-        features = layer.getFeatures()
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", fieldName], layer.fields())
+        features = layer.getFeatures(featureRequest)
         index = layer.fields().indexFromName(fieldName)
         layer.startEditing()
 
@@ -1004,7 +1018,8 @@ class YleiskaavaDatabase:
 
     def updateSelectedSpatialFeaturesWithFieldValues(self, featureType, updatedFieldData):
         layer = self.getTargetLayer(featureType)
-        features = layer.getSelectedFeatures()
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes([updatedFieldDataItem["fieldName"] for updatedFieldDataItem in updatedFieldData], layer.fields())
+        features = layer.getSelectedFeatures(featureRequest)
 
         layer.startEditing()
 
@@ -1033,8 +1048,8 @@ class YleiskaavaDatabase:
         layer = QgsProject.instance().mapLayersByName("teema")[0]
 
         layer.startEditing()
-
-        for feature in layer.getFeatures():
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "nimi", "kuvaus"], layer.fields())
+        for feature in layer.getFeatures(featureRequest):
             if feature["id"] == themeID:
                 index = layer.fields().indexFromName("nimi")
                 success = layer.changeAttributeValue(feature.id(), index, themeName)
@@ -1061,11 +1076,11 @@ class YleiskaavaDatabase:
 
     
     def getThemeCountForSpatialFeature(self, featureID, featureType):
-        relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_teema_yhteys")[0]
-
         count = 0
 
-        for feature in relationLayer.getFeatures():
+        relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_teema_yhteys")[0]
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id_kaavaobjekti_" + featureType], relationLayer.fields())
+        for feature in relationLayer.getFeatures(featureRequest):
             if feature["id_kaavaobjekti_" + featureType] == featureID:
                 count += 1
 
@@ -1122,8 +1137,8 @@ class YleiskaavaDatabase:
 
     def existsFeatureThemeRelation(self, featureID, featureType, themeID):
         relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_teema_yhteys")[0]
-
-        for feature in relationLayer.getFeatures():
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id_teema", "id_kaavaobjekti_" + featureType], relationLayer.fields())
+        for feature in relationLayer.getFeatures(featureRequest):
             if (feature["id_teema"] == themeID and feature["id_kaavaobjekti_" + featureType] == featureID):
                 return True
 
@@ -1134,8 +1149,8 @@ class YleiskaavaDatabase:
         relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_teema_yhteys")[0]
 
         relationLayer.startEditing()
-
-        for feature in relationLayer.getFeatures():
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id_kaavaobjekti_" + featureType], relationLayer.fields())
+        for feature in relationLayer.getFeatures(featureRequest):
             if (feature["id_kaavaobjekti_" + featureType] == featureID):
                 relationLayer.deleteFeature(feature.id())
 
@@ -1187,8 +1202,8 @@ class YleiskaavaDatabase:
 
         targetSchemaTableName = self.getTargetSchemaTableNameForUserFriendlyTableName(spatialFeatureLayer.name())
         schema, table_name = targetSchemaTableName.split('.')
-
-        for relationFeature in relationLayer.getFeatures():
+        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id_lahtoaineisto", "id_" + table_name], relationLayer.fields())
+        for relationFeature in relationLayer.getFeatures(featureRequest):
             if relationFeature["id_lahtoaineisto"] == linkedSourceDataFeature["id"] and relationFeature["id_" + table_name] is not None:
                 linkedFeatureIDs.append(relationFeature["id_" + table_name])
 

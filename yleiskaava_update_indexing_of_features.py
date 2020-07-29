@@ -3,7 +3,10 @@
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QVariant
 
-from qgis.core import (Qgis, QgsProject, QgsFeature, QgsMessageLog)
+from qgis.core import (
+    Qgis, QgsProject,
+    QgsFeature, QgsMessageLog,
+    QgsFeatureRequest)
 
 import os.path
 from operator import itemgetter
@@ -186,7 +189,8 @@ class UpdateIndexingOfFeatures:
     def handleFeatureSelectionChanged(self):
         if self.dialogUpdateIndexingOfFeatures.isVisible():
             if self.selectedLayer.selectedFeatureCount() == 1:
-                features = self.selectedLayer.getSelectedFeatures()
+                featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)
+                features = self.selectedLayer.getSelectedFeatures(featureRequest)
                 feature = QgsFeature()
                 features.nextFeature(feature)
                 self.selectedFeatureID = feature["id"]

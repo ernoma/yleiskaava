@@ -286,7 +286,7 @@ class UpdateRegulationOfGroup:
         if self.currentRegulation != None:
             regulationID = self.currentRegulation["id"]
 
-            spatialFeatures = self.yleiskaavaDatabase.getSelectedFeatures(featureType)
+            spatialFeatures = self.yleiskaavaDatabase.getSelectedFeatures(featureType, ["id"])
             # spatialFeatures = self.yleiskaavaDatabase.getSpatialFeaturesWithRegulationForType(regulationID, featureType)
 
             for feature in spatialFeatures:
@@ -311,7 +311,7 @@ class UpdateRegulationOfGroup:
 
 
     def removeRegulationsAndLandUseClassificationsFromSpatialFeatures(self, featureType, shouldUpdateOnlyRelation):
-        spatialFeatures = self.yleiskaavaDatabase.getSelectedFeatures(featureType)
+        spatialFeatures = self.yleiskaavaDatabase.getSelectedFeatures(featureType, ["id"])
         # spatialFeatures = self.yleiskaavaDatabase.getSpatialFeaturesWithRegulationForType(regulationID, featureType)
 
         for feature in spatialFeatures:

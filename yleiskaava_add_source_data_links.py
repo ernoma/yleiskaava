@@ -197,11 +197,13 @@ class AddSourceDataLinks:
         featureCount = 0
         featureInfos = []
 
+        selectedTargetLayerFeatureRequest = QgsFeatureRequest().setNoAttributes().setLimit(1)
+
         for index, feature in enumerate(self.shownSourceLayer.getFeatures()):
             featureCount += 1 # layer.featureCount() ei luotettava
             featureInfos.append({
                 "feature": feature,
-                "distance": self.getDistance(self.shownSourceLayer, feature, self.selectedTargetLayer, self.selectedTargetLayer.selectedFeatures()[0]),
+                "distance": self.getDistance(self.shownSourceLayer, feature, self.selectedTargetLayer, list(self.selectedTargetLayer.getSelectedFeatures(selectedTargetLayerFeatureRequest))[0]),
                 "nimi": feature[self.originalSourceLayerInfo["nimi"]],
                 "linkki_data": feature[self.originalSourceLayerInfo["linkki_data"]]
             })

@@ -39,7 +39,7 @@
         <bool>false</bool>
        </property>
        <property name="text">
-        <string>Valitse päivtettävä kohde</string>
+        <string>Valitse päivitettävä kohde</string>
        </property>
       </widget>
      </item>

@@ -259,7 +259,7 @@ class UpdateThemesOfGroup:
         if self.currentTheme != None:
             themeID = self.currentTheme["id"]
 
-            spatialFeatures = self.yleiskaavaDatabase.getSelectedFeatures(featureType)
+            spatialFeatures = self.yleiskaavaDatabase.getSelectedFeatures(featureType, ["id"])
             # spatialFeatures = self.yleiskaavaDatabase.getSpatialFeaturesWithThemeForType(themeID, featureType)
 
             for feature in spatialFeatures:
@@ -281,7 +281,7 @@ class UpdateThemesOfGroup:
 
 
     def removeThemesFromSpatialFeatures(self, featureType):
-        spatialFeatures = self.yleiskaavaDatabase.getSelectedFeatures(featureType)
+        spatialFeatures = self.yleiskaavaDatabase.getSelectedFeatures(featureType, ["id"])
         # spatialFeatures = self.yleiskaavaDatabase.getSpatialFeaturesWithRegulationForType(regulationID, featureType)
 
         for feature in spatialFeatures:
