@@ -49,8 +49,8 @@ class UpdateIndexingOfFeatures:
         self.dialogUpdateIndexingOfFeatures.lineEditPrefix.textEdited.connect(self.handleLineEditPrefixEdited)
         self.dialogUpdateIndexingOfFeatures.lineEditPostfix.textEdited.connect(self.handleLineEditPostfixEdited)
         self.dialogUpdateIndexingOfFeatures.lineEditNewIndexValueForFeatureToAddBetween.textEdited.connect(self.handleLineEditNewIndexValueForFeatureToAddBetweenEdited)
-        self.dialogUpdateIndexingOfFeatures.comboBoxIndexDirection.addItems([UpdateIndexingOfFeatures.INDEX_DIRECTION_NAME_ASC, UpdateIndexingOfFeatures.INDEX_DIRECTION_NAME_DESC])
-        self.dialogUpdateIndexingOfFeatures.comboBoxIndexDirection.currentIndexChanged.connect(self.handleComboBoxIndexDirectionCurrentIndexChanged)
+        # self.dialogUpdateIndexingOfFeatures.comboBoxIndexDirection.addItems([UpdateIndexingOfFeatures.INDEX_DIRECTION_NAME_ASC, UpdateIndexingOfFeatures.INDEX_DIRECTION_NAME_DESC])
+        # self.dialogUpdateIndexingOfFeatures.comboBoxIndexDirection.currentIndexChanged.connect(self.handleComboBoxIndexDirectionCurrentIndexChanged)
         
         self.dialogUpdateIndexingOfFeatures.pushButtonUpdate.clicked.connect(self.handlePushButtonUpdateClicked)
         self.dialogUpdateIndexingOfFeatures.pushButtonUpdateAndClose.clicked.connect(self.handlePushButtonUpdateAndCloseClicked)

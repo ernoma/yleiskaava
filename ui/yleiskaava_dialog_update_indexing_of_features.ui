@@ -137,29 +137,11 @@
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_5">
-     <item>
-      <widget class="QLabel" name="label_6">
-       <property name="text">
-        <string>7. Valitse indeksin päivityksen muutossuunta:</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QComboBox" name="comboBoxIndexDirection">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item>
     <layout class="QHBoxLayout" name="horizontalLayout_8">
      <item>
       <widget class="QLabel" name="label_7">
        <property name="text">
-        <string>8. Tarkista nykyiset karttatason kohteiden indeksiarvot:</string>
+        <string>7. Tarkista nykyiset karttatason kohteiden indeksiarvot:</string>
        </property>
       </widget>
      </item>
@@ -173,7 +155,7 @@
      <item>
       <widget class="QLabel" name="label_4">
        <property name="text">
-        <string>9. Syötä väliin lisättävän kohteen indeksiarvo:</string>
+        <string>8. Syötä väliin lisättävän kohteen indeksiarvo:</string>
        </property>
       </widget>
      </item>
@@ -194,7 +176,7 @@
      <item>
       <widget class="QLabel" name="label_8">
        <property name="text">
-        <string>10. Tarkista päivityksen jälkeiset karttatason kohteiden indeksiarvot:</string>
+        <string>9. Tarkista päivityksen jälkeiset karttatason kohteiden indeksiarvot:</string>
        </property>
       </widget>
      </item>

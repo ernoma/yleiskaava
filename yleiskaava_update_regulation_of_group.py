@@ -75,12 +75,18 @@ class UpdateRegulationOfGroup:
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedPolygonFeaturesForUpdate = True
 
+        self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPolygonFeatures.setChecked(True)
+
+
     def selectSupplementaryPolygonFeatures(self):
         layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE_TAYDENTAVA)[0]
         if layer.selectedFeatureCount() > 0:
              self.iface.messageBar().pushMessage('Täydentävät aluekohteet karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate = True
+
+        self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForSupplementaryPolygonFeatures.setChecked(True)
+
 
     def selectLineFeatures(self):
         layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA)[0]
@@ -89,6 +95,9 @@ class UpdateRegulationOfGroup:
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedLineFeaturesForUpdate = True
 
+        self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForLineFeatures.setChecked(True)
+
+
     def selectPointFeatures(self):
         layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_PISTE)[0]
         if layer.selectedFeatureCount() > 0:
@@ -96,30 +105,36 @@ class UpdateRegulationOfGroup:
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedPointFeaturesForUpdate = True
 
+        self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPointFeatures.setChecked(True)
+
 
     def checkBoxUpdateLandUseClassificationsForPolygonFeaturesStateChanged(self):
-        if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPolygonFeatures.isChecked():
-            self.dialogUpdateRegulationOfGroup.pushButtonSelectPolygonFeatures.setEnabled(True)
-        else:
-            self.dialogUpdateRegulationOfGroup.pushButtonSelectPolygonFeatures.setEnabled(False)
+        pass
+        # if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPolygonFeatures.isChecked():
+        #     self.dialogUpdateRegulationOfGroup.pushButtonSelectPolygonFeatures.setEnabled(True)
+        # else:
+        #     self.dialogUpdateRegulationOfGroup.pushButtonSelectPolygonFeatures.setEnabled(False)
 
     def checkBoxUpdateLandUseClassificationsForSupplementaryPolygonFeaturesStateChanged(self):
-        if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForSupplementaryPolygonFeatures.isChecked():
-            self.dialogUpdateRegulationOfGroup.pushButtonSelectSupplementaryPolygonFeatures.setEnabled(True)
-        else:
-            self.dialogUpdateRegulationOfGroup.pushButtonSelectSupplementaryPolygonFeatures.setEnabled(False)
+        pass
+        # if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForSupplementaryPolygonFeatures.isChecked():
+        #     self.dialogUpdateRegulationOfGroup.pushButtonSelectSupplementaryPolygonFeatures.setEnabled(True)
+        # else:
+        #     self.dialogUpdateRegulationOfGroup.pushButtonSelectSupplementaryPolygonFeatures.setEnabled(False)
 
     def checkBoxUpdateLandUseClassificationsForLineFeaturesStateChanged(self):
-        if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForLineFeatures.isChecked():
-            self.dialogUpdateRegulationOfGroup.pushButtonSelectLineFeatures.setEnabled(True)
-        else:
-            self.dialogUpdateRegulationOfGroup.pushButtonSelectLineFeatures.setEnabled(False)
+        pass
+        # if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForLineFeatures.isChecked():
+        #     self.dialogUpdateRegulationOfGroup.pushButtonSelectLineFeatures.setEnabled(True)
+        # else:
+        #     self.dialogUpdateRegulationOfGroup.pushButtonSelectLineFeatures.setEnabled(False)
 
     def checkBoxUpdateLandUseClassificationsForPointFeaturesStateChanged(self):
-        if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPointFeatures.isChecked():
-            self.dialogUpdateRegulationOfGroup.pushButtonSelectPointFeatures.setEnabled(True)
-        else:
-            self.dialogUpdateRegulationOfGroup.pushButtonSelectPointFeatures.setEnabled(False)
+        pass
+        # if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPointFeatures.isChecked():
+        #     self.dialogUpdateRegulationOfGroup.pushButtonSelectPointFeatures.setEnabled(True)
+        # else:
+        #     self.dialogUpdateRegulationOfGroup.pushButtonSelectPointFeatures.setEnabled(False)
 
 
     def openDialogUpdateRegulationOfGroup(self):
@@ -276,6 +291,11 @@ class UpdateRegulationOfGroup:
 
     def reset(self):
         self.setupRegulationsInDialog()
+
+        self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPolygonFeatures.setChecked(False)
+        self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForSupplementaryPolygonFeatures.setChecked(False)
+        self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForLineFeatures.setChecked(False)
+        self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPointFeatures.setChecked(False)
 
         self.hasUserSelectedPolygonFeaturesForUpdate = False
         self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate = False

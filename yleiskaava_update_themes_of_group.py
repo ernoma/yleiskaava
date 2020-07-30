@@ -69,12 +69,18 @@ class UpdateThemesOfGroup:
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedPolygonFeaturesForUpdate = True
 
+        self.dialogUpdateThemeOfGroup.checkBoxUpdatePolygonFeatures.setChecked(True)
+
+
     def selectSupplementaryPolygonFeatures(self):
         layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE_TAYDENTAVA)[0]
         if layer.selectedFeatureCount() > 0:
              self.iface.messageBar().pushMessage('Täydentävät aluekohteet  karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate = True
+
+        self.dialogUpdateThemeOfGroup.checkBoxUpdateSupplementaryPolygonFeatures.setChecked(True)
+
 
     def selectLineFeatures(self):
         layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA)[0]
@@ -83,6 +89,9 @@ class UpdateThemesOfGroup:
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedLineFeaturesForUpdate = True
 
+        self.dialogUpdateThemeOfGroup.checkBoxUpdateLineFeatures.setChecked(True)
+
+
     def selectPointFeatures(self):
         layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_PISTE)[0]
         if layer.selectedFeatureCount() > 0:
@@ -90,30 +99,36 @@ class UpdateThemesOfGroup:
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedPointFeaturesForUpdate = True
 
+        self.dialogUpdateThemeOfGroup.checkBoxUpdatePointFeatures.setChecked(True)
+
 
     def checkBoxUpdatePolygonFeaturesStateChanged(self):
-        if self.dialogUpdateThemeOfGroup.checkBoxUpdatePolygonFeatures.isChecked():
-            self.dialogUpdateThemeOfGroup.pushButtonSelectPolygonFeatures.setEnabled(True)
-        else:
-            self.dialogUpdateThemeOfGroup.pushButtonSelectPolygonFeatures.setEnabled(False)
+        pass
+        # if self.dialogUpdateThemeOfGroup.checkBoxUpdatePolygonFeatures.isChecked():
+        #     self.dialogUpdateThemeOfGroup.pushButtonSelectPolygonFeatures.setEnabled(True)
+        # else:
+        #     self.dialogUpdateThemeOfGroup.pushButtonSelectPolygonFeatures.setEnabled(False)
 
     def checkBoxUpdateSupplementaryPolygonFeaturesStateChanged(self):
-        if self.dialogUpdateThemeOfGroup.checkBoxUpdateSupplementaryPolygonFeatures.isChecked():
-            self.dialogUpdateThemeOfGroup.pushButtonSelectSupplementaryPolygonFeatures.setEnabled(True)
-        else:
-            self.dialogUpdateThemeOfGroup.pushButtonSelectSupplementaryPolygonFeatures.setEnabled(False)
+        pass
+        # if self.dialogUpdateThemeOfGroup.checkBoxUpdateSupplementaryPolygonFeatures.isChecked():
+        #     self.dialogUpdateThemeOfGroup.pushButtonSelectSupplementaryPolygonFeatures.setEnabled(True)
+        # else:
+        #     self.dialogUpdateThemeOfGroup.pushButtonSelectSupplementaryPolygonFeatures.setEnabled(False)
 
     def checkBoxUpdateLineFeaturesStateChanged(self):
-        if self.dialogUpdateThemeOfGroup.checkBoxUpdateLineFeatures.isChecked():
-            self.dialogUpdateThemeOfGroup.pushButtonSelectLineFeatures.setEnabled(True)
-        else:
-            self.dialogUpdateThemeOfGroup.pushButtonSelectLineFeatures.setEnabled(False)
+        pass
+        # if self.dialogUpdateThemeOfGroup.checkBoxUpdateLineFeatures.isChecked():
+        #     self.dialogUpdateThemeOfGroup.pushButtonSelectLineFeatures.setEnabled(True)
+        # else:
+        #     self.dialogUpdateThemeOfGroup.pushButtonSelectLineFeatures.setEnabled(False)
 
     def checkBoxUpdatePointFeaturesStateChanged(self):
-        if self.dialogUpdateThemeOfGroup.checkBoxUpdatePointFeatures.isChecked():
-            self.dialogUpdateThemeOfGroup.pushButtonSelectPointFeatures.setEnabled(True)
-        else:
-            self.dialogUpdateThemeOfGroup.pushButtonSelectPointFeatures.setEnabled(False)
+        pass
+        # if self.dialogUpdateThemeOfGroup.checkBoxUpdatePointFeatures.isChecked():
+        #     self.dialogUpdateThemeOfGroup.pushButtonSelectPointFeatures.setEnabled(True)
+        # else:
+        #     self.dialogUpdateThemeOfGroup.pushButtonSelectPointFeatures.setEnabled(False)
 
 
     def openDialogUpdateThemeForGroup(self):
@@ -249,6 +264,11 @@ class UpdateThemesOfGroup:
 
     def reset(self):
         self.setupThemesInDialog()
+
+        self.dialogUpdateThemeOfGroup.checkBoxUpdatePolygonFeatures.setChecked(False)
+        self.dialogUpdateThemeOfGroup.checkBoxUpdateSupplementaryPolygonFeatures.setChecked(False)
+        self.dialogUpdateThemeOfGroup.checkBoxUpdateLineFeatures.setChecked(False)
+        self.dialogUpdateThemeOfGroup.checkBoxUpdatePointFeatures.setChecked(False)
 
         self.hasUserSelectedPolygonFeaturesForUpdate = False
         self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate = False

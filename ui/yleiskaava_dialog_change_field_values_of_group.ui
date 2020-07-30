@@ -19,14 +19,14 @@
      <item>
       <widget class="QPushButton" name="pushButtonSelectPolygonFeatures">
        <property name="text">
-        <string>Valitse päivitettävät aluekohteet</string>
+        <string>Valitse päivitettävät aluevarauskohteet</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="pushButtonChooseUpdatedAttributesAndValuesForSpatialFeatures">
        <property name="text">
-        <string>Valitse päivitykset aluekohteille</string>
+        <string>Valitse päivitykset aluevarauskohteille</string>
        </property>
       </widget>
      </item>
