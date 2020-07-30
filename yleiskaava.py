@@ -28,6 +28,7 @@ from qgis.PyQt.QtWidgets import QAction, QWidget, QGridLayout, QLabel, QComboBox
 
 from qgis.core import (
     Qgis, QgsProject)
+from qgis.gui import QgsMessageBarItem
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -86,6 +87,7 @@ class Yleiskaava:
 
         self.pluginIsActive = False
         self.dockwidget = None
+        self.openProjectMessageBarItem = None
 
         self.yleiskaavaDatabase = YleiskaavaDatabase(self.iface)
         self.yleiskaavaUtils = YleiskaavaUtils(self.yleiskaavaDatabase)
@@ -264,7 +266,9 @@ class Yleiskaava:
     def setupYleiskaavaDockWidget(self):
 
         if not self.canUse():
-            self.iface.messageBar().pushMessage('Yleiskaavan QGIS-työtila pitää käynnistää ennen työkalujen käyttöä', Qgis.Warning, duration=10)
+            self.iface.projectRead.connect(self.handleProjectRead)
+            self.openProjectMessageBarItem = QgsMessageBarItem('Yleiskaavan QGIS-työtila pitää käynnistää ennen työkalujen käyttöä', Qgis.Warning, duration=10)
+            self.iface.messageBar().pushItem(self.openProjectMessageBarItem)
 
         self.dataCopySourceToTarget.setup()
         self.updateRegulationOfGroup.setup()
@@ -287,6 +291,12 @@ class Yleiskaava:
         self.dockwidget.pushButtonHelp.clicked.connect(self.showHelp)
 
 
+    def handleProjectRead(self):
+        if self.canUse():
+            self.iface.projectRead.disconnect(self.handleProjectRead)
+            self.iface.messageBar().popWidget(self.openProjectMessageBarItem)
+            self.openProjectMessageBarItem = None
+            
 
     def canUse(self):
         if len(QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE)) != 1 or len(QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE_TAYDENTAVA)) != 1 or len(QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA)) != 1 or len(QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_PISTE)) != 1:
