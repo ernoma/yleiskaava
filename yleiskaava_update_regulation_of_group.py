@@ -1,7 +1,7 @@
 
 
 from qgis.PyQt import uic
-from qgis.PyQt.QtCore import QVariant
+from qgis.PyQt.QtCore import Qt, QVariant
 
 from qgis.core import (Qgis, QgsProject, QgsMessageLog)
 
@@ -25,6 +25,7 @@ class UpdateRegulationOfGroup:
         self.plugin_dir = os.path.dirname(__file__)
 
         self.dialogUpdateRegulationOfGroup = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_update_regulation_of_group.ui'))
+        self.dialogUpdateRegulationOfGroup.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
 
         self.regulations = None
         self.regulationTitles = None

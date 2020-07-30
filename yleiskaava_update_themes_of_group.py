@@ -1,7 +1,7 @@
 
 
 from qgis.PyQt import uic
-from qgis.PyQt.QtCore import QVariant
+from qgis.PyQt.QtCore import Qt, QVariant
 
 from qgis.core import (Qgis, QgsProject, QgsMessageLog)
 
@@ -24,6 +24,7 @@ class UpdateThemesOfGroup:
         self.plugin_dir = os.path.dirname(__file__)
 
         self.dialogUpdateThemeOfGroup = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_update_themes_of_group.ui'))
+        self.dialogUpdateThemeOfGroup.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
 
         self.themes = None
         self.themeNames = None

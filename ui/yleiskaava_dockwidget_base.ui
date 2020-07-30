@@ -42,19 +42,19 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButtonOpenGeometryEditSettings">
-        <property name="text">
-         <string>Kaavakohteiden geometrisen jakamisen muutosasetukset</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QPushButton" name="pushButtonChangeFieldValuesForGroup">
         <property name="enabled">
          <bool>true</bool>
         </property>
         <property name="text">
          <string>Vaihda kenttien arvoja joukolle kaavakohteita...</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButtonOpenGeometryEditSettings">
+        <property name="text">
+         <string>Kaavakohteiden geometrisen jakamisen muutosasetukset</string>
         </property>
        </widget>
       </item>

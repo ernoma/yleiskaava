@@ -34,9 +34,10 @@ class ChangeFieldValuesOfGroup:
         self.plugin_dir = os.path.dirname(__file__)
 
         self.dialogChangeFieldValuesOfGroup = uic.loadUi(os.path.join(self.plugin_dir, 'ui','yleiskaava_dialog_change_field_values_of_group.ui'))
+        self.dialogChangeFieldValuesOfGroup.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
 
         self.dialogChooseAndUpdateFieldValuesForFeatureType = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_choose_and_update_field_values_for_feature_type.ui'))
-        self.dialogChooseAndUpdateFieldValuesForFeatureType.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
+        self.dialogChooseAndUpdateFieldValuesForFeatureType.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
 
         self.hasUserSelectedPolygonFeaturesForUpdate = False
         self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate = False

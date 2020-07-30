@@ -1,7 +1,7 @@
 
 
 from qgis.PyQt import uic
-from qgis.PyQt.QtCore import QVariant
+from qgis.PyQt.QtCore import Qt, QVariant
 
 from qgis.core import (
     Qgis, QgsProject,
@@ -30,6 +30,7 @@ class UpdateIndexingOfFeatures:
         self.plugin_dir = os.path.dirname(__file__)
 
         self.dialogUpdateIndexingOfFeatures = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_update_indexing_of_features.ui'))
+        self.dialogUpdateIndexingOfFeatures.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
 
         self.selectedLayer = None
         self.selectedFeatureID = None
