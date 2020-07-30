@@ -149,7 +149,7 @@ class AddSourceDataLinks:
 
             apiIndex = self.dialogAddSourceDataLinks.comboBoxChooseSourceDataAPI.currentIndex() - 1
             apiID = self.apis[apiIndex]["id"]
-            QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, apiID: ' + str(apiID) + ', name: ' + name, 'Yleiskaava-työkalu', Qgis.Info)
+            # QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, apiID: ' + str(apiID) + ', name: ' + name, 'Yleiskaava-työkalu', Qgis.Info)
             layer, layerInfo = self.yleiskaavaSourceDataAPIs.getLayerAndLayerInfo(apiID, name)
 
             # QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches - layer.geometryType(): ' + str(layer.geometryType()), 'Yleiskaava-työkalu', Qgis.Info)
@@ -163,7 +163,7 @@ class AddSourceDataLinks:
                 # for field in fields:
                 #     QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, field.name(): ' + str(field.name()) + ', name: ' + name, 'Yleiskaava-työkalu', Qgis.Info)
 
-                QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, layer.featureCount(): ' + str(layer.featureCount()), 'Yleiskaava-työkalu', Qgis.Info)
+                # QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, layer.featureCount(): ' + str(layer.featureCount()), 'Yleiskaava-työkalu', Qgis.Info)
 
                 if self.selectedTargetLayer.selectedFeatureCount() > 0:
 
@@ -209,14 +209,14 @@ class AddSourceDataLinks:
                 "linkki_data": feature[self.originalSourceLayerInfo["linkki_data"]]
             })
         self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setRowCount(featureCount)
-        QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches - featureCount: ' + str(featureCount), 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches - featureCount: ' + str(featureCount), 'Yleiskaava-työkalu', Qgis.Info)
 
         if featureCount == 0:
             self.iface.messageBar().pushMessage('Lähdeaineistokarttatasolta ei löytynyt valituista kohteista määritetyn rajaussuorakulmion sisältä kohteita', Qgis.Info, 10)
 
         for index, featureInfo in enumerate(sorted(featureInfos, key=itemgetter("distance"))):
             # lähdeaineiston mukaan nimi/tunniste UI:hin
-            QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, nimi: ' + str(featureInfo["nimi"]) + ', linkki_data: ' + str(featureInfo["linkki_data"]), 'Yleiskaava-työkalu', Qgis.Info)
+            # QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches, nimi: ' + str(featureInfo["nimi"]) + ', linkki_data: ' + str(featureInfo["linkki_data"]), 'Yleiskaava-työkalu', Qgis.Info)
             
             userFriendlyFieldNameLabel = QLabel(str(featureInfo["nimi"]))
 
@@ -437,7 +437,7 @@ class AddSourceDataLinks:
                 if yMax is None or bbox.yMaximum() < yMax:
                     yMax = bbox.yMaximum()
 
-        QgsMessageLog.logMessage('createFeatureRequestForSelectedFeatures - xMin: ' + str(xMin) + ", yMin: " + str(yMin) + ", xMax: " + str(xMax) + ", yMax: " + str(yMax), 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage('createFeatureRequestForSelectedFeatures - xMin: ' + str(xMin) + ", yMin: " + str(yMin) + ", xMax: " + str(xMax) + ", yMax: " + str(yMax), 'Yleiskaava-työkalu', Qgis.Info)
 
         if xMin is not None and yMin is not None and xMax is not None and yMax is not None:
             bboxAllFeatures = QgsRectangle(xMin, yMin, xMax, yMax)

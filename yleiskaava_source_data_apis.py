@@ -76,7 +76,7 @@ class YleiskaavaSourceDataAPIs:
 
                 if layerName is not None:
                     layerNames.append(layerName.childNodes[0].data)
-                    QgsMessageLog.logMessage("getWFSAPILayerNames - layerName: " + layerName.childNodes[0].data, 'Yleiskaava-työkalu', Qgis.Info)
+                    # QgsMessageLog.logMessage("getWFSAPILayerNames - layerName: " + layerName.childNodes[0].data, 'Yleiskaava-työkalu', Qgis.Info)
                     layerTitles.append(layerTitle.childNodes[0].data)
 
         return layerNames, layerTitles 

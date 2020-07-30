@@ -699,8 +699,8 @@ class YleiskaavaDatabase:
                     self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
                     # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
             else:
-                # pass
-                QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - relationLayer.commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
+                pass
+                # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - relationLayer.commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
 
 
     def addRegulationRelationsToLayer(self, sourceFeatureID, targetFeatureID, featureType):
@@ -708,7 +708,7 @@ class YleiskaavaDatabase:
         regulations = self.getRegulationsForSpatialFeature(sourceFeatureID, featureType)
         targetSchemaTableName = "yk_yleiskaava.kaavaobjekti_" + featureType
         for regulation in regulations:
-            QgsMessageLog.logMessage("addRegulationRelationsToLayer - regulation relation lisätään kaavakohteelle, fid: " + str(targetFeatureID), 'Yleiskaava-työkalu', Qgis.Info)
+            # QgsMessageLog.logMessage("addRegulationRelationsToLayer - regulation relation lisätään kaavakohteelle, fid: " + str(targetFeatureID), 'Yleiskaava-työkalu', Qgis.Info)
             self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulation["id"])
 
 
@@ -788,8 +788,8 @@ class YleiskaavaDatabase:
                     self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
                     # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
             else:
-                # pass
-                QgsMessageLog.logMessage("createFeatureThemeRelationWithThemeID - relationLayer.commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
+                pass
+                # QgsMessageLog.logMessage("createFeatureThemeRelationWithThemeID - relationLayer.commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
 
 
     def addThemeRelationsToLayer(self, sourceFeatureID, targetFeatureID, featureType):
@@ -1131,8 +1131,8 @@ class YleiskaavaDatabase:
                     self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
                     # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
             else:
-                # pass
-                QgsMessageLog.logMessage("createFeatureThemeRelationWithThemeID - relationLayer.commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
+                pass
+                # QgsMessageLog.logMessage("createFeatureThemeRelationWithThemeID - relationLayer.commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
 
 
     def existsFeatureThemeRelation(self, featureID, featureType, themeID):

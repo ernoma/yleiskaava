@@ -279,22 +279,22 @@ class GeometryEditSettings:
 
 
     def areaFeatureAdded(self, fid):
-        QgsMessageLog.logMessage("areaFeatureAdded - fid: " + str(fid), 'Yleiskaava-työkalu', Qgis.Info)
-        QgsMessageLog.logMessage("areaFeatureAdded - self.areaFeatureLayer.featureCount(): " + str(self.featureLayer['alue'].featureCount()), 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage("areaFeatureAdded - fid: " + str(fid), 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage("areaFeatureAdded - self.areaFeatureLayer.featureCount(): " + str(self.featureLayer['alue'].featureCount()), 'Yleiskaava-työkalu', Qgis.Info)
         self.addedFeatureIDs['alue'].append(fid)
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText("Uusi aluevarauskohde, uusia yhteensä: " + str(len(self.addedFeatureIDs['alue'])))
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
 
     def suplementaryAreaFeatureAdded(self, fid):
-        QgsMessageLog.logMessage("suplementaryAreaFeatureAdded - fid: " + str(fid), 'Yleiskaava-työkalu', Qgis.Info)
-        QgsMessageLog.logMessage("suplementaryAreaFeatureAdded - self.suplementaryAreaFeatureLayer.featureCount(): " + str(self.featureLayer['alue_taydentava'].featureCount()), 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage("suplementaryAreaFeatureAdded - fid: " + str(fid), 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage("suplementaryAreaFeatureAdded - self.suplementaryAreaFeatureLayer.featureCount(): " + str(self.featureLayer['alue_taydentava'].featureCount()), 'Yleiskaava-työkalu', Qgis.Info)
         self.addedFeatureIDs['alue_taydentava'].append(fid)
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText("Uusi täydentävä aluekohde, uusia yhteensä: " + str(len(self.addedFeatureIDs['alue_taydentava'])))
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
 
     def lineFeatureAdded(self, fid):
-        QgsMessageLog.logMessage("lineFeatureAdded - fid: " + str(fid), 'Yleiskaava-työkalu', Qgis.Info)
-        QgsMessageLog.logMessage("lineFeatureAdded - self.lineFeatureLayer.featureCount(): " + str(self.featureLayer['viiva'].featureCount()), 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage("lineFeatureAdded - fid: " + str(fid), 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage("lineFeatureAdded - self.lineFeatureLayer.featureCount(): " + str(self.featureLayer['viiva'].featureCount()), 'Yleiskaava-työkalu', Qgis.Info)
         #self.addedFeatureIDs.append(fid)
         self.addedFeatureIDs['viiva'].append(fid)
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText("Uusi viivamainen kohde, uusia yhteensä: " + str(len(self.addedFeatureIDs['viiva'])))
@@ -321,7 +321,7 @@ class GeometryEditSettings:
                 sourceFeatureUUID = sourceFeature["id"]
                 targetFeatureUUID = targetFeature["id"]
                 
-                QgsMessageLog.logMessage("addRegulationAndThemeRelationsToFeature - sourceFeatureUUID: " + str(sourceFeatureUUID) + ", targetFeatureUUID: " + str(targetFeatureUUID), 'Yleiskaava-työkalu', Qgis.Info)
+                # QgsMessageLog.logMessage("addRegulationAndThemeRelationsToFeature - sourceFeatureUUID: " + str(sourceFeatureUUID) + ", targetFeatureUUID: " + str(targetFeatureUUID), 'Yleiskaava-työkalu', Qgis.Info)
 
                 #self.lineFeatureLayer.beginEditCommand("Lisätään kaavamääräys")
 

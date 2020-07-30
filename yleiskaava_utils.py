@@ -289,7 +289,7 @@ class YleiskaavaUtils:
 
 
     def isShownTargetFieldName(self, targetFieldName):
-        if targetFieldName != 'id' and targetFieldName != 'id_yleiskaava' and targetFieldName != 'kansallinen_laillinen_sitovuus'  and targetFieldName != 'kohde_periytyy_muualta' and targetFieldName != 'pinta_ala_ha' and targetFieldName != 'pituus_km' and targetFieldName != 'rakennusoikeus_kem' and targetFieldName != 'rakennusoikeus_lkm' and targetFieldName != 'id_kaavakohteen_olemassaolo' and targetFieldName != 'id_kansallisen_kaavakohteen_olemassaolo':
+        if targetFieldName != 'id' and targetFieldName != 'id_yleiskaava' and targetFieldName != 'kansallinen_laillinen_sitovuus' and targetFieldName != 'kohde_periytyy_muualta' and targetFieldName != 'pinta_ala_ha' and targetFieldName != 'pituus_km' and targetFieldName != 'rakennusoikeus_kem' and targetFieldName != 'rakennusoikeus_lkm' and targetFieldName != 'id_kaavakohteen_olemassaolo' and targetFieldName != 'id_kansallisen_kaavakohteen_olemassaolo':
             return True
 
         return False
@@ -386,4 +386,4 @@ class YleiskaavaUtils:
 class COPY_ERROR_REASONS:
     SELECTED_FEATURE_COUNT_IS_ZERO = 1
     TARGET_TABLE_NOT_SELECTED = 2
-    TARGET_FIELD_SELECTED_MULTIPLE_TIMES = 3
+    TARGET_FIELD_SELECTED_MULTIPLE_TIMES_NOT_SUPPORTED_FOR_TYPE = 3

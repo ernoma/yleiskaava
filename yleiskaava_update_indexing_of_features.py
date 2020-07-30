@@ -138,7 +138,7 @@ class UpdateIndexingOfFeatures:
 
 
     def getTargetFieldNameAndTypeFromComboBoxText(self, text):
-        QgsMessageLog.logMessage('getTargetFieldNameAndTypeFromComboBoxText, text: ' + str(text), 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage('getTargetFieldNameAndTypeFromComboBoxText, text: ' + str(text), 'Yleiskaava-työkalu', Qgis.Info)
         userFriendlyFieldName, targetFieldNameAndTypeName = text.rsplit(' (', 1)
         targetFieldName, targetFieldTypeName = targetFieldNameAndTypeName[0:-1].split(', ')
         return userFriendlyFieldName, targetFieldName, targetFieldTypeName
@@ -345,7 +345,7 @@ class UpdateIndexingOfFeatures:
                     pass
             
             if not isNumber:
-                QgsMessageLog.logMessage("getIndexValueTypes - not isNumber, valuePart: " + valuePart, 'Yleiskaava-työkalu', Qgis.Info)
+                # QgsMessageLog.logMessage("getIndexValueTypes - not isNumber, valuePart: " + valuePart, 'Yleiskaava-työkalu', Qgis.Info)
                 hasStrings = True
 
         return hasFloats, hasInts, hasStrings
@@ -365,17 +365,17 @@ class UpdateIndexingOfFeatures:
         # if canIndex:
         shouldReverse = self.shouldReverse()
         if hasStrings:
-            QgsMessageLog.logMessage("getValidAndSortedFeatureIDsAndValuesAndValueParts - hasStrings", 'Yleiskaava-työkalu', Qgis.Info)
+            # QgsMessageLog.logMessage("getValidAndSortedFeatureIDsAndValuesAndValueParts - hasStrings", 'Yleiskaava-työkalu', Qgis.Info)
             sortedFeatureIDsAndValidValuesAndValueParts = sorted(validFeatureIDsAndValuesAndValueParts, key=lambda x: x['valuePart'], reverse = shouldReverse)
             if shouldLowerValueParts:
                 for index, sortedFeatureIDsAndValidValuesAndValuePart in enumerate(sortedFeatureIDsAndValidValuesAndValueParts):
                     sortedFeatureIDsAndValidValuesAndValueParts[index]['valuePart'] = sortedFeatureIDsAndValidValuesAndValueParts[index]['valuePart'].lower()
 
         elif hasFloats:
-            QgsMessageLog.logMessage("getValidAndSortedFeatureIDsAndValuesAndValueParts - hasFloats", 'Yleiskaava-työkalu', Qgis.Info)
+            # QgsMessageLog.logMessage("getValidAndSortedFeatureIDsAndValuesAndValueParts - hasFloats", 'Yleiskaava-työkalu', Qgis.Info)
             sortedFeatureIDsAndValidValuesAndValueParts = sorted(validFeatureIDsAndValuesAndValueParts, key=lambda x: float(x['valuePart']), reverse = shouldReverse)
         elif hasInts:
-            QgsMessageLog.logMessage("getValidAndSortedFeatureIDsAndValuesAndValueParts - hasInts", 'Yleiskaava-työkalu', Qgis.Info)
+            # QgsMessageLog.logMessage("getValidAndSortedFeatureIDsAndValuesAndValueParts - hasInts", 'Yleiskaava-työkalu', Qgis.Info)
             sortedFeatureIDsAndValidValuesAndValueParts = sorted(validFeatureIDsAndValuesAndValueParts, key=lambda x: int(x['valuePart']), reverse = shouldReverse)
         else:
             self.iface.messageBar().pushMessage('Bugi koodissa: getValidAndSortedFeatureIDsAndValuesAndValueParts', Qgis.Critical)

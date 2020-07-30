@@ -183,7 +183,7 @@ class ChangeFieldValuesOfGroup:
                 value = self.yleiskaavaUtils.getValueOfWidgetForType(widget, fieldTypeName)
                 compatibleValue = self.yleiskaavaUtils.getAttributeValueInCompatibleType(fieldName, fieldTypeName, fieldTypeName, value)
 
-                QgsMessageLog.logMessage('updateFieldValuesForFeatureType - shouldUpdate, fieldName: ' + fieldName + ', value: ' + str(value) + ', compatibleValue: ' + str(compatibleValue), 'Yleiskaava-työkalu', Qgis.Info)
+                # QgsMessageLog.logMessage('updateFieldValuesForFeatureType - shouldUpdate, fieldName: ' + fieldName + ', value: ' + str(value) + ', compatibleValue: ' + str(compatibleValue), 'Yleiskaava-työkalu', Qgis.Info)
                 updatedFieldValues.append({
                     "fieldName": fieldName,
                     "fieldTypeName": fieldTypeName,
