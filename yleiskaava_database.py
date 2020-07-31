@@ -299,7 +299,10 @@ class YleiskaavaDatabase:
         plans = []
         for index, feature in enumerate(features):
             if feature['nimi'] == planName:
-                planID = feature['id']
+                if not feature['id']:
+                    planID = None
+                else:
+                    planID = feature['id']
                 break
 
         return planID

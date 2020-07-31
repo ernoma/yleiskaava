@@ -45,6 +45,8 @@ class DataCopySourceToTarget:
     COPY_SOURCE_DATA_DIALOG_MIN_WIDTH = 1006
     COPY_SOURCE_DATA_DIALOG_MIN_HEIGHT = 624
 
+    MESSAGE_BAR_TEXT_COPYING = 'Kopioidaan lähdeaineiston kohteet tietokantaan. Älä muokkaa työtilan karttatasoja kopioinnin aikana!'
+
 
     def __init__(self, iface, yleiskaavaDatabase, yleiskaavaUtils):
         
@@ -91,7 +93,6 @@ class DataCopySourceToTarget:
         self.includeLineRegulations = False
         self.includePointRegulations = False
 
-        self.copyMessageBarItem = None
         self.hasUserCanceledCopy = False
 
 
@@ -610,32 +611,39 @@ class DataCopySourceToTarget:
         reason = self.getCopyErrorReason()
 
         if reason == None:
-            transformContext = QgsProject.instance().transformContext() # EI - QgsCoordinateTransformContext
+            transformContext = QgsProject.instance().transformContext() # OK - QgsCoordinateTransformContext: "QgsCoordinateTransformContext objects are thread safe for read and write.", https://qgis.org/pyqgis/3.4/core/QgsCoordinateTransformContext.html
             planNumber = self.yleiskaavaDatabase.getPlanNumberForName(self.getPlanNameFromCopySettings()) # ok
             shouldLinkToSpatialPlan = self.dialogCopySettings.checkBoxLinkToSpatialPlan.isChecked() # ok
             spatialPlanName = self.dialogCopySettings.comboBoxSpatialPlanName.currentText() # ok
-            spatialPlanID = self.yleiskaavaDatabase.getSpatialPlanIDForPlanName(spatialPlanName) # EI - voi olla QVariant
+            spatialPlanID = self.yleiskaavaDatabase.getSpatialPlanIDForPlanName(spatialPlanName) # ok
             fieldMatches = self.getSourceTargetFieldMatches() # ok
             includeFieldNamesForMultiValues = self.dialogCopySettings.checkBoxIncludeFieldNamesForMultiValues.isChecked() # ok
             targetFieldValueSeparator = self.dialogCopySettings.lineEditMultiValuesSeparator.text() # ok
-            defaultFieldNameValueInfos = self.getDefaultTargetFieldInfo() # EI - QVariantit
+            defaultFieldNameValueInfos = self.getDefaultTargetFieldInfo() # ok
             shouldCreateNewRegulation = self.dialogCopySettings.checkBoxCreateRegulations.isChecked() # ok
             shouldFillLandUseClassificationWithRegulation = self.dialogCopySettings.checkBoxFillLandUseClassificationWithRegulation.isChecked() # ok
-            specificRegulations = self.yleiskaavaDatabase.getSpecificRegulations() # EI - QVariantit
-            regulationNames = [regulation["kaavamaarays_otsikko"].value() for regulation in specificRegulations]  # ok
+            specificRegulations = self.yleiskaavaDatabase.getSpecificRegulations()
+            regulationNames = []
+            for regulation in specificRegulations:
+                  if not regulation["kaavamaarays_otsikko"].isNull():
+                      if regulation["kaavamaarays_otsikko"].value() != None:
+                        regulationNames.append(regulation["kaavamaarays_otsikko"].value()) # ok
 
-            self.copySourceDataToDatabaseTask = CopySourceDataToDatabaseTask(self.yleiskaavaUtils, transformContext, planNumber, self.sourceLayer.clone(), self.targetLayer.clone(), self.targetSchemaTableName, shouldLinkToSpatialPlan, spatialPlanName, spatialPlanID, fieldMatches, includeFieldNamesForMultiValues, targetFieldValueSeparator, defaultFieldNameValueInfos, shouldCreateNewRegulation, shouldFillLandUseClassificationWithRegulation, regulationNames) # EI  - self.sourceLayer.clone(), self.targetLayer.clone()
+            self.copySourceDataToDatabaseTask = CopySourceDataToDatabaseTask(self.yleiskaavaUtils, self.yleiskaavaDatabase, transformContext, planNumber, self.targetSchemaTableName, shouldLinkToSpatialPlan, spatialPlanName, spatialPlanID, fieldMatches, includeFieldNamesForMultiValues, targetFieldValueSeparator, defaultFieldNameValueInfos, shouldCreateNewRegulation, shouldFillLandUseClassificationWithRegulation, regulationNames) # OK  - yllä olevat
+            regulationLayer = self.yleiskaavaDatabase.getProjectLayer("yk_yleiskaava.kaavamaarays")
+            regulationRelationLayer = self.yleiskaavaDatabase.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
+            self.copySourceDataToDatabaseTask.setDependentLayers([self.sourceLayer, self.targetLayer, regulationLayer, regulationRelationLayer])
 
             # self.copySourceDataToDatabaseTask.createFeatureRegulationRelation.connect(self.handleCreateFeatureRegulationRelation)
             # self.copySourceDataToDatabaseTask.createSpecificRegulationAndFeatureRegulationRelation.connect(self.handleCreateSpecificRegulationAndFeatureRegulationRelation)
             self.copySourceDataToDatabaseTask.progressChanged.connect(self.handleCopySourceDataToDatabaseTaskProgressChanged)
             self.copySourceDataToDatabaseTask.taskCompleted.connect(self.handleCopySourceDataToDatabaseTaskCompleted)
             self.copySourceDataToDatabaseTask.taskTerminated.connect(self.handleCopySourceDataToDatabaseTerminated)
-            self.iface.messageBar().pushItem(self.copyMessageBarItem)
+            copyMessageBarItem = QgsMessageBarItem(DataCopySourceToTarget.MESSAGE_BAR_TEXT_COPYING)
+            self.iface.messageBar().pushItem(copyMessageBarItem)
             self.dialogCopyMessage.progressBar.setValue(0)
             self.dialogCopyMessage.show()
             QgsApplication.taskManager().addTask(self.copySourceDataToDatabaseTask)
-            self.copyMessageBarItem = QgsMessageBarItem('Kopioidaan lähdeaineiston kohteet tietokantaan. Älä muokkaa työtilan karttatasoja kopioinnin aikana!')
 
         elif reason == COPY_ERROR_REASONS.SELECTED_FEATURE_COUNT_IS_ZERO:
             self.iface.messageBar().pushMessage('Yhtään lähdekarttatason kohdetta ei ole valittuna', Qgis.Critical)
@@ -664,9 +672,9 @@ class DataCopySourceToTarget:
 
     def handleCopySourceDataToDatabaseTaskCompleted(self):
         self.hideAllDialogs()
-        if self.copyMessageBarItem is not None:
-            self.iface.messageBar().popWidget(self.copyMessageBarItem)
-            self.copyMessageBarItem = None
+        copyMessageBarItem = self.iface.messageBar().currentItem()
+        if copyMessageBarItem is not None and copyMessageBarItem.text() == DataCopySourceToTarget.MESSAGE_BAR_TEXT_COPYING:
+            self.iface.messageBar().popWidget()
         self.yleiskaavaUtils.refreshTargetLayersInProject() # Päivitä lopuksi työtilan karttatasot, jotka liittyvät T1:n ajoon
         if not self.hasUserCanceledCopy:
             self.iface.messageBar().pushMessage('Lähdeaineisto kopioitu tietokantaan', Qgis.Info, duration=0)
@@ -676,9 +684,9 @@ class DataCopySourceToTarget:
 
     def handleCopySourceDataToDatabaseTerminated(self):
         self.hideAllDialogs()
-        if self.copyMessageBarItem is not None:
-            self.iface.messageBar().popWidget(self.copyMessageBarItem)
-            self.copyMessageBarItem = None
+        copyMessageBarItem = self.iface.messageBar().currentItem()
+        if copyMessageBarItem is not None and copyMessageBarItem.text() == DataCopySourceToTarget.MESSAGE_BAR_TEXT_COPYING:
+            self.iface.messageBar().popWidget()
         self.yleiskaavaUtils.refreshTargetLayersInProject() # Päivitä lopuksi työtilan karttatasot, jotka liittyvät T1:n ajoon
         if not self.hasUserCanceledCopy:
             self.iface.messageBar().pushMessage('Lähdeaineiston kopiointi tietokantaan epäonnistui', Qgis.Critical, duration=0)
@@ -735,13 +743,13 @@ class DataCopySourceToTarget:
             widget = self.dialogCopySettings.tableWidgetDefaultFieldValues.cellWidget(i, DataCopySourceToTarget.DEFAULT_VALUES_INPUT_INDEX)
             # QgsMessageLog.logMessage("getDefaultTargetFieldInfo - targetFieldName: " + targetFieldName, 'Yleiskaava-työkalu', Qgis.Info)
             value = self.yleiskaavaUtils.getValueOfWidgetForType(widget, targetFieldType)
-            variantValue = None
-            if value is None:
-                variantValue = QVariant()
+            tempValue = None
+            if not QVariant(value).isNull():
+                tempValue = QVariant(value).value()
             else:
-                variantValue = QVariant(value)
+                tempValue = None
 
-            targetFieldInfo = { "name": targetFieldName, "type": targetFieldType, "value": variantValue }
+            targetFieldInfo = { "name": targetFieldName, "type": targetFieldType, "value": tempValue }
             defaultFieldNameValueInfos.append(targetFieldInfo)
 
             # QgsMessageLog.logMessage("getDefaultTargetFieldInfo - targetFieldName: " + targetFieldName + ", value: " + str(variantValue.value()), 'Yleiskaava-työkalu', Qgis.Info)
