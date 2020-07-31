@@ -2,18 +2,18 @@
 
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import Qt, QVariant
+from qgis.PyQt.QtWidgets import QProgressDialog 
 
-from qgis.core import (Qgis, QgsProject, QgsMessageLog)
+from qgis.core import (Qgis, QgsProject, QgsMessageLog, QgsApplication)
 
 import os.path
 import uuid
 from operator import itemgetter
 
 from .yleiskaava_database import YleiskaavaDatabase
-
+from .yleiskaava_update_regulation_of_group_task import UpdateRegulationOfGroupTask
 
 class UpdateRegulationOfGroup:
-
 
     def __init__(self, iface, yleiskaavaDatabase, yleiskaavaUtils):
         
@@ -36,6 +36,10 @@ class UpdateRegulationOfGroup:
         self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate = False
         self.hasUserSelectedLineFeaturesForUpdate = False
         self.hasUserSelectedPointFeaturesForUpdate = False
+
+        self.hasUserCanceledCopy = False
+        self.progressDialog = None
+        self.shouldHide = False
 
     def setup(self):
         self.setupDialogUpdateRegulationOfGroup()
@@ -143,13 +147,15 @@ class UpdateRegulationOfGroup:
 
 
     def handleUpdateRegulation(self):
-        self.updateRegulation(False)
+        self.shouldHide = False
+        self.updateRegulation()
 
     def handleUpdateRegulationAndClose(self):
-        self.updateRegulation(True)
+        self.shouldHide = True
+        self.updateRegulation()
 
 
-    def updateRegulation(self, shouldHide):
+    def updateRegulation(self):
         # Päivitä kaavamääräys ja siihen liitetyt kaavakohteet ja huomio asetukset, sekä mahd. useat määräykset kohteella kayttotarkoitus_lyhenne-päivityksessä.
         # Tarkista, onko kaavamääräyksen lomaketiedoissa eroa ja jos ei, niin ilmoita käyttäjälle.
         # Lisää kaavamääräys sellaisille kaavakohteille, joilla sitä ei vielä ole, mutta käyttäjä on ko. kaavakohteen valinnut / valitsee
@@ -183,35 +189,35 @@ class UpdateRegulationOfGroup:
                 if not self.hasUserSelectedPolygonFeaturesForUpdate:
                     self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä aluevarauksia; aluevarauksia ei päivitetty', Qgis.Warning)
                 else:
-                    success = self.updateRegulationsAndLandUseClassificationsForSpatialFeatures("alue")
-                    if success:
-                        self.iface.messageBar().pushMessage('Aluvarausten käyttötarkoitukset päivitetty', Qgis.Info, 30)
+                    self.progressDialog = QProgressDialog("Päivitetään aluevarausten kaavamääräyksiä...", "Keskeytä", 0, 100)
+                    self.progressDialog.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
+                    self.updateRegulationsAndLandUseClassificationsForSpatialFeatures("alue")
             if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForSupplementaryPolygonFeatures.isChecked():
                 if not self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate:
                     self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä täydentäviä aluekohteita; täydentäviä aluekohteita ei päivitetty', Qgis.Warning)
                 else:
-                    success = self.updateRegulationsAndLandUseClassificationsForSpatialFeatures("alue_taydentava")
-                    if success:
-                        self.iface.messageBar().pushMessage('Täydentävien aluekohteiden käyttötarkoitukset päivitetty', Qgis.Info, 30)
+                    self.progressDialog = QProgressDialog("Päivitetään täydentävien aluekohteiden kaavamääräyksiä...", "Keskeytä", 0, 100)
+                    self.progressDialog.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
+                    self.updateRegulationsAndLandUseClassificationsForSpatialFeatures("alue_taydentava")
             if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForLineFeatures.isChecked():
                 if not self.hasUserSelectedLineFeaturesForUpdate:
                     self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä viivamaisia kohteita; viivamaisia ei päivitetty', Qgis.Warning)
                 else:
-                    success = self.updateRegulationsAndLandUseClassificationsForSpatialFeatures("viiva")
-                    if success:
-                        self.iface.messageBar().pushMessage('Viivamaisten kohteiden käyttötarkoitukset päivitetty', Qgis.Info, 30)
+                    self.progressDialog = QProgressDialog("Päivitetään viimamaisten kohteiden kaavamääräyksiä...", "Keskeytä", 0, 100)
+                    self.progressDialog.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
+                    self.updateRegulationsAndLandUseClassificationsForSpatialFeatures("viiva")
             if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPointFeatures.isChecked():
                 if not self.hasUserSelectedPointFeaturesForUpdate:
                     self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä pistemäisiä kohteita; pistemäisiä kohteita ei päivitetty', Qgis.Warning)
                 else:
-                    success = self.updateRegulationsAndLandUseClassificationsForSpatialFeatures("piste")
-                    if success:
-                        self.iface.messageBar().pushMessage('Pistemäisten kohteiden käyttötarkoitukset päivitetty', Qgis.Info, 30)
-
+                    self.progressDialog = QProgressDialog("Päivitetään pistemäisten kohteiden kaavamääräyksiä...", "Keskeytä", 0, 100)
+                    self.progressDialog.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
+                    self.updateRegulationsAndLandUseClassificationsForSpatialFeatures("piste")
             # else:
             #     self.iface.messageBar().pushMessage("Kaavakohteita ei päivitetty", Qgis.Critical)
+            if self.shouldHide:
+                self.dialogUpdateRegulationOfGroup.hide()
 
-            self.finishUpdate(shouldHide)
         elif self.dialogUpdateRegulationOfGroup.checkBoxRemoveOldRegulationsFromSpatialFeatures.isChecked():
             shouldUpdateOnlyRelation = False
 
@@ -260,7 +266,9 @@ class UpdateRegulationOfGroup:
                         else:
                             self.iface.messageBar().pushMessage('Pistemäisten kohteiden kaavamääräykset ja käyttötarkoitus poistettu', Qgis.Info, 30)
 
-            self.finishUpdate(shouldHide)
+            if self.shouldHide:
+                self.dialogUpdateRegulationOfGroup.hide()
+            self.finishUpdate()
         else:
             self.iface.messageBar().pushMessage('Valitse kaavamääräys', Qgis.Info, 30)
 
@@ -280,14 +288,8 @@ class UpdateRegulationOfGroup:
         return False
 
 
-    def finishUpdate(self, shouldHide):
-        self.reset()
-
+    def finishUpdate(self):
         self.yleiskaavaUtils.refreshTargetLayersInProject()
-
-        if shouldHide:
-            self.dialogUpdateRegulationOfGroup.hide()
-
 
     def reset(self):
         self.setupRegulationsInDialog()
@@ -306,29 +308,59 @@ class UpdateRegulationOfGroup:
     def updateRegulationsAndLandUseClassificationsForSpatialFeatures(self, featureType):
         if self.currentRegulation != None:
             regulationID = self.currentRegulation["id"]
+            regulationTitle = self.currentRegulation["kaavamaarays_otsikko"]
+            shouldRemoveOldRegulationRelations = self.dialogUpdateRegulationOfGroup.checkBoxRemoveOldRegulationsFromSpatialFeatures.isChecked()
+            shouldUpdateOnlyRelation = False
+            shouldUpdateRegulationTextsEvenIfSpatialFeatureHasMultipleRegulations = self.dialogUpdateRegulationOfGroup.checkBoxUpdateRegulationTextsEvenIfSpatialFeatureHasMultipleRegulations.isChecked()
 
-            spatialFeatures = self.yleiskaavaDatabase.getSelectedFeatures(featureType, ["id"])
-            # spatialFeatures = self.yleiskaavaDatabase.getSpatialFeaturesWithRegulationForType(regulationID, featureType)
+            self.updateRegulationOfGroupTask = UpdateRegulationOfGroupTask(self.yleiskaavaDatabase, featureType, regulationID, regulationTitle, shouldRemoveOldRegulationRelations, shouldUpdateRegulationTextsEvenIfSpatialFeatureHasMultipleRegulations)
 
-            for feature in spatialFeatures:
-                regulationCount = self.yleiskaavaDatabase.getRegulationCountForSpatialFeature(feature["id"], featureType)
+            targetLayer = self.yleiskaavaDatabase.getTargetLayer(featureType)
+            regulationLayer = self.yleiskaavaDatabase.getProjectLayer("yk_yleiskaava.kaavamaarays")
+            regulationRelationLayer = self.yleiskaavaDatabase.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
+            self.updateRegulationOfGroupTask.setDependentLayers([targetLayer, regulationLayer, regulationRelationLayer])
 
-                # QgsMessageLog.logMessage("updateRegulationsAndLandUseClassificationsForSpatialFeatures - feature['feature']['kaavammaraysotsikko']: " + feature['feature']['kaavammaraysotsikko'] + ", regulationCount for feature: " + str(regulationCount), 'Yleiskaava-työkalu', Qgis.Info)
+            self.progressDialog.canceled.connect(self.handleUpdateRegulationOfGroupTaskStopRequestedByUser)
+            self.updateRegulationOfGroupTask.progressChanged.connect(self.handleUpdateRegulationOfGroupTaskProgressChanged)
+            self.updateRegulationOfGroupTask.taskCompleted.connect(self.handleUpdateRegulationOfGroupTaskCompleted)
+            self.updateRegulationOfGroupTask.taskTerminated.connect(self.handleUpdateRegulationOfGroupTaskTerminated)
 
-                shouldRemoveOldRegulationRelations = self.dialogUpdateRegulationOfGroup.checkBoxRemoveOldRegulationsFromSpatialFeatures.isChecked()
-                shouldUpdateOnlyRelation = False
+            self.progressDialog.setValue(0)
+            self.progressDialog.show()
+            QgsApplication.taskManager().addTask(self.updateRegulationOfGroupTask)
 
-                if regulationCount >= 1 and not self.dialogUpdateRegulationOfGroup.checkBoxUpdateRegulationTextsEvenIfSpatialFeatureHasMultipleRegulations.isChecked() and not shouldRemoveOldRegulationRelations:
-                    shouldUpdateOnlyRelation = True
-                
-                success = self.yleiskaavaDatabase.updateSpatialFeatureRegulationAndLandUseClassification(feature["id"], featureType, regulationID, self.currentRegulation["kaavamaarays_otsikko"], shouldRemoveOldRegulationRelations, shouldUpdateOnlyRelation)
 
-                if not success:
-                    self.iface.messageBar().pushMessage("Kaavakohteelle, jonka tyyppi on " + self.yleiskaavaDatabase.getUserFriendlySpatialFeatureTypeName(featureType) + " ja id on " + str(feature["id"]) + " ei voitu päivittää kaavamääräystä, kaavamaaraysteksti- ja kayttotarkoitus_lyhenne-kenttien tekstejä", Qgis.Critical)
+    def handleUpdateRegulationOfGroupTaskStopRequestedByUser(self):
+        self.hasUserCanceledCopy = True
+        self.updateRegulationOfGroupTask.cancel()
 
-                    return False
 
-        return True
+    def handleUpdateRegulationOfGroupTaskProgressChanged(self, progress):
+        self.progressDialog.setValue(int(progress))
+
+
+    def handleUpdateRegulationOfGroupTaskCompleted(self):
+        self.progressDialog.hide()
+        self.finishUpdate()
+        if not self.hasUserCanceledCopy:
+            self.iface.messageBar().pushMessage('Valittujen kaavakohteiden kaavamääräykset päivitetty', Qgis.Info, duration=30)
+        else:
+            self.iface.messageBar().pushMessage('Valittujen kaavakohteiden kaavamääräyksiä ei päivitetty kokonaisuudessaan tietokantaan', Qgis.Info, duration=30)
+        self.hasUserCanceledCopy = False
+        #if success:
+        #    self.iface.messageBar().pushMessage('Aluvarausten käyttötarkoitukset päivitetty', Qgis.Info, 30)
+        #                         self.iface.messageBar().pushMessage('Täydentävien aluekohteiden käyttötarkoitukset päivitetty', Qgis.Info, 30)
+        #                        self.iface.messageBar().pushMessage('Viivamaisten kohteiden käyttötarkoitukset päivitetty', Qgis.Info, 30)
+        #                        self.iface.messageBar().pushMessage('Pistemäisten kohteiden käyttötarkoitukset päivitetty', Qgis.Info, 30)
+
+
+    def handleUpdateRegulationOfGroupTaskTerminated(self):
+        if not self.hasUserCanceledCopy:
+           self.iface.messageBar().pushMessage("Kaavamääräyksen sekä kaavamaaraysteksti- ja kayttotarkoitus_lyhenne-kenttien tekstien päivityksessä tapahtui virhe", Qgis.Critical)
+        else:
+            self.hasUserCanceledCopy = False
+        self.progressDialog.hide()
+        self.finishUpdate()
 
 
     def removeRegulationsAndLandUseClassificationsFromSpatialFeatures(self, featureType, shouldUpdateOnlyRelation):

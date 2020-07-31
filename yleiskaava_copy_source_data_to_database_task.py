@@ -72,8 +72,6 @@ class CopySourceDataToDatabaseTask(QgsTask):
 
     def copySourceFeaturesToTargetLayer(self):
         success = True
-
-
         layers = self.dependentLayers()
         for layer in layers:
             if layer.name() != YleiskaavaDatabase.KAAVAOBJEKTI_ALUE and layer.name() != YleiskaavaDatabase.KAAVAOBJEKTI_ALUE_TAYDENTAVA and layer.name() != YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA and layer.name() != YleiskaavaDatabase.KAAVAOBJEKTI_PISTE and layer.name() != "kaavaobjekti_kaavamaarays_yhteys" and layer.name() != "kaavamääräykset":

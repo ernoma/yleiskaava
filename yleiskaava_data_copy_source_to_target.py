@@ -4,7 +4,7 @@ from qgis.PyQt.QtCore import Qt, QVariant, QSize
 from qgis.PyQt.QtWidgets import QWidget, QGridLayout, QLabel, QComboBox, QCheckBox
 
 from qgis.core import (
-    Qgis, QgsProject, QgsFeature, QgsWkbTypes, QgsMessageLog, QgsMapLayer,  QgsMapLayerProxyModel, QgsGeometry, QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsTask, QgsApplication)
+    Qgis, QgsProject, QgsFeature, QgsWkbTypes, QgsMessageLog, QgsMapLayer,  QgsMapLayerProxyModel, QgsGeometry, QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsApplication)
 
 from qgis.gui import QgsFilterLineEdit, QgsDateTimeEdit, QgsMessageBarItem
 
