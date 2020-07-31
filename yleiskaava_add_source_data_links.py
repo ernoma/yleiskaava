@@ -94,7 +94,7 @@ class AddSourceDataLinks:
 
     def handlePushButtonCloseClicked(self):
         self.removeShownSourceLayer()
-        self.dialogAddSourceDataLinks.hide
+        self.dialogAddSourceDataLinks.hide()
 
 
     def openDialogAddSourceDataLinks(self):
@@ -199,15 +199,16 @@ class AddSourceDataLinks:
         featureInfos = []
 
         selectedTargetLayerFeatureRequest = QgsFeatureRequest().setNoAttributes().setLimit(1)
-
-        for index, feature in enumerate(self.shownSourceLayer.getFeatures()):
-            featureCount += 1 # layer.featureCount() ei luotettava
-            featureInfos.append({
-                "feature": feature,
-                "distance": self.getDistance(self.shownSourceLayer, feature, self.selectedTargetLayer, list(self.selectedTargetLayer.getSelectedFeatures(selectedTargetLayerFeatureRequest))[0]),
-                "nimi": feature[self.originalSourceLayerInfo["nimi"]],
-                "linkki_data": feature[self.originalSourceLayerInfo["linkki_data"]]
-            })
+        if self.shownSourceLayer.fields().indexFromName(self.originalSourceLayerInfo["nimi"]) != -1 and self.shownSourceLayer.fields().indexFromName(self.originalSourceLayerInfo["linkki_data"]) != -1:
+            for index, feature in enumerate(self.shownSourceLayer.getFeatures()):
+                if feature.isValid():
+                    featureCount += 1 # layer.featureCount() ei luotettava
+                    featureInfos.append({
+                        "feature": feature,
+                        "distance": self.getDistance(self.shownSourceLayer, feature, self.selectedTargetLayer, list(self.selectedTargetLayer.getSelectedFeatures(selectedTargetLayerFeatureRequest))[0]),
+                        "nimi": feature[self.originalSourceLayerInfo["nimi"]],
+                        "linkki_data": feature[self.originalSourceLayerInfo["linkki_data"]]
+                    })
         self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setRowCount(featureCount)
         # QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches - featureCount: ' + str(featureCount), 'Yleiskaava-työkalu', Qgis.Info)
 
@@ -264,7 +265,7 @@ class AddSourceDataLinks:
         # the position is a number starting from 0, with -1 an alias for the end
         layerTree.insertChildNode(0, QgsLayerTreeLayer(self.shownSourceLayer))
         self.shownSourceLayer.setOpacity(0.5)
-        self.shownSourceLayer.commitChanges()
+        # self.shownSourceLayer.commitChanges()
 
 
     def removeShownSourceLayer(self):
@@ -293,7 +294,7 @@ class AddSourceDataLinks:
                 break
 
         mapCanvas.panToFeatureIds(layer, [linkedFeature.id()])
-        mapCanvas.flashGeometries([linkedFeature.geometry()], layer.crs())
+        mapCanvas.flashGeometries([linkedFeature.geometry()], layer.sourceCrs())
         self.iface.openFeatureForm(layer, linkedFeature)
 
 
@@ -307,7 +308,7 @@ class AddSourceDataLinks:
                 break
 
         mapCanvas.panToFeatureIds(layer, [linkedFeature.id()])
-        mapCanvas.flashGeometries([linkedFeature.geometry()], layer.crs())
+        mapCanvas.flashGeometries([linkedFeature.geometry()], layer.sourceCrs())
         self.iface.openFeatureForm(layer, linkedFeature)
 
 
@@ -402,9 +403,9 @@ class AddSourceDataLinks:
         featureRequest = None
 
         transform = None
-        selectedTargetLayerCRS = self.selectedTargetLayer.crs()
-        if layer.crs() != selectedTargetLayerCRS:
-            transform = QgsCoordinateTransform(selectedTargetLayerCRS, layer.crs(), QgsProject.instance())
+        selectedTargetLayerCRS = self.selectedTargetLayer.sourceCrs()
+        if layer.sourceCrs() != selectedTargetLayerCRS:
+            transform = QgsCoordinateTransform(selectedTargetLayerCRS, layer.sourceCrs(), QgsProject.instance())
 
         features = self.selectedTargetLayer.selectedFeatures()
 
@@ -510,8 +511,8 @@ class AddSourceDataLinks:
         distance = -1
 
         transform = None
-        if layer1.crs() != layer2.crs():
-            transform = QgsCoordinateTransform(layer1.crs(), layer2.crs(), QgsProject.instance())
+        if layer1.sourceCrs() != layer2.sourceCrs():
+            transform = QgsCoordinateTransform(layer1.sourceCrs(), layer2.sourceCrs(), QgsProject.instance())
 
         geom1 = feature1.geometry()
         geom2 = feature2.geometry()

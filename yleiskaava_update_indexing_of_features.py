@@ -267,10 +267,11 @@ class UpdateIndexingOfFeatures:
 
 
     def shouldReverse(self):
-        if self.dialogUpdateIndexingOfFeatures.comboBoxIndexDirection.currentText() == UpdateIndexingOfFeatures.INDEX_DIRECTION_NAME_ASC:
-            return False
+        return False
+        # if self.dialogUpdateIndexingOfFeatures.comboBoxIndexDirection.currentText() == UpdateIndexingOfFeatures.INDEX_DIRECTION_NAME_ASC:
+        #     return False
 
-        return True
+        # return True
 
 
     def getValuePartIfValid(self, value):

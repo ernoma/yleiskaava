@@ -160,11 +160,11 @@ class YleiskaavaSourceDataAPIs:
         geomType = layer.geometryType()
 
         if geomType == QgsWkbTypes.PointGeometry:
-            memoryLayer = QgsVectorLayer("MultiPoint?crs=" + layer.crs().authid(), layerInfo['user_friendly_title'], "memory")
+            memoryLayer = QgsVectorLayer("MultiPoint?crs=" + layer.sourceCrs().authid(), layerInfo['user_friendly_title'], "memory")
         elif geomType == QgsWkbTypes.LineGeometry:
-            memoryLayer = QgsVectorLayer("MultiLineString?crs=" + layer.crs().authid(), layerInfo['user_friendly_title'], "memory")
+            memoryLayer = QgsVectorLayer("MultiLineString?crs=" + layer.sourceCrs().authid(), layerInfo['user_friendly_title'], "memory")
         elif geomType == QgsWkbTypes.PolygonGeometry:
-            memoryLayer = QgsVectorLayer("MultiPolygon?crs=" + layer.crs().authid(), layerInfo['user_friendly_title'], "memory")
+            memoryLayer = QgsVectorLayer("MultiPolygon?crs=" + layer.sourceCrs().authid(), layerInfo['user_friendly_title'], "memory")
         
         if memoryLayer is not None:
             fields = layer.dataProvider().fields().toList()
@@ -172,9 +172,9 @@ class YleiskaavaSourceDataAPIs:
             for field in fields:
                 memoryLayer.addAttribute(field)
             memoryLayer.commitChanges()
-            memoryLayer.startEditing()
-            memoryLayer.addFeatures(features)
-            memoryLayer.commitChanges()
+            # memoryLayer.startEditing()
+            memoryLayer.dataProvider().addFeatures(features)
+            # memoryLayer.commitChanges()
 
         return memoryLayer
 

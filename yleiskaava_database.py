@@ -512,32 +512,17 @@ class YleiskaavaDatabase:
     def updateRegulation(self, regulationID, regulationTitle, regulationText, regulationDescription):
         layer = self.getProjectLayer("yk_yleiskaava.kaavamaarays")
 
-        layer.startEditing()
         featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "kaavamaarays_otsikko", "maaraysteksti", "kuvaus_teksti"], layer.fields())
         for feature in layer.getFeatures(featureRequest):
             if feature["id"] == regulationID:
-                index = layer.fields().indexFromName("kaavamaarays_otsikko")
-                success = layer.changeAttributeValue(feature.id(), index, regulationTitle)
+                fid = feature.id()
+                indexTitle = layer.fields().indexFromName("kaavamaarays_otsikko")
+                indexText = layer.fields().indexFromName("maaraysteksti")
+                indexDescription = layer.fields().indexFromName("kuvaus_teksti")
+                attrs = { indexTitle: regulationTitle, indexText: regulationText, indexDescription: indexDescription }
+                success = layer.dataProvider().changeAttributeValues({ fid: attrs })
                 if not success:
-                    self.iface.messageBar().pushMessage('updateRegulation - kaavamaarays_otsikko - changeAttributeValue() failed', Qgis.Critical)
-                    return False
-                index = layer.fields().indexFromName("maaraysteksti")
-                success = layer.changeAttributeValue(feature.id(), index, regulationText)
-                if not success:
-                    self.iface.messageBar().pushMessage('updateRegulation - maaraysteksti - changeAttributeValue() failed', Qgis.Critical)
-                    return False
-                index = layer.fields().indexFromName("kuvaus_teksti")
-                success = layer.changeAttributeValue(feature.id(), index, regulationDescription)
-                if not success:
-                    self.iface.messageBar().pushMessage('updateRegulation - kuvaus_teksti - changeAttributeValue() failed', Qgis.Critical)
-                    return False
-                success = layer.commitChanges()
-                if not success:
-                    self.iface.messageBar().pushMessage('updateRegulation - commitChanges() failed, reason(s): "', Qgis.Critical)
-                    # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
-                    for error in layer.commitErrors():
-                        self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
-                        # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
+                    self.iface.messageBar().pushMessage('updateRegulation - commitChanges() failed', Qgis.Critical)
                     return False
                 break
 
@@ -551,29 +536,13 @@ class YleiskaavaDatabase:
         feature = self.findSpatialFeatureFromFeatureLayerWithID(layer, featureID)
 
         if not shouldUpdateOnlyRelation:
-            layer.startEditing()
-
-            index = layer.fields().indexFromName("kaavamaaraysotsikko")
-            success = layer.changeAttributeValue(feature.id(), index, None)
+            fid = feature.id()
+            indexTitle = layer.fields().indexFromName("kaavamaaraysotsikko")
+            indexLandUseClass = layer.fields().indexFromName("kayttotarkoitus_lyhenne")
+            attrs = { indexTitle: None, indexLandUseClass: None }
+            success = layer.dataProvider().changeAttributeValues({ fid: attrs })
             if not success:
-                    self.iface.messageBar().pushMessage('removeSpatialFeatureRegulationAndLandUseClassification - kaavamaaraysotsikko - changeAttributeValue() failed', Qgis.Critical)
-                    return False
-            index = layer.fields().indexFromName("kayttotarkoitus_lyhenne")
-            # landUseClassificationName = None
-            # if feature["id_yleiskaava"] is not None:
-            #     planNumber = self.getPlanNumberForPlanID(feature["id_yleiskaava"])
-                # landUseClassificationName = self.yleiskaavaUtils.getLandUseClassificationNameForRegulation(planNumber, "yk_yleiskaava.kaavaobjekti_" + featureType, regulationTitle)
-            success = layer.changeAttributeValue(feature.id(), index, None)
-            if not success:
-                self.iface.messageBar().pushMessage('removeSpatialFeatureRegulationAndLandUseClassification - kayttotarkoitus_lyhenne - changeAttributeValue() failed', Qgis.Critical)
-
-            success = layer.commitChanges()
-            if not success:
-                self.iface.messageBar().pushMessage('removeSpatialFeatureRegulationAndLandUseClassification - commitChanges() failed, reason(s): "', Qgis.Critical)
-                # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
-                for error in layer.commitErrors():
-                    self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
-                    # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
+                self.iface.messageBar().pushMessage('removeSpatialFeatureRegulationAndLandUseClassification - commitChanges() failed', Qgis.Critical)
                 return False
 
         return True
@@ -599,30 +568,17 @@ class YleiskaavaDatabase:
         feature = self.findSpatialFeatureFromFeatureLayerWithID(layer, featureID)
 
         if not shouldUpdateOnlyRelation:
-            layer.startEditing()
-
-            index = layer.fields().indexFromName("kaavamaaraysotsikko")
-            success = layer.changeAttributeValue(feature.id(), index, regulationTitle)
-            if not success:
-                    self.iface.messageBar().pushMessage('updateSpatialFeatureRegulationAndLandUseClassificationTexts - kaavamaaraysotsikko - changeAttributeValue() failed', Qgis.Critical)
-                    return False
-            index = layer.fields().indexFromName("kayttotarkoitus_lyhenne")
+            fid = feature.id()
+            indexTitle = layer.fields().indexFromName("kaavamaaraysotsikko")
+            indexLandUseClass = layer.fields().indexFromName("kayttotarkoitus_lyhenne")
             landUseClassificationName = regulationTitle
             if feature["id_yleiskaava"] is not None:
                 planNumber = self.getPlanNumberForPlanID(feature["id_yleiskaava"])
                 landUseClassificationName = self.yleiskaavaUtils.getLandUseClassificationNameForRegulation(planNumber, "yk_yleiskaava.kaavaobjekti_" + featureType, regulationTitle)
-            success = layer.changeAttributeValue(feature.id(), index, landUseClassificationName)
+            attrs = { indexTitle: regulationTitle, indexLandUseClass: landUseClassificationName }
+            success = layer.dataProvider().changeAttributeValues({ fid: attrs })
             if not success:
-                self.iface.messageBar().pushMessage('updateSpatialFeatureRegulationAndLandUseClassificationTexts - kayttotarkoitus_lyhenne - changeAttributeValue() failed', Qgis.Critical)
-
-            success = layer.commitChanges()
-            if not success:
-                self.iface.messageBar().pushMessage('updateSpatialFeatureRegulationAndLandUseClassificationTexts - commitChanges() failed, reason(s): "', Qgis.Critical)
-                # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
-                for error in layer.commitErrors():
-                    self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
-                    # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
-                return False
+                self.iface.messageBar().pushMessage('updateSpatialFeatureRegulationAndLandUseClassificationTexts - commitChanges() failed', Qgis.Critical)
 
         return True
 
@@ -640,43 +596,34 @@ class YleiskaavaDatabase:
     def removeRegulationRelationsFromSpatialFeature(self, featureID, featureType):
         relationLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
 
-        relationLayer.startEditing()
         featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id_kaavaobjekti_" + featureType], relationLayer.fields())
         for feature in relationLayer.getFeatures(featureRequest):
             if (feature["id_kaavaobjekti_" + featureType] == featureID):
-                relationLayer.deleteFeature(feature.id())
-
-        relationLayer.commitChanges()
+                relationLayer.dataProvider().deleteFeatures([feature.id()])
 
 
     def deleteSpatialFeature(self, featureID, featureType):
         layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.kaavaobjekti_" + featureType)
-        layer.startEditing()
         featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id"], layer.fields())
         for feature in layer.getFeatures(featureRequest):
             if (feature["id"] == featureID):
-                layer.deleteFeature(feature.id())
+                layer.dataProvider().deleteFeatures([feature.id()])
                 break
-        layer.commitChanges()
 
 
-    def createFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationTitle, shouldClone=False):
+    def createFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationTitle):
         regulationID = self.findRegulationID(regulationTitle)
 
-        self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulationID, shouldClone)
+        self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulationID)
 
 
-    def createFeatureRegulationRelationWithRegulationID(self, targetSchemaTableName, targetFeatureID, regulationID, shouldClone=False):
+    def createFeatureRegulationRelationWithRegulationID(self, targetSchemaTableName, targetFeatureID, regulationID):
         # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - targetSchemaTableName: " + targetSchemaTableName + ", targetFeatureID: " + str(targetFeatureID) + ", regulationID: " + str(regulationID), 'Yleiskaava-työkalu', Qgis.Info)
 
         relationLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
-        if shouldClone:
-            relationLayer = relationLayer.clone()
         #relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_kaavamaarays_yhteys")[0]
 
         schema, table_name = targetSchemaTableName.split('.')
-
-        relationLayer.startEditing()
 
         relationLayerFeature = QgsFeature()
         relationLayerFeature.setFields(relationLayer.fields())
@@ -689,18 +636,6 @@ class YleiskaavaDatabase:
         success = provider.addFeatures([relationLayerFeature])
         if not success:
             self.iface.messageBar().pushMessage('Bugi koodissa: createFeatureRegulationRelationWithRegulationID - addFeatures() failed"', Qgis.Critical)
-            # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - addFeatures() failed", 'Yleiskaava-työkalu', Qgis.Critical)
-        else:
-            success = relationLayer.commitChanges()
-            if not success:
-                self.iface.messageBar().pushMessage('Bugi koodissa: createFeatureRegulationRelationWithRegulationID - commitChanges() failed, reason(s): "', Qgis.Critical)
-                # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
-                for error in relationLayer.commitErrors():
-                    self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
-                    # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
-            else:
-                pass
-                # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - relationLayer.commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
 
 
     def addRegulationRelationsToLayer(self, sourceFeatureID, targetFeatureID, featureType):
@@ -761,11 +696,8 @@ class YleiskaavaDatabase:
         # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - targetSchemaTableName: " + targetSchemaTableName + ", targetFeatureID: " + str(targetFeatureID) + ", regulationID: " + str(regulationID), 'Yleiskaava-työkalu', Qgis.Info)
 
         relationLayer = self.getProjectLayer("yk_kuvaustekniikka.kaavaobjekti_teema_yhteys")
-        #relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_kaavamaarays_yhteys")[0]
 
         schema, table_name = targetSchemaTableName.split('.')
-
-        relationLayer.startEditing()
 
         relationLayerFeature = QgsFeature()
         relationLayerFeature.setFields(relationLayer.fields())
@@ -778,18 +710,6 @@ class YleiskaavaDatabase:
         success = provider.addFeatures([relationLayerFeature])
         if not success:
             self.iface.messageBar().pushMessage('Bugi koodissa: createFeatureThemeRelationWithThemeID - addFeatures() failed"', Qgis.Critical)
-            # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - addFeatures() failed", 'Yleiskaava-työkalu', Qgis.Critical)
-        else:
-            success = relationLayer.commitChanges()
-            if not success:
-                self.iface.messageBar().pushMessage('Bugi koodissa: createFeatureThemeRelationWithThemeID - commitChanges() failed, reason(s): "', Qgis.Critical)
-                # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
-                for error in relationLayer.commitErrors():
-                    self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
-                    # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
-            else:
-                pass
-                # QgsMessageLog.logMessage("createFeatureThemeRelationWithThemeID - relationLayer.commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
 
 
     def addThemeRelationsToLayer(self, sourceFeatureID, targetFeatureID, featureType):
@@ -812,10 +732,8 @@ class YleiskaavaDatabase:
         return regulationID
 
 
-    def createSpecificRegulationAndFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationName, shouldClone=False):
+    def createSpecificRegulationAndFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationName):
         regulationLayer = self.getProjectLayer("yk_yleiskaava.kaavamaarays")
-        if shouldClone:
-            regulationLayer = regulationLayer.clone()
 
         regulationID = str(uuid.uuid4())
 
@@ -823,12 +741,10 @@ class YleiskaavaDatabase:
         regulationFeature.setFields(regulationLayer.fields())
         regulationFeature.setAttribute("id", regulationID)
         regulationFeature.setAttribute("kaavamaarays_otsikko", regulationName)
-        regulationLayer.startEditing()
         provider = regulationLayer.dataProvider()
         provider.addFeatures([regulationFeature])
-        regulationLayer.commitChanges()
 
-        self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulationID, shouldClone)
+        self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulationID)
 
 
     def getCodeListValuesForPlanObjectField(self, targetFieldName):
@@ -992,26 +908,22 @@ class YleiskaavaDatabase:
         featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", fieldName], layer.fields())
         features = layer.getFeatures(featureRequest)
         index = layer.fields().indexFromName(fieldName)
-        layer.startEditing()
 
         for feature in features:
             for featureIDsAndValue in featureIDsAndValues:
                 if feature["id"] == featureIDsAndValue["id"]:
                     # QgsMessageLog.logMessage("updateSpatialFeaturesWithFieldValues - changing attribute value for feature id: " + featureIDsAndValue["id"] + ", value: " + featureIDsAndValue["value"], 'Yleiskaava-työkalu', Qgis.Info)
-                    layer.changeAttributeValue(feature.id(), index, featureIDsAndValue["value"])
+                    fid = feature.id()
+                    attrs = { index: featureIDsAndValue["value"] }
+                    success = layer.dataProvider().changeAttributeValues({ fid: attrs })
+                    if not success:
+                        self.iface.messageBar().pushMessage('Bugi koodissa: updateSpatialFeaturesWithFieldValues - commitChanges() failed', Qgis.Critical)
+                        # QgsMessageLog.logMessage("copySourceFeaturesToTargetLayer - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
+                        # for error in self.targetLayer.commitErrors():
+                        #     self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
+                        #     # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
 
-        success = layer.commitChanges()
-
-        if not success:
-            self.iface.messageBar().pushMessage('Bugi koodissa: updateSpatialFeaturesWithFieldValues - commitChanges() failed, reason(s): "', Qgis.Critical)
-            # QgsMessageLog.logMessage("copySourceFeaturesToTargetLayer - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
-            for error in self.targetLayer.commitErrors():
-                self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
-                # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
-
-            return False
-        else:
-            pass
+                        return False
 
         return True
 
@@ -1021,25 +933,20 @@ class YleiskaavaDatabase:
         featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes([updatedFieldDataItem["fieldName"] for updatedFieldDataItem in updatedFieldData], layer.fields())
         features = layer.getSelectedFeatures(featureRequest)
 
-        layer.startEditing()
-
         for feature in features:
             for updatedFieldDataItem in updatedFieldData:
+                fid = feature.id()
                 index = layer.fields().indexFromName(updatedFieldDataItem["fieldName"])
-                layer.changeAttributeValue(feature.id(), index, updatedFieldDataItem["value"])
+                attrs = { index: updatedFieldDataItem["value"] }
+                success = layer.dataProvider().changeAttributeValues({ fid: attrs })
+                if not success:
+                    self.iface.messageBar().pushMessage('Bugi koodissa: updateSelectedSpatialFeaturesWithFieldValues - commitChanges() failed', Qgis.Critical)
+                    # QgsMessageLog.logMessage("copySourceFeaturesToTargetLayer - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
+                    # for error in self.targetLayer.commitErrors():
+                    #     self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
+                        # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
 
-        success = layer.commitChanges()
-
-        if not success:
-            self.iface.messageBar().pushMessage('Bugi koodissa: updateSelectedSpatialFeaturesWithFieldValues - commitChanges() failed, reason(s): "', Qgis.Critical)
-            # QgsMessageLog.logMessage("copySourceFeaturesToTargetLayer - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
-            for error in self.targetLayer.commitErrors():
-                self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
-                # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
-
-            return False
-        else:
-            pass
+                    return False
 
         return True
 
@@ -1047,28 +954,20 @@ class YleiskaavaDatabase:
     def updateTheme(self, themeID, themeName, themeDescription):
         layer = QgsProject.instance().mapLayersByName("teema")[0]
 
-        layer.startEditing()
         featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "nimi", "kuvaus"], layer.fields())
         for feature in layer.getFeatures(featureRequest):
             if feature["id"] == themeID:
-                index = layer.fields().indexFromName("nimi")
-                success = layer.changeAttributeValue(feature.id(), index, themeName)
+                fid = feature.id()
+                indexThemeName = layer.fields().indexFromName("nimi")
+                indexThemeDescription = layer.fields().indexFromName("kuvaus")
+                attrs = { indexThemeName: themeName, indexThemeDescription: themeDescription }
+                success = layer.dataProvider().changeAttributeValues({ fid: attrs })
                 if not success:
-                    self.iface.messageBar().pushMessage('updateTheme - nimi - changeAttributeValue() failed', Qgis.Critical)
-                    return False
-                index = layer.fields().indexFromName("kuvaus")
-                success = layer.changeAttributeValue(feature.id(), index, themeDescription)
-                if not success:
-                    self.iface.messageBar().pushMessage('updateTheme - kuvaus - changeAttributeValue() failed', Qgis.Critical)
-                    return False
-    
-                success = layer.commitChanges()
-                if not success:
-                    self.iface.messageBar().pushMessage('updateTheme - commitChanges() failed, reason(s): "', Qgis.Critical)
+                    self.iface.messageBar().pushMessage('updateTheme - commitChanges() failed', Qgis.Critical)
                     # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
-                    for error in layer.commitErrors():
-                        self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
-                        # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
+                    # for error in layer.commitErrors():
+                    #     self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
+                    #     # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
                     return False
                 break
 
@@ -1107,9 +1006,6 @@ class YleiskaavaDatabase:
 
         schema, table_name = targetSchemaTableName.split('.')
 
-
-        relationLayer.startEditing()
-
         relationLayerFeature = QgsFeature()
         relationLayerFeature.setFields(relationLayer.fields())
         relationLayerFeature.setAttribute("id", str(uuid.uuid4()))
@@ -1121,18 +1017,6 @@ class YleiskaavaDatabase:
         success = provider.addFeatures([relationLayerFeature])
         if not success:
             self.iface.messageBar().pushMessage('Bugi koodissa: createFeatureThemeRelationWithThemeID - addFeatures() failed"', Qgis.Critical)
-            # QgsMessageLog.logMessage("createFeatureThemeRelationWithThemeID - addFeatures() failed", 'Yleiskaava-työkalu', Qgis.Critical)
-        else:
-            success = relationLayer.commitChanges()
-            if not success:
-                self.iface.messageBar().pushMessage('Bugi koodissa: createFeatureThemeRelationWithThemeID - commitChanges() failed, reason(s): "', Qgis.Critical)
-                # QgsMessageLog.logMessage("createFeatureThemeRelationWithThemeID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
-                for error in relationLayer.commitErrors():
-                    self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
-                    # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
-            else:
-                pass
-                # QgsMessageLog.logMessage("createFeatureThemeRelationWithThemeID - relationLayer.commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
 
 
     def existsFeatureThemeRelation(self, featureID, featureType, themeID):
@@ -1148,17 +1032,14 @@ class YleiskaavaDatabase:
     def removeThemeRelationsFromSpatialFeature(self, featureID, featureType):
         relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_teema_yhteys")[0]
 
-        relationLayer.startEditing()
         featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id_kaavaobjekti_" + featureType], relationLayer.fields())
         for feature in relationLayer.getFeatures(featureRequest):
             if (feature["id_kaavaobjekti_" + featureType] == featureID):
-                relationLayer.deleteFeature(feature.id())
-
-        relationLayer.commitChanges()
+                relationLayer.dataProvider().deleteFeatures([feature.id()])
 
 
     def getSourceDataFeatures(self, linkType):
-        layer = QgsProject.instance().mapLayersByName("lahtoaineisto")[0] # <- jos filteröity UI:ssa, niin ei toimi
+        layer = QgsProject.instance().mapLayersByName("lahtoaineisto")[0]
         
         features = []
 
@@ -1198,7 +1079,7 @@ class YleiskaavaDatabase:
     def getLinkedFeatureIDsForSourceDataFeature(self, spatialFeatureLayer, linkedSourceDataFeature):
         linkedFeatureIDs = []
 
-        relationLayer = QgsProject.instance().mapLayersByName("lahtoaineisto_yleiskaava_yhteys")[0] # <- jos filteröity UI:ssa, niin ei toimi
+        relationLayer = QgsProject.instance().mapLayersByName("lahtoaineisto_yleiskaava_yhteys")[0]
 
         targetSchemaTableName = self.getTargetSchemaTableNameForUserFriendlyTableName(spatialFeatureLayer.name())
         schema, table_name = targetSchemaTableName.split('.')
@@ -1211,7 +1092,7 @@ class YleiskaavaDatabase:
 
 
     def createSourceDataFeature(self, sourceData):
-        sourceDataLayer = QgsProject.instance().mapLayersByName("lahtoaineisto")[0] # <- jos filteröity UI:ssa, niin ei toimi
+        sourceDataLayer = QgsProject.instance().mapLayersByName("lahtoaineisto")[0]
 
         sourceDataFeatureID = str(uuid.uuid4())
 
@@ -1220,26 +1101,13 @@ class YleiskaavaDatabase:
         sourceDataFeature.setAttribute("id", sourceDataFeatureID)
         for key in sourceData.keys():
             sourceDataFeature.setAttribute(key, sourceData[key])
-        sourceDataLayer.startEditing()
         provider = sourceDataLayer.dataProvider()
         success = provider.addFeatures([sourceDataFeature])
         if not success:
             self.iface.messageBar().pushMessage('Bugi koodissa: createSourceDataFeature - addFeatures() failed"', Qgis.Critical)
-        else:
-            success = sourceDataLayer.commitChanges()
-            if not success:
-                self.iface.messageBar().pushMessage('Bugi koodissa: createSourceDataFeature - commitChanges() failed, reason(s): "', Qgis.Critical)
-                # QgsMessageLog.logMessage("createFeatureThemeRelationWithThemeID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
-                for error in sourceDataLayer.commitErrors():
-                    self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
-                    # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
-            else:
-                pass
-                # QgsMessageLog.logMessage("createFeatureThemeRelationWithThemeID - relationLayer.commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
-        if success:
-            return sourceDataFeatureID
-        else:
             return None
+
+        return sourceDataFeatureID
 
 
     def createSourceDataFeatureAndRelationToSpatialFeature(self, sourceData, spatialFeatureLayer, targetFeatureID):
@@ -1265,7 +1133,7 @@ class YleiskaavaDatabase:
 
 
     def createSourceDataRelationToSpatialFeature(self, linkedSourceDataFeatureID, spatialFeatureLayer, targetFeatureID):
-        relationLayer = QgsProject.instance().mapLayersByName("lahtoaineisto_yleiskaava_yhteys")[0] # <- jos filteröity UI:ssa, niin ei toimi
+        relationLayer = QgsProject.instance().mapLayersByName("lahtoaineisto_yleiskaava_yhteys")[0]
 
         targetSchemaTableName = self.getTargetSchemaTableNameForUserFriendlyTableName(spatialFeatureLayer.name())
         schema, table_name = targetSchemaTableName.split('.')
@@ -1277,24 +1145,12 @@ class YleiskaavaDatabase:
         relationFeature.setAttribute("id", relationFeatureID)
         relationFeature.setAttribute("id_lahtoaineisto", linkedSourceDataFeatureID)
         relationFeature.setAttribute("id_" + table_name, targetFeatureID)
-        relationLayer.startEditing()
+        
         provider = relationLayer.dataProvider()
         success = provider.addFeatures([relationFeature])
         if not success:
             self.iface.messageBar().pushMessage('Bugi koodissa: createSourceDataFeature - addFeatures() failed"', Qgis.Critical)
-        else:
-            success = relationLayer.commitChanges()
-            if not success:
-                self.iface.messageBar().pushMessage('Bugi koodissa: createSourceDataFeature - commitChanges() failed, reason(s): "', Qgis.Critical)
-                # QgsMessageLog.logMessage("createFeatureThemeRelationWithThemeID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
-                for error in relationLayer.commitErrors():
-                    self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
-                    # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
-            else:
-                pass
-                # QgsMessageLog.logMessage("createFeatureThemeRelationWithThemeID - relationLayer.commitChanges() success", 'Yleiskaava-työkalu', Qgis.Info)
-
-        if success:
-            return relationFeatureID
-        else:
             return None
+
+        return relationFeatureID
+

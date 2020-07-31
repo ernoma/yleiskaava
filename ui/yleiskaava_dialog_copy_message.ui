@@ -16,19 +16,32 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QLabel" name="label">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="font">
       <font>
        <pointsize>14</pointsize>
       </font>
      </property>
      <property name="text">
-      <string>Ainestoa kopioidaan tietokantaan.</string>
+      <string>Ainestoa kopioidaan tietokantaan</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QProgressBar" name="progressBar">
+     <property name="value">
+      <number>0</number>
      </property>
     </widget>
    </item>
@@ -70,6 +83,13 @@
         </size>
        </property>
       </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonStop">
+       <property name="text">
+        <string>Keskeytä</string>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QPushButton" name="pushButtonClose">

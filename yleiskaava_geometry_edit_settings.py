@@ -69,7 +69,7 @@ class GeometryEditSettings:
         # QgsMessageLog.logMessage("openDockWidgetGeometryEditSettings", 'Yleiskaava-työkalu', Qgis.Info)
         self.featureLayer['alue'] = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE)[0]
         self.featureLayer['alue_taydentava'] = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE_TAYDENTAVA)[0]
-        self.featureLayer['viiva'] = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_PISTE)[0]
+        self.featureLayer['viiva'] = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA)[0]
 
         self.followEdits()
 
@@ -219,6 +219,7 @@ class GeometryEditSettings:
                 pass
             self.featureLayer[featureType].featureAdded.connect(self.suplementaryAreaFeatureAdded)
         elif featureType == 'viiva':
+            # QgsMessageLog.logMessage('followFeatureLayerEdits - featureType == "viiva"', 'Yleiskaava-työkalu', Qgis.Info)
             self.featureLayerEditBuffer[featureType].geometryChanged.connect(self.lineFeatureGeometryChanged)
             try:
                 self.featureLayer[featureType].featureAdded.disconnect(self.lineFeatureAdded)
@@ -264,7 +265,7 @@ class GeometryEditSettings:
 
 
     def lineFeatureGeometryChanged(self, fid, geometry):
-        #QgsMessageLog.logMessage("lineFeatureGeometryChanged - fid: " + str(fid) + ", geometry.length(): " + str(geometry.length()), 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage("lineFeatureGeometryChanged - fid: " + str(fid) + ", geometry.length(): " + str(geometry.length()), 'Yleiskaava-työkalu', Qgis.Info)
         # QgsMessageLog.logMessage("lineFeatureGeometryChanged - self.lineFeatureLayer.getFeature(fid).geometry().length(): " + str(self.lineFeatureLayer.getFeature(fid).geometry().length()), 'Yleiskaava-työkalu', Qgis.Info)
         # for key in addedFeatures.keys():
         #     QgsMessageLog.logMessage("lineFeatureGeometryChanged - addedFeatures, key: " + str(key) + ", feature.geometry.length(): " + str( addedFeatures[key].geometry().length()), 'Yleiskaava-työkalu', Qgis.Info)
@@ -309,7 +310,10 @@ class GeometryEditSettings:
 
     def addRegulationAndThemeRelationsToFeature(self, featureType):
 
+        shouldReturnToEditMode = self.featureLayer[featureType].isEditable()
         self.featureLayer[featureType].commitChanges()
+        if shouldReturnToEditMode:
+            self.featureLayer[featureType].startEditing()
 
         if len(self.changedFeatureIDs[featureType]) == len(self.addedFeatureIDs[featureType]):
             for index, sourceFeatureID in enumerate(self.changedFeatureIDs[featureType]):
@@ -379,7 +383,7 @@ class GeometryEditSettings:
             self.addedFeatureIDs[featureType] = []
 
             self.updateEditableFeatureClassesCountUIInfo()
-            self.featureLayer[featureType].startEditing()
+            # self.featureLayer[featureType].startEditing()
 
             # self.dockWidgetGeometryEditSettings.plainTextEditMessages.clear()
         else:
@@ -395,4 +399,4 @@ class GeometryEditSettings:
             self.changedFeatureIDs[featureType] = []
             self.addedFeatureIDs[featureType] = []
 
-            self.featureLayer[featureType].startEditing()
+            # self.featureLayer[featureType].startEditing()

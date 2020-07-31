@@ -19,6 +19,12 @@
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
        <widget class="QPushButton" name="pushButtonCopySourceDataToDatabase">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>Kopioi lähdeaineistoa tietokantaan...</string>
         </property>
@@ -26,6 +32,12 @@
       </item>
       <item>
        <widget class="QPushButton" name="pushButtonUpdateRegulationForGroup">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>Kaavamääräyksen päivitys joukolle kaavakohteita...</string>
         </property>
@@ -35,6 +47,12 @@
        <widget class="QPushButton" name="pushButtonUpdateThemeForGroup">
         <property name="enabled">
          <bool>true</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
         <property name="text">
          <string>Teeman päivitys joukolle kaavakohteita...</string>
@@ -46,6 +64,12 @@
         <property name="enabled">
          <bool>true</bool>
         </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>Vaihda kenttien arvoja joukolle kaavakohteita...</string>
         </property>
@@ -53,6 +77,12 @@
       </item>
       <item>
        <widget class="QPushButton" name="pushButtonOpenGeometryEditSettings">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>Kaavakohteiden geometrisen jakamisen muutosasetukset</string>
         </property>
@@ -63,6 +93,12 @@
         <property name="enabled">
          <bool>true</bool>
         </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>Päivitä kaavakohteiden indeksointia...</string>
         </property>
@@ -72,6 +108,12 @@
        <widget class="QPushButton" name="pushButtonAddSourceDataLinks">
         <property name="enabled">
          <bool>true</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
         <property name="text">
          <string>Lisää linkkejä lähtöaineistoihin...</string>
@@ -87,6 +129,12 @@
       </item>
       <item>
        <widget class="QPushButton" name="pushButtonSettings">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>Asetukset...</string>
         </property>
@@ -94,6 +142,12 @@
       </item>
       <item>
        <widget class="QPushButton" name="pushButtonHelp">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>Ohje</string>
         </property>
