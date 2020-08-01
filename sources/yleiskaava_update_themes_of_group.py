@@ -16,14 +16,14 @@ from .yleiskaava_update_themes_of_group_task import UpdateThemesOfGroupTask
 
 class UpdateThemesOfGroup:
 
-    def __init__(self, iface, yleiskaavaDatabase, yleiskaavaUtils):
+    def __init__(self, iface, plugin_dir, yleiskaavaDatabase, yleiskaavaUtils):
         
         self.iface = iface
 
         self.yleiskaavaDatabase = yleiskaavaDatabase
         self.yleiskaavaUtils = yleiskaavaUtils
 
-        self.plugin_dir = os.path.dirname(__file__)
+        self.plugin_dir = plugin_dir
 
         self.dialogUpdateThemeOfGroup = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_update_themes_of_group.ui'))
         self.dialogUpdateThemeOfGroup.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)

@@ -31,7 +31,7 @@ from qgis.core import (
 from qgis.gui import QgsMessageBarItem
 
 # Initialize Qt resources from file resources.py
-from .resources import *
+from ..resources import *
 
 # Import the code for the DockWidget
 from .yleiskaava_dockwidget import YleiskaavaDockWidget
@@ -62,7 +62,7 @@ class Yleiskaava:
         self.iface = iface
 
         # initialize plugin directory
-        self.plugin_dir = os.path.dirname(__file__)
+        self.plugin_dir = os.path.dirname(os.path.dirname(__file__))
 
         # initialize locale
         locale = QSettings().value('locale/userLocale')[0:2]
@@ -89,17 +89,17 @@ class Yleiskaava:
         self.dockwidget = None
         self.openProjectMessageBarItem = None
 
-        self.yleiskaavaDatabase = YleiskaavaDatabase(self.iface)
-        self.yleiskaavaUtils = YleiskaavaUtils(self.yleiskaavaDatabase)
+        self.yleiskaavaDatabase = YleiskaavaDatabase(self.iface, self.plugin_dir)
+        self.yleiskaavaUtils = YleiskaavaUtils(self.plugin_dir, self.yleiskaavaDatabase)
         self.yleiskaavaDatabase.setYleiskaavaUtils(self.yleiskaavaUtils)
 
-        self.dataCopySourceToTarget = DataCopySourceToTarget(self.iface, self.yleiskaavaDatabase, self.yleiskaavaUtils)
-        self.updateRegulationOfGroup = UpdateRegulationOfGroup(self.iface, self.yleiskaavaDatabase, self.yleiskaavaUtils)
-        self.geometryEditSettings = GeometryEditSettings(self.iface, self.yleiskaavaDatabase, self.yleiskaavaUtils)
-        self.changeFieldValuesOfGroup = ChangeFieldValuesOfGroup(self.iface, self.yleiskaavaDatabase, self.yleiskaavaUtils)
-        self.updateThemesOfGroup = UpdateThemesOfGroup(self.iface, self.yleiskaavaDatabase, self.yleiskaavaUtils)
-        self.updateIndexingOfFeatures = UpdateIndexingOfFeatures(self.iface, self.yleiskaavaDatabase, self.yleiskaavaUtils)
-        self.addSourceDataLinks = AddSourceDataLinks(self.iface, self.yleiskaavaDatabase, self.yleiskaavaUtils)
+        self.dataCopySourceToTarget = DataCopySourceToTarget(self.iface, self.plugin_dir, self.yleiskaavaDatabase, self.yleiskaavaUtils)
+        self.updateRegulationOfGroup = UpdateRegulationOfGroup(self.iface, self.plugin_dir, self.yleiskaavaDatabase, self.yleiskaavaUtils)
+        self.geometryEditSettings = GeometryEditSettings(self.iface, self.plugin_dir, self.yleiskaavaDatabase, self.yleiskaavaUtils)
+        self.changeFieldValuesOfGroup = ChangeFieldValuesOfGroup(self.iface, self.plugin_dir, self.yleiskaavaDatabase, self.yleiskaavaUtils)
+        self.updateThemesOfGroup = UpdateThemesOfGroup(self.iface, self.plugin_dir, self.yleiskaavaDatabase, self.yleiskaavaUtils)
+        self.updateIndexingOfFeatures = UpdateIndexingOfFeatures(self.iface, self.plugin_dir, self.yleiskaavaDatabase, self.yleiskaavaUtils)
+        self.addSourceDataLinks = AddSourceDataLinks(self.iface, self.plugin_dir, self.yleiskaavaDatabase, self.yleiskaavaUtils)
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):

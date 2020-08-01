@@ -16,14 +16,14 @@ from .yleiskaava_database import YleiskaavaDatabase
 
 class GeometryEditSettings:
 
-    def __init__(self, iface, yleiskaavaDatabase, yleiskaavaUtils):
+    def __init__(self, iface, plugin_dir, yleiskaavaDatabase, yleiskaavaUtils):
         
         self.iface = iface
 
         self.yleiskaavaDatabase = yleiskaavaDatabase
         self.yleiskaavaUtils = yleiskaavaUtils
 
-        self.plugin_dir = os.path.dirname(__file__)
+        self.plugin_dir = plugin_dir
 
         self.dockWidgetGeometryEditSettings = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dockwidget_geometry_edit_settings.ui'))
 

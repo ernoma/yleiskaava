@@ -20,14 +20,14 @@ class UpdateIndexingOfFeatures:
     LETTERS = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "å", "ä", "ö"]
 
 
-    def __init__(self, iface, yleiskaavaDatabase, yleiskaavaUtils):
+    def __init__(self, iface, plugin_dir, yleiskaavaDatabase, yleiskaavaUtils):
         
         self.iface = iface
 
         self.yleiskaavaDatabase = yleiskaavaDatabase
         self.yleiskaavaUtils = yleiskaavaUtils
 
-        self.plugin_dir = os.path.dirname(__file__)
+        self.plugin_dir = plugin_dir
 
         self.dialogUpdateIndexingOfFeatures = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_update_indexing_of_features.ui'))
         self.dialogUpdateIndexingOfFeatures.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)

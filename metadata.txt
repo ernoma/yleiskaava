@@ -5,7 +5,7 @@
 [general]
 name=Yleiskaava
 qgisMinimumVersion=3.0
-description=Tampereen yleiskaavoituksen tietokannan käyttöön
+description=Tampereen yleiskaavoituksen tietokannan käyttöön työkaluja.
 version=0.1
 author=Tampereen kaupunki
 email=erno.makinen@tampere.fi

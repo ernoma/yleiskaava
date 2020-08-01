@@ -29,7 +29,8 @@ class YleiskaavaUtils:
         { "plan_numbers": ["yk049"], "name": "YHTEISÖJEN LOMA-ASUNTOALUE", "abbreviation": "R" }
     ]
 
-    def __init__(self, yleiskaavaDatabase):
+    def __init__(self, plugin_dir, yleiskaavaDatabase):
+        self.plugin_dir = plugin_dir
         self.yleiskaavaDatabase = yleiskaavaDatabase
         
 

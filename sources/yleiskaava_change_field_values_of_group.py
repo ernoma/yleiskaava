@@ -24,14 +24,14 @@ class ChangeFieldValuesOfGroup:
     CHOOSE_AND_UPDATE_VALUES_MIN_HEIGHT = 1088
 
 
-    def __init__(self, iface, yleiskaavaDatabase, yleiskaavaUtils):
+    def __init__(self, iface, plugin_dir, yleiskaavaDatabase, yleiskaavaUtils):
         
         self.iface = iface
 
         self.yleiskaavaDatabase = yleiskaavaDatabase
         self.yleiskaavaUtils = yleiskaavaUtils
 
-        self.plugin_dir = os.path.dirname(__file__)
+        self.plugin_dir = plugin_dir
 
         self.dialogChangeFieldValuesOfGroup = uic.loadUi(os.path.join(self.plugin_dir, 'ui','yleiskaava_dialog_change_field_values_of_group.ui'))
         self.dialogChangeFieldValuesOfGroup.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)

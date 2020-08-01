@@ -48,14 +48,14 @@ class DataCopySourceToTarget:
     MESSAGE_BAR_TEXT_COPYING = 'Kopioidaan lähdeaineiston kohteet tietokantaan. Älä muokkaa työtilan karttatasoja kopioinnin aikana!'
 
 
-    def __init__(self, iface, yleiskaavaDatabase, yleiskaavaUtils):
+    def __init__(self, iface, plugin_dir, yleiskaavaDatabase, yleiskaavaUtils):
         
         self.iface = iface
 
         self.yleiskaavaDatabase = yleiskaavaDatabase
         self.yleiskaavaUtils = yleiskaavaUtils
 
-        self.plugin_dir = os.path.dirname(__file__)
+        self.plugin_dir = plugin_dir
 
         self.dialogCopySourceDataToDatabase = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_copy_source_data_to_database.ui'))
         self.dialogCopySourceDataToDatabase.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)

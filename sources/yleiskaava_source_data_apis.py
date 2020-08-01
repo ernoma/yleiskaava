@@ -16,14 +16,14 @@ class YleiskaavaSourceDataAPIs:
     SOURCE_DATA_API_SETTINGS_FILE_PATH = 'T:\kaavadat\Yleiskaava\_Yleiskaava_Tietomallityö\kaavoitustyön_tuki\ohjelmistokehitys\kaava_tyokalu\lahderajapinnat.json'
 
 
-    def __init__(self, iface, yleiskaavaDatabase, yleiskaavaUtils):
+    def __init__(self, iface, plugin_dir, yleiskaavaDatabase, yleiskaavaUtils):
 
         self.iface = iface
 
+        self.plugin_dir = plugin_dir
+
         self.yleiskaavaDatabase = yleiskaavaDatabase
         self.yleiskaavaUtils = yleiskaavaUtils
-
-        self.plugin_dir = os.path.dirname(__file__)
 
         self.sourceDataAPIs = self.readSourceDataAPIs()
 

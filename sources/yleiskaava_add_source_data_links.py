@@ -27,16 +27,16 @@ class AddSourceDataLinks:
     LINKED_FEATURE_INDEX = 4
     LINK_TO_FEATURE_INDEX = 5
 
-    def __init__(self, iface, yleiskaavaDatabase, yleiskaavaUtils):
+    def __init__(self, iface, plugin_dir, yleiskaavaDatabase, yleiskaavaUtils):
         
         self.iface = iface
+
+        self.plugin_dir = plugin_dir
 
         self.yleiskaavaDatabase = yleiskaavaDatabase
         self.yleiskaavaUtils = yleiskaavaUtils
 
-        self.yleiskaavaSourceDataAPIs = YleiskaavaSourceDataAPIs(iface, yleiskaavaDatabase, yleiskaavaUtils)
-
-        self.plugin_dir = os.path.dirname(__file__)
+        self.yleiskaavaSourceDataAPIs = YleiskaavaSourceDataAPIs(iface, self.plugin_dir, yleiskaavaDatabase, yleiskaavaUtils)
 
         self.dialogAddSourceDataLinks = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_add_source_data_links.ui'))
         self.dialogAddSourceDataLinks.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)

@@ -16,13 +16,13 @@ class YleiskaavaDatabase:
     KAAVAOBJEKTI_VIIVA = "Viivamaiset kaavakohteet"
     KAAVAOBJEKTI_PISTE = "Pistemäiset kaavakohteet"
 
-    def __init__(self, iface):
+    def __init__(self, iface, plugin_dir):
 
         self.iface = iface
 
         self.yleiskaavaUtils = None
 
-        self.plugin_dir = os.path.dirname(__file__)
+        self.plugin_dir = plugin_dir
 
         self.yleiskaava_target_tables = [
             {"name": "yk_yleiskaava.yleiskaava", "userFriendlyTableName": 'Yleiskaavan ulkorajaus (yleiskaava)', "geomFieldName": "kaavan_ulkorajaus", "geometryType": QgsWkbTypes.PolygonGeometry, "showInCopySourceToTargetUI": False},
