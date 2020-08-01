@@ -84,7 +84,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Kaavakohteiden geometrisen jakamisen muutosasetukset</string>
+         <string>Kaavakohteiden kopiointi ja geometrinen muokkaus... </string>
         </property>
        </widget>
       </item>
