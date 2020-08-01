@@ -16,7 +16,7 @@ import uuid
 
 
 # from .yleiskaava_dialog_copy_source_data_to_database import Ui_DialogCopySourceDataToDatabase
-from .yleiskaava_copy_source_data_to_database_task import CopySourceDataToDatabaseTask
+from .yleiskaava_data_copy_source_to_target_task import CopySourceDataToDatabaseTask
 from .yleiskaava_utils import COPY_ERROR_REASONS
 from .yleiskaava_database import YleiskaavaDatabase
 
@@ -74,7 +74,7 @@ class DataCopySourceToTarget:
         self.dialogChooseRegulation.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
 
         self.dialogCopyMessage = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_copy_message.ui'))
-        self.dialogCopyMessage.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
+        self.dialogCopyMessage.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowStaysOnTopHint)
 
         self.sourceLayer = None
 
@@ -106,7 +106,7 @@ class DataCopySourceToTarget:
 
     def setupDialogCopyMessage(self):
         self.dialogCopyMessage.labelWarning.setStyleSheet("color: rgb(51, 0, 0);")
-        self.dialogCopyMessage.pushButtonClose.clicked.connect(self.dialogCopyMessage.hide)
+        # self.dialogCopyMessage.pushButtonClose.clicked.connect(self.dialogCopyMessage.hide)
         self.dialogCopyMessage.pushButtonStop.clicked.connect(self.handleCopyTaskStopRequestedByUser)
 
 

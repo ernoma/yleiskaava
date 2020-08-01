@@ -2,7 +2,7 @@
 
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import Qt, QVariant
-from qgis.PyQt.QtWidgets import QProgressDialog 
+from qgis.PyQt.QtWidgets import QProgressDialog
 
 from qgis.core import (Qgis, QgsProject, QgsMessageLog, QgsApplication)
 
@@ -190,28 +190,28 @@ class UpdateRegulationOfGroup:
                     self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä aluevarauksia; aluevarauksia ei päivitetty', Qgis.Warning)
                 else:
                     self.progressDialog = QProgressDialog("Päivitetään aluevarausten kaavamääräyksiä...", "Keskeytä", 0, 100)
-                    self.progressDialog.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
+                    self.progressDialog.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowStaysOnTopHint)
                     self.updateRegulationsAndLandUseClassificationsForSpatialFeatures("alue")
             if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForSupplementaryPolygonFeatures.isChecked():
                 if not self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate:
                     self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä täydentäviä aluekohteita; täydentäviä aluekohteita ei päivitetty', Qgis.Warning)
                 else:
                     self.progressDialog = QProgressDialog("Päivitetään täydentävien aluekohteiden kaavamääräyksiä...", "Keskeytä", 0, 100)
-                    self.progressDialog.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
+                    self.progressDialog.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowStaysOnTopHint)
                     self.updateRegulationsAndLandUseClassificationsForSpatialFeatures("alue_taydentava")
             if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForLineFeatures.isChecked():
                 if not self.hasUserSelectedLineFeaturesForUpdate:
                     self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä viivamaisia kohteita; viivamaisia ei päivitetty', Qgis.Warning)
                 else:
                     self.progressDialog = QProgressDialog("Päivitetään viimamaisten kohteiden kaavamääräyksiä...", "Keskeytä", 0, 100)
-                    self.progressDialog.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
+                    self.progressDialog.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowStaysOnTopHint)
                     self.updateRegulationsAndLandUseClassificationsForSpatialFeatures("viiva")
             if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPointFeatures.isChecked():
                 if not self.hasUserSelectedPointFeaturesForUpdate:
                     self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä pistemäisiä kohteita; pistemäisiä kohteita ei päivitetty', Qgis.Warning)
                 else:
                     self.progressDialog = QProgressDialog("Päivitetään pistemäisten kohteiden kaavamääräyksiä...", "Keskeytä", 0, 100)
-                    self.progressDialog.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
+                    self.progressDialog.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowStaysOnTopHint)
                     self.updateRegulationsAndLandUseClassificationsForSpatialFeatures("piste")
             # else:
             #     self.iface.messageBar().pushMessage("Kaavakohteita ei päivitetty", Qgis.Critical)
