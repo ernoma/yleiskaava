@@ -10,7 +10,6 @@ from qgis.core import (
     QgsApplication)
 
 import os.path
-from functools import partial
 
 from .yleiskaava_database import YleiskaavaDatabase
 
@@ -64,14 +63,23 @@ class GeometryEditSettings:
 
     def setup(self):
         self.dockWidgetGeometryEditSettings.checkBoxKeepFeatureRelationsOnCopy.stateChanged.connect(self.handleCheckBoxKeepFeatureRelationsOnCopyStateChanged)
-        # self.dockWidgetGeometryEditSettings.checkBoxKeepFeatureRelations.stateChanged.connect(self.handleCheckBoxKeepFeatureRelationsStateChanged)
+        self.dockWidgetGeometryEditSettings.checkBoxKeepFeatureRelationsOnSplit.stateChanged.connect(self.handleCheckBoxKeepFeatureRelationsOnSplitStateChanged)
         self.dockWidgetGeometryEditSettings.checkBoxPreventFeaturesWithTinyGeometries.stateChanged.connect(self.handleCheckBoxPreventFeaturesWithTinyGeometriesStateChanged)
 
         self.dockWidgetGeometryEditSettings.closed.connect(self.disconnectAll)
+        self.dockWidgetGeometryEditSettings.visibilityChanged.connect(self.visibilityChangedDockWidgetGeometryEditSettings)
 
 
     def onClosePlugin(self):
         self.disconnectAll()
+
+
+    def visibilityChangedDockWidgetGeometryEditSettings(self, visible):
+        QgsMessageLog.logMessage("visibilityChangedDockWidgetGeometryEditSettings, visible: " + str(visible), 'Yleiskaava-työkalu', Qgis.Info)
+        if visible:
+            self.dockWidgetGeometryEditSettings.show()
+        else:
+            self.disconnectAll()
 
 
     def openDockWidgetGeometryEditSettings(self):
@@ -91,6 +99,7 @@ class GeometryEditSettings:
 
 
     def followEdits(self):
+        QgsMessageLog.logMessage("followEdits", 'Yleiskaava-työkalu', Qgis.Info)
         # NOTE edit bufferin geometrychanged-signaalin parametrina on alkup. featuren id
         # NOTE layerin featureAdded-signaalin kautta pääsee käsiksi uutteen featureen
         # NOTE kaikki näkymättömätkin kohteet tasolla jaetaan, jos ei ole filteröity pois
@@ -104,48 +113,92 @@ class GeometryEditSettings:
 
         self.iface.currentLayerChanged.connect(self.updateEditableFeatureClassesCountUIInfo)
 
-        if self.featureLayer['alue'] != None:
-            self.featureLayer['alue'].subsetStringChanged.connect(self.updateEditableFeatureClassesCountUIInfo)
+        if self.dockWidgetGeometryEditSettings.checkBoxKeepFeatureRelationsOnSplit.isChecked():
+            if self.featureLayer['alue'] != None:
+                self.featureLayer['alue'].subsetStringChanged.connect(self.updateEditableFeatureClassesCountUIInfo)
 
-            self.featureLayer['alue'].editingStarted.connect(partial(self.followFeatureLayerEdits, 'alue'))
-            self.featureLayer['alue'].editingStopped.connect(partial(self.stopFollowingFeatureLayerEdits, 'alue'))
-            self.featureLayer['alue'].editCommandEnded.connect(partial(self.updateFeatureAttributesAfterEditCommandEnded, 'alue'))
-    
-        if self.featureLayer['alue_taydentava'] != None:
-            self.featureLayer['alue_taydentava'].subsetStringChanged.connect(self.updateEditableFeatureClassesCountUIInfo)
+                self.featureLayer['alue'].editingStarted.connect(self.followFeatureLayerEditsArea)
+                self.featureLayer['alue'].editingStopped.connect(self.stopFollowingFeatureLayerEditsArea)
+                self.featureLayer['alue'].editCommandEnded.connect(self.updateFeatureAttributesAfterEditCommandEndedArea)
+        
+            if self.featureLayer['alue_taydentava'] != None:
+                self.featureLayer['alue_taydentava'].subsetStringChanged.connect(self.updateEditableFeatureClassesCountUIInfo)
 
-            self.featureLayer['alue_taydentava'].editingStarted.connect(partial(self.followFeatureLayerEdits, 'alue_taydentava'))
-            self.featureLayer['alue_taydentava'].editingStopped.connect(partial(self.stopFollowingFeatureLayerEdits, 'alue_taydentava'))
-            self.featureLayer['alue_taydentava'].editCommandEnded.connect(partial(self.updateFeatureAttributesAfterEditCommandEnded, 'alue_taydentava'))
+                self.featureLayer['alue_taydentava'].editingStarted.connect(self.followFeatureLayerEditsSuplementaryArea)
+                self.featureLayer['alue_taydentava'].editingStopped.connect(self.stopFollowingFeatureLayerEditsSuplementaryArea)
+                self.featureLayer['alue_taydentava'].editCommandEnded.connect(self.updateFeatureAttributesAfterEditCommandEndedSuplementaryArea)
 
-        if self.featureLayer['viiva'] != None:
-            self.featureLayer['viiva'].subsetStringChanged.connect(self.updateEditableFeatureClassesCountUIInfo)
+            if self.featureLayer['viiva'] != None:
+                self.featureLayer['viiva'].subsetStringChanged.connect(self.updateEditableFeatureClassesCountUIInfo)
 
-            # receiversCount = self.lineFeatureLayer.receivers(self.lineFeatureLayer.editingStarted)
-            # QgsMessageLog.logMessage("followEdits - before receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
-            # QgsMessageLog.logMessage("followEdits - connect(self.followLineFeatureLayerEdits)", 'Yleiskaava-työkalu', Qgis.Info)
-            self.featureLayer['viiva'].editingStarted.connect(partial(self.followFeatureLayerEdits, 'viiva'))
-            # receiversCount = self.lineFeatureLayer.receivers(self.lineFeatureLayer.editingStarted)
-            # QgsMessageLog.logMessage("followEdits - after receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
-            self.featureLayer['viiva'].editingStopped.connect(partial(self.stopFollowingFeatureLayerEdits, 'viiva'))
-            self.featureLayer['viiva'].editCommandEnded.connect(partial(self.updateFeatureAttributesAfterEditCommandEnded, 'viiva'))
+                # receiversCount = self.lineFeatureLayer.receivers(self.lineFeatureLayer.editingStarted)
+                # QgsMessageLog.logMessage("followEdits - before receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
+                # QgsMessageLog.logMessage("followEdits - connect(self.followLineFeatureLayerEdits)", 'Yleiskaava-työkalu', Qgis.Info)
+                self.featureLayer['viiva'].editingStarted.connect(self.followFeatureLayerEditsLine)
+                # receiversCount = self.lineFeatureLayer.receivers(self.lineFeatureLayer.editingStarted)
+                # QgsMessageLog.logMessage("followEdits - after receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
+                self.featureLayer['viiva'].editingStopped.connect(self.stopFollowingFeatureLayerEditsLine)
+                self.featureLayer['viiva'].editCommandEnded.connect(pself.updateFeatureAttributesAfterEditCommandEndedLine)
 
-        if self.featureLayer['piste'] != None:
-            # self.featureLayer['piste'].subsetStringChanged.connect(self.updateEditableFeatureClassesCountUIInfo)
+            if self.featureLayer['piste'] != None:
+                # self.featureLayer['piste'].subsetStringChanged.connect(self.updateEditableFeatureClassesCountUIInfo)
 
-            self.featureLayer['piste'].editingStarted.connect(partial(self.followFeatureLayerEdits, 'piste'))
-            self.featureLayer['piste'].editingStopped.connect(partial(self.stopFollowingFeatureLayerEdits, 'piste'))
-            # self.featureLayer['piste'].editCommandEnded.connect(partial(self.updateFeatureAttributesAfterEditCommandEnded, 'piste'))
+                self.featureLayer['piste'].editingStarted.connect(self.followFeatureLayerEditsPoint)
+                self.featureLayer['piste'].editingStopped.connect(self.stopFollowingFeatureLayerEditsPoint)
+
+            self.iface.actionSplitFeatures().triggered.connect(self.actionSplitFeaturesTriggered)
 
         if self.dockWidgetGeometryEditSettings.checkBoxKeepFeatureRelationsOnCopy.isChecked():
             self.iface.actionCopyFeatures().triggered.connect(self.actionCopyCutFeaturesTriggered)
             self.iface.actionCutFeatures().triggered.connect(self.actionCopyCutFeaturesTriggered)
             self.iface.actionPasteFeatures().triggered.connect(self.actionPasteFeaturesTriggered)
 
+    def followFeatureLayerEditsArea(self):
+        self.followFeatureLayerEdits('alue')
+
+    def followFeatureLayerEditsSuplementaryArea(self):
+        self.followFeatureLayerEdits('alue_taydentava')
+
+    def followFeatureLayerEditsLine(self):
+        self.followFeatureLayerEdits('viiva')
+
+    def followFeatureLayerEditsPoint(self):
+        self.followFeatureLayerEdits('piste')
+
+
+    def stopFollowingFeatureLayerEditsArea(self):
+        self.stopFollowingFeatureLayerEdits('alue')
+
+    def stopFollowingFeatureLayerEditsSuplementaryArea(self):
+        self.stopFollowingFeatureLayerEdits('alue_taydentava')
+    
+    def stopFollowingFeatureLayerEditsLine(self):
+        self.stopFollowingFeatureLayerEdits('viiva')
+
+    def stopFollowingFeatureLayerEditsPoint(self):
+        self.stopFollowingFeatureLayerEdits('piste')
+
+
+    def updateFeatureAttributesAfterEditCommandEndedArea(self):
+        self.updateFeatureAttributesAfterEditCommandEnded('alue')
+
+    def updateFeatureAttributesAfterEditCommandEndedSuplementaryArea(self):
+        self.updateFeatureAttributesAfterEditCommandEnded('alue_taydentava')
+    
+    def updateFeatureAttributesAfterEditCommandEndedLine(self):
+        self.updateFeatureAttributesAfterEditCommandEnded('viiva')
+
+    def updateFeatureAttributesAfterEditCommandEndedPoint(self):
+        self.updateFeatureAttributesAfterEditCommandEnded('piste')
+    
 
     def disconnectAll(self):
-        # QgsMessageLog.logMessage("disconnectAll", 'Yleiskaava-työkalu', Qgis.Info)
+        QgsMessageLog.logMessage("disconnectAll", 'Yleiskaava-työkalu', Qgis.Info)
+        self.disconnectAllOnSplit()
+        self.disconnectAllOnCopyCutPaste()
 
+
+    def disconnectAllOnSplit(self):
         try:
             self.iface.currentLayerChanged.disconnect(self.updateEditableFeatureClassesCountUIInfo)
         except TypeError:
@@ -156,11 +209,26 @@ class GeometryEditSettings:
         if self.featureLayer['alue'] != None:
             try:
                 self.featureLayer['alue'].subsetStringChanged.disconnect(self.updateEditableFeatureClassesCountUIInfo)
-                self.featureLayer['alue'].editingStarted.disconnect(partial(self.followFeatureLayerEdits, 'alue'))
+            except TypeError:
+                pass
+            except RuntimeError:
+                pass
+            try:
+                self.featureLayer['alue'].editingStarted.disconnect(self.followFeatureLayerEditsArea)
+            except TypeError:
+                pass
+            except RuntimeError:
+                pass
                 # receiversCount = self.lineFeatureLayer.receivers(self.lineFeatureLayer.editingStarted)
                 # QgsMessageLog.logMessage("disconnectAll - receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
-                self.featureLayer['alue'].editingStopped.disconnect(partial(self.stopFollowingFeatureLayerEdits, 'alue'))
-                self.featureLayer['alue'].editCommandEnded.disconnect(partial(self.updateFeatureAttributesAfterEditCommandEnded, 'alue'))
+            try:
+                self.featureLayer['alue'].editingStopped.disconnect(self.stopFollowingFeatureLayerEditsArea))
+            except TypeError:
+                pass
+            except RuntimeError:
+                pass
+            try:
+                self.featureLayer['alue'].editCommandEnded.disconnect(self.updateFeatureAttributesAfterEditCommandEndedArea)
             except TypeError:
                 pass
             except RuntimeError:
@@ -169,11 +237,26 @@ class GeometryEditSettings:
         if self.featureLayer['alue_taydentava'] != None:
             try:
                 self.featureLayer['alue_taydentava'].subsetStringChanged.disconnect(self.updateEditableFeatureClassesCountUIInfo)
-                self.featureLayer['alue_taydentava'].editingStarted.disconnect(partial(self.followFeatureLayerEdits, 'alue_taydentava'))
+            except TypeError:
+                pass
+            except RuntimeError:
+                pass
+            try:
+                self.featureLayer['alue_taydentava'].editingStarted.disconnect(self.followFeatureLayerEditsSuplementaryArea)
+            except TypeError:
+                pass
+            except RuntimeError:
+                pass
                 # receiversCount = self.lineFeatureLayer.receivers(self.lineFeatureLayer.editingStarted)
                 # QgsMessageLog.logMessage("disconnectAll - receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
-                self.featureLayer['alue_taydentava'].editingStopped.disconnect(partial(self.stopFollowingFeatureLayerEdits, 'alue_taydentava'))
-                self.featureLayer['alue_taydentava'].editCommandEnded.disconnect(partial(self.updateFeatureAttributesAfterEditCommandEnded, 'alue_taydentava'))
+            try:
+                self.featureLayer['alue_taydentava'].editingStopped.disconnect(self.stopFollowingFeatureLayerEditsSuplementaryArea)
+            except TypeError:
+                pass
+            except RuntimeError:
+                pass
+            try:
+                self.featureLayer['alue_taydentava'].editCommandEnded.disconnect(self.updateFeatureAttributesAfterEditCommandEndedSuplementaryArea)
             except TypeError:
                 pass
             except RuntimeError:
@@ -182,11 +265,26 @@ class GeometryEditSettings:
         if self.featureLayer['viiva'] != None:
             try:
                 self.featureLayer['viiva'].subsetStringChanged.disconnect(self.updateEditableFeatureClassesCountUIInfo)
-                self.featureLayer['viiva'].editingStarted.disconnect(partial(self.followFeatureLayerEdits, 'viiva'))
+            except TypeError:
+                pass
+            except RuntimeError:
+                pass
+            try:
+                self.featureLayer['viiva'].editingStarted.disconnect(self.followFeatureLayerEditsLine)
+            except TypeError:
+                pass
+            except RuntimeError:
+                pass
                 # receiversCount = self.lineFeatureLayer.receivers(self.lineFeatureLayer.editingStarted)
                 # QgsMessageLog.logMessage("disconnectAll - receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
-                self.featureLayer['viiva'].editingStopped.disconnect(partial(self.stopFollowingFeatureLayerEdits, 'viiva'))
-                self.featureLayer['viiva'].editCommandEnded.disconnect(partial(self.updateFeatureAttributesAfterEditCommandEnded, 'viiva'))
+            try:
+                self.featureLayer['viiva'].editingStopped.disconnect(self.stopFollowingFeatureLayerEditsLine)
+            except TypeError:
+                pass
+            except RuntimeError:
+                pass
+            try:
+                self.featureLayer['viiva'].editCommandEnded.disconnect(self.updateFeatureAttributesAfterEditCommandEndedLine)
             except TypeError:
                 pass
             except RuntimeError:
@@ -195,16 +293,28 @@ class GeometryEditSettings:
         if self.featureLayer['piste'] != None:
             try:
                 # self.featureLayer['piste'].subsetStringChanged.disconnect(self.updateEditableFeatureClassesCountUIInfo)
-                self.featureLayer['piste'].editingStarted.disconnect(partial(self.followFeatureLayerEdits, 'piste'))
+                self.featureLayer['piste'].editingStarted.disconnect(self.followFeatureLayerEditsPoint)
+            except TypeError:
+                pass
+            except RuntimeError:
+                pass
                 # receiversCount = self.lineFeatureLayer.receivers(self.lineFeatureLayer.editingStarted)
                 # QgsMessageLog.logMessage("disconnectAll - receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
-                self.featureLayer['piste'].editingStopped.disconnect(partial(self.stopFollowingFeatureLayerEdits, 'piste'))
-                # self.featureLayer['piste'].editCommandEnded.disconnect(partial(self.updateFeatureAttributesAfterEditCommandEnded, 'viiva'))
+            try:
+                self.featureLayer['piste'].editingStopped.disconnect(self.stopFollowingFeatureLayerEditsPoint)
             except TypeError:
                 pass
             except RuntimeError:
                 pass
 
+        try:
+            self.iface.actionSplitFeatures().triggered.disconnect(self.actionSplitFeaturesTriggered)
+        except TypeError:
+            pass
+        except RuntimeError:
+            pass
+
+    def disconnectAllOnCopyCutPaste(self):
         try:
             self.iface.actionCopyFeatures().triggered.disconnect(self.actionCopyCutFeaturesTriggered)
             self.iface.actionCutFeatures().triggered.disconnect(self.actionCopyCutFeaturesTriggered)
@@ -240,8 +350,10 @@ class GeometryEditSettings:
                 self.dockWidgetGeometryEditSettings.lineEditEditableFeatureClassesCount.setText(str(len(featureClasses)))
 
     def updateFeatureAttributesAfterEditCommandEnded(self, featureType):
-        self.addRegulationAndThemeRelationsToFeature(featureType)
-        self.yleiskaavaUtils.refreshTargetLayersInProject()
+        QgsMessageLog.logMessage('updateFeatureAttributesAfterEditCommandEnded - featureType:' + featureType, 'Yleiskaava-työkalu', Qgis.Info)
+        if self.iface.actionSplitFeatures().isChecked():
+            self.addRegulationAndThemeRelationsToFeature(featureType)
+            self.yleiskaavaUtils.refreshTargetLayersInProject()
 
 
     def followFeatureLayerEdits(self, featureType):
@@ -300,7 +412,8 @@ class GeometryEditSettings:
         # changedGeometries = self.areaFeatureLayerEditBuffer.changedGeometries()
         # for key in changedGeometries.keys():
         #     QgsMessageLog.logMessage("areaFeatureGeometryChanged - changedGeometries, key: " + str(key) + ", geometry.area(): " + str(geometry.area()), 'Yleiskaava-työkalu', Qgis.Info)
-        self.changedFeatureIDs['alue'].append(fid)
+        if fid not in self.changedFeatureIDs['alue']:
+            self.changedFeatureIDs['alue'].append(fid)
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText("Aluevarauskohteen geometriassa muutos, käyttötarkoitus: " + str(self.featureLayer['alue'].getFeature(fid)["kayttotarkoitus_lyhenne"]) + ", muuttuneita aluevarauskohteita yhteensä: " + str(len(self.changedFeatureIDs['alue'])))
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
 
@@ -310,7 +423,8 @@ class GeometryEditSettings:
         # changedGeometries = self.suplementaryAreaFeatureLayerEditBuffer.changedGeometries()
         # for key in changedGeometries.keys():
         #     QgsMessageLog.logMessage("suplementaryAreaFeatureGeometryChanged - changedGeometries, key: " + str(key) + ", geometry.area(): " + str(geometry.area()), 'Yleiskaava-työkalu', Qgis.Info)
-        self.changedFeatureIDs['alue_taydentava'].append(fid)
+        if fid not in self.changedFeatureIDs['alue_taydentava']:
+            self.changedFeatureIDs['alue_taydentava'].append(fid)
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText("Täydentävän aluekohteen geometriassa muutos, käyttötarkoitus: " + str(self.featureLayer['alue_taydentava'].getFeature(fid)["kayttotarkoitus_lyhenne"]) + ", muuttuneita täydentäviä aluekohteita yhteensä: " + str(len(self.changedFeatureIDs['alue_taydentava'])))
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
 
@@ -320,7 +434,8 @@ class GeometryEditSettings:
         # QgsMessageLog.logMessage("lineFeatureGeometryChanged - self.lineFeatureLayer.getFeature(fid).geometry().length(): " + str(self.lineFeatureLayer.getFeature(fid).geometry().length()), 'Yleiskaava-työkalu', Qgis.Info)
         # for key in addedFeatures.keys():
         #     QgsMessageLog.logMessage("lineFeatureGeometryChanged - addedFeatures, key: " + str(key) + ", feature.geometry.length(): " + str( addedFeatures[key].geometry().length()), 'Yleiskaava-työkalu', Qgis.Info)
-        self.changedFeatureIDs['viiva'].append(fid)
+        if fid not in self.changedFeatureIDs['viiva']:
+            self.changedFeatureIDs['viiva'].append(fid)
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText("Viivamaisen kohteen geometriassa muutos, käyttötarkoitus: " + str(self.featureLayer['viiva'].getFeature(fid)["kayttotarkoitus_lyhenne"]) + ", muuttuneita viivamaisia kohteita yhteensä: " + str(len(self.changedFeatureIDs['viiva'])))
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
 
@@ -336,6 +451,9 @@ class GeometryEditSettings:
         self.addedFeatureIDs['alue'].append(fid)
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText("Uusi aluevarauskohde, uusia yhteensä: " + str(len(self.addedFeatureIDs['alue'])))
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
+        if not self.iface.actionSplitFeatures().isChecked() and self.featuresCopiedToClipboardLayer is not None and self.featuresCopiedToClipboard is not None and self.featuresCopiedToClipboardLayer.name() == YleiskaavaDatabase.KAAVAOBJEKTI_ALUE:
+            self.handlePasteFeatures('alue')
+
 
     def suplementaryAreaFeatureAdded(self, fid):
         # QgsMessageLog.logMessage("suplementaryAreaFeatureAdded - fid: " + str(fid), 'Yleiskaava-työkalu', Qgis.Info)
@@ -343,6 +461,8 @@ class GeometryEditSettings:
         self.addedFeatureIDs['alue_taydentava'].append(fid)
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText("Uusi täydentävä aluekohde, uusia yhteensä: " + str(len(self.addedFeatureIDs['alue_taydentava'])))
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
+        if not self.iface.actionSplitFeatures().isChecked() and self.featuresCopiedToClipboardLayer is not None and self.featuresCopiedToClipboard is not None and self.featuresCopiedToClipboardLayer.name() == YleiskaavaDatabase.KAAVAOBJEKTI_ALUE_TAYDENTAVA:
+            self.handlePasteFeatures('alue_taydentava')
 
     def lineFeatureAdded(self, fid):
         # QgsMessageLog.logMessage("lineFeatureAdded - fid: " + str(fid), 'Yleiskaava-työkalu', Qgis.Info)
@@ -351,7 +471,8 @@ class GeometryEditSettings:
         self.addedFeatureIDs['viiva'].append(fid)
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText("Uusi viivamainen kohde, uusia yhteensä: " + str(len(self.addedFeatureIDs['viiva'])))
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
-
+        if not self.iface.actionSplitFeatures().isChecked() and self.featuresCopiedToClipboardLayer is not None and self.featuresCopiedToClipboard is not None and self.featuresCopiedToClipboardLayer.name() == YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA:
+            self.handlePasteFeatures('viiva')
         # if len(self.changedLineFeatureIDs) == 1:
         #     self.addRegulationAndThemeRelationsToLineFeature()
         # elif len(self.changedLineFeatureIDs) > 1:
@@ -366,17 +487,21 @@ class GeometryEditSettings:
         self.addedFeatureIDs['piste'].append(fid)
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText("Uusi pistemäinen kohde, uusia yhteensä: " + str(len(self.addedFeatureIDs['piste'])))
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
+        if not self.iface.actionSplitFeatures().isChecked() and self.featuresCopiedToClipboardLayer is not None and self.featuresCopiedToClipboard is not None and self.featuresCopiedToClipboardLayer.name() == YleiskaavaDatabase.KAAVAOBJEKTI_PISTE:
+            self.handlePasteFeatures('piste')
 
-        if len(self.addedFeatureIDs['piste']) == len(self.featuresCopiedToClipboard):
+
+    def handlePasteFeatures(self, featureType):
+        if len(self.addedFeatureIDs[featureType]) == len(self.featuresCopiedToClipboard):
             if self.dockWidgetGeometryEditSettings.checkBoxKeepFeatureRelationsOnCopy.isChecked():
                 if self.featuresCopiedToClipboardLayer.name() == self.iface.activeLayer().name():
 
-                    shouldReturnToEditMode = self.featureLayer['piste'].isEditable()
-                    self.featureLayer['piste'].commitChanges()
+                    shouldReturnToEditMode = self.featureLayer[featureType].isEditable()
+                    self.featureLayer[featureType].commitChanges()
 
-                    for addedFeatureID in self.addedFeatureIDs['piste']:
-                        QgsMessageLog.logMessage("pointFeatureAdded - haetaan liitetylle kohteelle täsmäystä, addedFeatureID: " + str(addedFeatureID), 'Yleiskaava-työkalu', Qgis.Info)
-                        addedFeature = self.featureLayer['piste'].getFeature(addedFeatureID)
+                    for addedFeatureID in self.addedFeatureIDs[featureType]:
+                        QgsMessageLog.logMessage("handlePasteFeatures - haetaan liitetylle kohteelle täsmäystä, addedFeatureID: " + str(addedFeatureID), 'Yleiskaava-työkalu', Qgis.Info)
+                        addedFeature = self.featureLayer[featureType].getFeature(addedFeatureID)
 
                         foundMatch = False
                         foundMatchMultiple = False
@@ -392,10 +517,10 @@ class GeometryEditSettings:
                                 matchedSourceFeature = clipboardFeature
 
                         if matchedSourceFeature is not None and addedFeature is not None:
-                            self.addRegulationAndThemeRelationsToFeatureFromCopy(matchedSourceFeature, addedFeature, 'piste')
+                            self.addRegulationAndThemeRelationsToFeatureFromCopy(matchedSourceFeature, addedFeature, featureType)
                             # self.featuresCopiedToClipboard = [feature for feature in self.featuresCopiedToClipboard if feature['id'] != matchedSourceFeature['id']]
                         else:
-                            QgsMessageLog.logMessage("pointFeatureAdded - bugi koodissa, matchedSourceFeature: " + str(matchedSourceFeature) + ", addedFeature: " + str(addedFeature), 'Yleiskaava-työkalu', Qgis.Critical)
+                            QgsMessageLog.logMessage("handlePasteFeatures - bugi koodissa, matchedSourceFeature: " + str(matchedSourceFeature) + ", addedFeature: " + str(addedFeature), 'Yleiskaava-työkalu', Qgis.Critical)
 
                         if foundMatchMultiple:
                             self.iface.messageBar().pushMessage('Liitetyllä kohteella ' + addedFeature['id'] + ' on useita täsmääviä kohteita, joten sen kaavamääräys- ja teema-relaatiot eivät ehkä kopioituneet oikein. Myös muilla liitetyillä kohteilla, joilla on samat täsmäykset on sama ongelma.', Qgis.Warning)
@@ -403,10 +528,12 @@ class GeometryEditSettings:
                             self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
 
                     if shouldReturnToEditMode:
-                        self.featureLayer['piste'].startEditing()
+                        self.featureLayer[featureType].startEditing()
 
-            # self.changedFeatureIDs['piste'] = []
-            self.addedFeatureIDs['piste'] = []
+            self.changedFeatureIDs[featureType] = []
+            self.addedFeatureIDs[featureType] = []
+            self.featuresCopiedToClipboardLayer = None
+            self.featuresCopiedToClipboard = None
             self.yleiskaavaUtils.refreshTargetLayersInProject()
 
 
@@ -440,8 +567,6 @@ class GeometryEditSettings:
 
         shouldReturnToEditMode = self.featureLayer[featureType].isEditable()
         self.featureLayer[featureType].commitChanges()
-        if shouldReturnToEditMode:
-            self.featureLayer[featureType].startEditing()
 
         if len(self.changedFeatureIDs[featureType]) == len(self.addedFeatureIDs[featureType]):
             for index, sourceFeatureID in enumerate(self.changedFeatureIDs[featureType]):
@@ -507,9 +632,6 @@ class GeometryEditSettings:
                                 self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText('Kohteen pituus verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin')
                                 self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
 
-            self.changedFeatureIDs[featureType] = []
-            self.addedFeatureIDs[featureType] = []
-
             self.updateEditableFeatureClassesCountUIInfo()
             # self.featureLayer[featureType].startEditing()
 
@@ -524,15 +646,25 @@ class GeometryEditSettings:
             self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
             #self.iface.messageBar().pushMessage('Uusien ja jaettujen kohteiden lukumäärät eivät ole samoja. Uuden viivamaisen kohteen kaavamääräystä ja teemaa ei aseteta', Qgis.Warning)
 
-            self.changedFeatureIDs[featureType] = []
-            self.addedFeatureIDs[featureType] = []
+        self.changedFeatureIDs[featureType] = []
+        self.addedFeatureIDs[featureType] = []
 
+        if shouldReturnToEditMode:
+            self.featureLayer[featureType].startEditing()
             # self.featureLayer[featureType].startEditing()
 
 
     def handleCheckBoxKeepFeatureRelationsOnCopyStateChanged(self):
         self.featuresCopiedToClipboardLayer = None
         self.featuresCopiedToClipboard = None
+        self.changedFeatureIDs['alue'] = []
+        self.addedFeatureIDs['alue'] = []
+        self.changedFeatureIDs['alue_taydentava'] = []
+        self.addedFeatureIDs['alue_taydentava'] = []
+        self.changedFeatureIDs['viiva'] = []
+        self.addedFeatureIDs['viiva'] = []
+        self.changedFeatureIDs['piste'] = []
+        self.addedFeatureIDs['piste'] = []
 
         if self.dockWidgetGeometryEditSettings.checkBoxKeepFeatureRelationsOnCopy.isChecked():
             self.iface.actionCopyFeatures().triggered.connect(self.actionCopyCutFeaturesTriggered)
@@ -542,6 +674,37 @@ class GeometryEditSettings:
             self.iface.actionCopyFeatures().triggered.disconnect(self.actionCopyCutFeaturesTriggered)
             self.iface.actionCutFeatures().triggered.disconnect(self.actionCopyCutFeaturesTriggered)
             self.iface.actionPasteFeatures().triggered.disconnect(self.actionPasteFeaturesTriggered)
+
+    def handleCheckBoxKeepFeatureRelationsOnSplitStateChanged(self):
+        self.featuresCopiedToClipboardLayer = None
+        self.featuresCopiedToClipboard = None
+        self.changedFeatureIDs['alue'] = []
+        self.addedFeatureIDs['alue'] = []
+        self.changedFeatureIDs['alue_taydentava'] = []
+        self.addedFeatureIDs['alue_taydentava'] = []
+        self.changedFeatureIDs['viiva'] = []
+        self.addedFeatureIDs['viiva'] = []
+        self.changedFeatureIDs['piste'] = []
+        self.addedFeatureIDs['piste'] = []
+
+        if self.dockWidgetGeometryEditSettings.checkBoxKeepFeatureRelationsOnSplit.isChecked():
+            self.followEdits()
+        else:
+            self.disconnectAllOnSplit()
+
+
+    def actionSplitFeaturesTriggered(self):
+        QgsMessageLog.logMessage("actionSplitFeaturesTriggered", 'Yleiskaava-työkalu', Qgis.Info)
+        self.featuresCopiedToClipboardLayer = None
+        self.featuresCopiedToClipboard = None
+        self.changedFeatureIDs['alue'] = []
+        self.addedFeatureIDs['alue'] = []
+        self.changedFeatureIDs['alue_taydentava'] = []
+        self.addedFeatureIDs['alue_taydentava'] = []
+        self.changedFeatureIDs['viiva'] = []
+        self.addedFeatureIDs['viiva'] = []
+        self.changedFeatureIDs['piste'] = []
+        self.addedFeatureIDs['piste'] = []
 
 
     def actionCopyCutFeaturesTriggered(self):
