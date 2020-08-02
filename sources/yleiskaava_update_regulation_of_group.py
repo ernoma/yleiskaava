@@ -15,17 +15,17 @@ from .yleiskaava_update_regulation_of_group_task import UpdateRegulationOfGroupT
 
 class UpdateRegulationOfGroup:
 
-    def __init__(self, iface, plugin_dir, yleiskaavaDatabase, yleiskaavaUtils):
+    def __init__(self, iface, plugin_dir, yleiskaavaSettings, yleiskaavaDatabase, yleiskaavaUtils):
         
         self.iface = iface
 
+        self.yleiskaavaSettings = yleiskaavaSettings
         self.yleiskaavaDatabase = yleiskaavaDatabase
         self.yleiskaavaUtils = yleiskaavaUtils
 
         self.plugin_dir = plugin_dir
 
         self.dialogUpdateRegulationOfGroup = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_update_regulation_of_group.ui'))
-        self.dialogUpdateRegulationOfGroup.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
 
         self.regulations = None
         self.regulationTitles = None
@@ -143,6 +143,10 @@ class UpdateRegulationOfGroup:
 
     def openDialogUpdateRegulationOfGroup(self):
         self.reset()
+        if self.yleiskaavaSettings.shouldKeepDialogsOnTop():
+            self.dialogUpdateRegulationOfGroup.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
+        else:
+            self.dialogUpdateRegulationOfGroup.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
         self.dialogUpdateRegulationOfGroup.show()
 
 

@@ -48,33 +48,25 @@ class DataCopySourceToTarget:
     MESSAGE_BAR_TEXT_COPYING = 'Kopioidaan lähdeaineiston kohteet tietokantaan. Älä muokkaa työtilan karttatasoja kopioinnin aikana!'
 
 
-    def __init__(self, iface, plugin_dir, yleiskaavaDatabase, yleiskaavaUtils):
+    def __init__(self, iface, plugin_dir, yleiskaavaSettings, yleiskaavaDatabase, yleiskaavaUtils):
         
         self.iface = iface
 
+        self.yleiskaavaSettings = yleiskaavaSettings
         self.yleiskaavaDatabase = yleiskaavaDatabase
         self.yleiskaavaUtils = yleiskaavaUtils
 
         self.plugin_dir = plugin_dir
 
         self.dialogCopySourceDataToDatabase = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_copy_source_data_to_database.ui'))
-        self.dialogCopySourceDataToDatabase.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
-
-        # self.dialogCopySourceDataToDatabase = Ui_DialogCopySourceDataToDatabase()
-        # self.dialogCopySourceDataToDatabaseWidget = QWidget()
-        # self.dialogCopySourceDataToDatabase.setupUi(self.dialogCopySourceDataToDatabaseWidget)
 
         self.dialogChooseFeatures = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_choose_features.ui'))
-        self.dialogChooseFeatures.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
 
         self.dialogCopySettings = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_copy_settings.ui'))
-        self.dialogCopySettings.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
 
         self.dialogChooseRegulation = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_choose_regulation.ui'))
-        self.dialogChooseRegulation.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
 
         self.dialogCopyMessage = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_copy_message.ui'))
-        self.dialogCopyMessage.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowStaysOnTopHint)
 
         self.sourceLayer = None
 
@@ -155,6 +147,10 @@ class DataCopySourceToTarget:
     def openDialogCopySourceDataToDatabase(self):
         self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.setFilters(QgsMapLayerProxyModel.HasGeometry)
         self.dialogCopySourceDataToDatabase.resize(QSize(DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_WIDTH, DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_HEIGHT))
+        if self.yleiskaavaSettings.shouldKeepDialogsOnTop():
+            self.dialogCopySourceDataToDatabase.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
+        else:
+            self.dialogCopySourceDataToDatabase.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
         self.dialogCopySourceDataToDatabase.show()
         self.sourceLayer = self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.currentLayer()
         if self.sourceLayer is not None:
@@ -167,6 +163,10 @@ class DataCopySourceToTarget:
         self.dialogChooseFeatures.hide()
         self.dialogCopySettings.hide()
         self.dialogCopySourceDataToDatabase.resize(QSize(DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_WIDTH, DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_HEIGHT))
+        if self.yleiskaavaSettings.shouldKeepDialogsOnTop():
+            self.dialogCopySourceDataToDatabase.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
+        else:
+            self.dialogCopySourceDataToDatabase.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
         self.dialogCopySourceDataToDatabase.show()
 
 
@@ -423,6 +423,10 @@ class DataCopySourceToTarget:
 
         self.dialogCopySourceDataToDatabase.hide()
         self.dialogCopySettings.hide()
+        if self.yleiskaavaSettings.shouldKeepDialogsOnTop():
+            self.dialogChooseFeatures.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
+        else:
+            self.dialogChooseFeatures.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
         self.dialogChooseFeatures.show()
         self.iface.showAttributeTable(self.sourceLayer)
 
@@ -460,6 +464,10 @@ class DataCopySourceToTarget:
         self.initializeDialogCopySettingsDefaultFieldsPart()
 
         self.dialogCopySettings.resize(QSize(DataCopySourceToTarget.SETTINGS_DIALOG_MIN_WIDTH, DataCopySourceToTarget.SETTINGS_DIALOG_MIN_HEIGHT))
+        if self.yleiskaavaSettings.shouldKeepDialogsOnTop():
+            self.dialogCopySettings.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
+        else:
+            self.dialogCopySettings.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
         self.dialogCopySettings.show()
         
 
@@ -642,6 +650,10 @@ class DataCopySourceToTarget:
             copyMessageBarItem = QgsMessageBarItem(DataCopySourceToTarget.MESSAGE_BAR_TEXT_COPYING)
             self.iface.messageBar().pushItem(copyMessageBarItem)
             self.dialogCopyMessage.progressBar.setValue(0)
+            if self.yleiskaavaSettings.shouldKeepDialogsOnTop():
+                self.dialogCopyMessage.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowStaysOnTopHint)
+            else:
+                self.dialogCopyMessage.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
             self.dialogCopyMessage.show()
             QgsApplication.taskManager().addTask(self.copySourceDataToDatabaseTask)
 
@@ -809,6 +821,10 @@ class DataCopySourceToTarget:
     
     def pushButtonChooseExistingRegulationForDefaultClicked(self):
         self.setupRegulationsInDialog()
+        if self.yleiskaavaSettings.shouldKeepDialogsOnTop():
+            self.dialogChooseRegulation.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
+        else:
+            self.dialogChooseRegulation.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
         self.dialogChooseRegulation.show()
 
 

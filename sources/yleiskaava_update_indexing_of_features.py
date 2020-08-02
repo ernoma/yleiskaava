@@ -20,17 +20,17 @@ class UpdateIndexingOfFeatures:
     LETTERS = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "å", "ä", "ö"]
 
 
-    def __init__(self, iface, plugin_dir, yleiskaavaDatabase, yleiskaavaUtils):
+    def __init__(self, iface, plugin_dir, yleiskaavaSettings, yleiskaavaDatabase, yleiskaavaUtils):
         
         self.iface = iface
 
+        self.yleiskaavaSettings = yleiskaavaSettings
         self.yleiskaavaDatabase = yleiskaavaDatabase
         self.yleiskaavaUtils = yleiskaavaUtils
 
         self.plugin_dir = plugin_dir
 
         self.dialogUpdateIndexingOfFeatures = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_update_indexing_of_features.ui'))
-        self.dialogUpdateIndexingOfFeatures.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
 
         self.selectedLayer = None
         self.selectedFeatureID = None
@@ -58,6 +58,10 @@ class UpdateIndexingOfFeatures:
         
 
     def openDialogUpdateIndexingOfFeatures(self):
+        if self.yleiskaavaSettings.shouldKeepDialogsOnTop():
+            self.dialogUpdateIndexingOfFeatures.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
+        else:
+            self.dialogUpdateIndexingOfFeatures.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
         self.dialogUpdateIndexingOfFeatures.show()
 
 

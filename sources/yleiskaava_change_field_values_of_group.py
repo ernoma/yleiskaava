@@ -24,21 +24,20 @@ class ChangeFieldValuesOfGroup:
     CHOOSE_AND_UPDATE_VALUES_MIN_HEIGHT = 1088
 
 
-    def __init__(self, iface, plugin_dir, yleiskaavaDatabase, yleiskaavaUtils):
+    def __init__(self, iface, plugin_dir, yleiskaavaSettings, yleiskaavaDatabase, yleiskaavaUtils):
         
         self.iface = iface
 
+        self.yleiskaavaSettings = yleiskaavaSettings
         self.yleiskaavaDatabase = yleiskaavaDatabase
         self.yleiskaavaUtils = yleiskaavaUtils
 
         self.plugin_dir = plugin_dir
 
         self.dialogChangeFieldValuesOfGroup = uic.loadUi(os.path.join(self.plugin_dir, 'ui','yleiskaava_dialog_change_field_values_of_group.ui'))
-        self.dialogChangeFieldValuesOfGroup.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
 
         self.dialogChooseAndUpdateFieldValuesForFeatureType = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_choose_and_update_field_values_for_feature_type.ui'))
-        self.dialogChooseAndUpdateFieldValuesForFeatureType.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
-
+        
         self.hasUserSelectedPolygonFeaturesForUpdate = False
         self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate = False
         self.hasUserSelectedLineFeaturesForUpdate = False
@@ -98,6 +97,14 @@ class ChangeFieldValuesOfGroup:
 
     def openDialogChangeFieldValuesForGroup(self):
         self.reset()
+
+        if self.yleiskaavaSettings.shouldKeepDialogsOnTop():
+            self.dialogChangeFieldValuesOfGroup.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
+            self.dialogChooseAndUpdateFieldValuesForFeatureType.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
+        else:
+            self.dialogChangeFieldValuesOfGroup.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
+            self.dialogChooseAndUpdateFieldValuesForFeatureType.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
+
         self.dialogChangeFieldValuesOfGroup.show()
 
 

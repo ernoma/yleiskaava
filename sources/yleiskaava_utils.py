@@ -380,10 +380,6 @@ class YleiskaavaUtils:
         return True
 
 
-    def displaySettingsDialog(self):
-        pass
-
-
 class COPY_ERROR_REASONS:
     SELECTED_FEATURE_COUNT_IS_ZERO = 1
     TARGET_TABLE_NOT_SELECTED = 2

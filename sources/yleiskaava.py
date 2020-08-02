@@ -37,6 +37,7 @@ from ..resources import *
 from .yleiskaava_dockwidget import YleiskaavaDockWidget
 import os.path
 
+from .yleiskaava_settings import YleiskaavaSettings
 from .yleiskaava_database import YleiskaavaDatabase
 from .yleiskaava_utils import YleiskaavaUtils
 from .yleiskaava_data_copy_source_to_target import DataCopySourceToTarget
@@ -89,17 +90,18 @@ class Yleiskaava:
         self.dockwidget = None
         self.openProjectMessageBarItem = None
 
+        self.yleiskaavaSettings = YleiskaavaSettings(self.iface, self.plugin_dir)
         self.yleiskaavaDatabase = YleiskaavaDatabase(self.iface, self.plugin_dir)
         self.yleiskaavaUtils = YleiskaavaUtils(self.plugin_dir, self.yleiskaavaDatabase)
         self.yleiskaavaDatabase.setYleiskaavaUtils(self.yleiskaavaUtils)
 
-        self.dataCopySourceToTarget = DataCopySourceToTarget(self.iface, self.plugin_dir, self.yleiskaavaDatabase, self.yleiskaavaUtils)
-        self.updateRegulationOfGroup = UpdateRegulationOfGroup(self.iface, self.plugin_dir, self.yleiskaavaDatabase, self.yleiskaavaUtils)
-        self.geometryEditSettings = GeometryEditSettings(self.iface, self.plugin_dir, self.yleiskaavaDatabase, self.yleiskaavaUtils)
-        self.changeFieldValuesOfGroup = ChangeFieldValuesOfGroup(self.iface, self.plugin_dir, self.yleiskaavaDatabase, self.yleiskaavaUtils)
-        self.updateThemesOfGroup = UpdateThemesOfGroup(self.iface, self.plugin_dir, self.yleiskaavaDatabase, self.yleiskaavaUtils)
-        self.updateIndexingOfFeatures = UpdateIndexingOfFeatures(self.iface, self.plugin_dir, self.yleiskaavaDatabase, self.yleiskaavaUtils)
-        self.addSourceDataLinks = AddSourceDataLinks(self.iface, self.plugin_dir, self.yleiskaavaDatabase, self.yleiskaavaUtils)
+        self.dataCopySourceToTarget = DataCopySourceToTarget(self.iface, self.plugin_dir, self.yleiskaavaSettings, self.yleiskaavaDatabase, self.yleiskaavaUtils)
+        self.updateRegulationOfGroup = UpdateRegulationOfGroup(self.iface, self.plugin_dir, self.yleiskaavaSettings, self.yleiskaavaDatabase, self.yleiskaavaUtils)
+        self.geometryEditSettings = GeometryEditSettings(self.iface, self.plugin_dir, self.yleiskaavaSettings, self.yleiskaavaDatabase, self.yleiskaavaUtils)
+        self.changeFieldValuesOfGroup = ChangeFieldValuesOfGroup(self.iface, self.plugin_dir, self.yleiskaavaSettings, self.yleiskaavaDatabase, self.yleiskaavaUtils)
+        self.updateThemesOfGroup = UpdateThemesOfGroup(self.iface, self.plugin_dir, self.yleiskaavaSettings, self.yleiskaavaDatabase, self.yleiskaavaUtils)
+        self.updateIndexingOfFeatures = UpdateIndexingOfFeatures(self.iface, self.plugin_dir, self.yleiskaavaSettings, self.yleiskaavaDatabase, self.yleiskaavaUtils)
+        self.addSourceDataLinks = AddSourceDataLinks(self.iface, self.plugin_dir, self.yleiskaavaSettings, self.yleiskaavaDatabase, self.yleiskaavaUtils)
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -270,6 +272,7 @@ class Yleiskaava:
             self.openProjectMessageBarItem = QgsMessageBarItem('Yleiskaavan QGIS-työtila pitää käynnistää ennen työkalujen käyttöä', Qgis.Warning, duration=10)
             self.iface.messageBar().pushItem(self.openProjectMessageBarItem)
 
+        self.yleiskaavaSettings.setupDialog()
         self.dataCopySourceToTarget.setup()
         self.updateRegulationOfGroup.setup()
         self.geometryEditSettings.setup()
@@ -286,7 +289,7 @@ class Yleiskaava:
         self.dockwidget.pushButtonUpdateIndexingForLayer.clicked.connect(self.updateIndexingOfFeatures.openDialogUpdateIndexingOfFeatures)
         self.dockwidget.pushButtonAddSourceDataLinks.clicked.connect(self.addSourceDataLinks.openDialogAddSourceDataLinks)
 
-        self.dockwidget.pushButtonSettings.clicked.connect(self.yleiskaavaUtils.displaySettingsDialog)
+        self.dockwidget.pushButtonSettings.clicked.connect(self.yleiskaavaSettings.openDialogSettings)
 
         self.dockwidget.pushButtonHelp.clicked.connect(self.showHelp)
 

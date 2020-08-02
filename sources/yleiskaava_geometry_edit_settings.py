@@ -16,10 +16,11 @@ from .yleiskaava_database import YleiskaavaDatabase
 
 class GeometryEditSettings:
 
-    def __init__(self, iface, plugin_dir, yleiskaavaDatabase, yleiskaavaUtils):
+    def __init__(self, iface, plugin_dir, yleiskaavaSettings, yleiskaavaDatabase, yleiskaavaUtils):
         
         self.iface = iface
 
+        self.yleiskaavaSettings = yleiskaavaSettings
         self.yleiskaavaDatabase = yleiskaavaDatabase
         self.yleiskaavaUtils = yleiskaavaUtils
 
@@ -138,7 +139,7 @@ class GeometryEditSettings:
                 # receiversCount = self.lineFeatureLayer.receivers(self.lineFeatureLayer.editingStarted)
                 # QgsMessageLog.logMessage("followEdits - after receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
                 self.featureLayer['viiva'].editingStopped.connect(self.stopFollowingFeatureLayerEditsLine)
-                self.featureLayer['viiva'].editCommandEnded.connect(pself.updateFeatureAttributesAfterEditCommandEndedLine)
+                self.featureLayer['viiva'].editCommandEnded.connect(self.updateFeatureAttributesAfterEditCommandEndedLine)
 
             if self.featureLayer['piste'] != None:
                 # self.featureLayer['piste'].subsetStringChanged.connect(self.updateEditableFeatureClassesCountUIInfo)
@@ -222,7 +223,7 @@ class GeometryEditSettings:
                 # receiversCount = self.lineFeatureLayer.receivers(self.lineFeatureLayer.editingStarted)
                 # QgsMessageLog.logMessage("disconnectAll - receiversCount: " + str(receiversCount), 'Yleiskaava-työkalu', Qgis.Info)
             try:
-                self.featureLayer['alue'].editingStopped.disconnect(self.stopFollowingFeatureLayerEditsArea))
+                self.featureLayer['alue'].editingStopped.disconnect(self.stopFollowingFeatureLayerEditsArea)
             except TypeError:
                 pass
             except RuntimeError:
