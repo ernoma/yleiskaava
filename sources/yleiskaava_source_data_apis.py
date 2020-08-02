@@ -13,7 +13,7 @@ import json
 
 class YleiskaavaSourceDataAPIs:
 
-    SOURCE_DATA_API_SETTINGS_FILE_PATH = 'T:\kaavadat\Yleiskaava\_Yleiskaava_Tietomallityö\kaavoitustyön_tuki\ohjelmistokehitys\kaava_tyokalu\lahderajapinnat.json'
+    SOURCE_DATA_API_SETTINGS_FILE_PATH = 'lahderajapinnat.json'
 
 
     def __init__(self, iface, plugin_dir, yleiskaavaDatabase, yleiskaavaUtils):
@@ -139,7 +139,7 @@ class YleiskaavaSourceDataAPIs:
 
 
     def readSourceDataAPIs(self):
-        filePath = YleiskaavaSourceDataAPIs.SOURCE_DATA_API_SETTINGS_FILE_PATH
+        filePath = os.path.join(self.plugin_dir, YleiskaavaSourceDataAPIs.SOURCE_DATA_API_SETTINGS_FILE_PATH)
 
         if not os.path.exists(filePath):
             self.iface.messageBar().pushMessage('Virhe', 'Lähderajapintatiedostoa ei voitu lukea',\
@@ -173,7 +173,8 @@ class YleiskaavaSourceDataAPIs:
                 memoryLayer.addAttribute(field)
             memoryLayer.commitChanges()
             # memoryLayer.startEditing()
-            memoryLayer.dataProvider().addFeatures(features)
+            if features is not None:
+                memoryLayer.dataProvider().addFeatures(features)
             # memoryLayer.commitChanges()
 
         return memoryLayer

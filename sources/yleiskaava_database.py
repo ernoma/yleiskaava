@@ -372,7 +372,7 @@ class YleiskaavaDatabase:
         featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["kayttotarkoitus_lyhenne"], layer.fields())
         
         for feature in layer.getFeatures(featureRequest):
-            if feature['kayttotarkoitus_lyhenne'] not in classifications:
+            if not QVariant(feature['kayttotarkoitus_lyhenne']).isNull() and feature['kayttotarkoitus_lyhenne'] not in classifications:
                 classifications.append(feature['kayttotarkoitus_lyhenne'])
 
         return classifications

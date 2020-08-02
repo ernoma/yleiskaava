@@ -5,126 +5,178 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tervetuloa Yleiskaava-työkalun dokumentaatioon! &#8212; Yleiskaava 0.1 documentation</title>
-    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <title>Tervetuloa Yleiskaava-työkalun dokumentaatioon! &#8212; Yleiskaava-työkalu 0.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
     <script src="_static/language_data.js"></script>
-    
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
   </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="nav-item nav-item-0"><a href="#">Yleiskaava 0.1 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Tervetuloa Yleiskaava-työkalun dokumentaatioon!</a></li> 
-      </ul>
-    </div>  
+  
 
     <div class="document">
       <div class="documentwrapper">
-        <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <div class="section" id="tervetuloa-yleiskaava-tyokalun-dokumentaatioon">
 <h1>Tervetuloa Yleiskaava-työkalun dokumentaatioon!<a class="headerlink" href="#tervetuloa-yleiskaava-tyokalun-dokumentaatioon" title="Permalink to this headline">¶</a></h1>
-<p>Contents:</p>
+<p>Tässä ohjeessa on kuvattu kunkin käyttöliittymästä löytyvä toiminto sillä tasolla, että sitä pitäisi pystyä ohjeen perusteella käyttämään. Kaikkea toimintojen osalta ei kuitenkaan varmasti ole huomattu dokumentoida. Joitakin yleisiä huomioita:
+* Toimintojen tekemät muokkaukset kaavakohteille ja tietokantaan edellyttävät usein kohdekarttatasojen tallentamista. Esimerkiksi kaavamääräys- ja teema-relaatioiden lisääminen onnistuu uusille kaavakohteile vasta, kun uudet kaavakohteet on tallennettu tietokantaan. Tästä toiminnon tekememästä tallennuksesta seuraa se, että QGIS:n Muokkaa-valikon Kumoa-toiminnolla ei voi perua kaavatasolle tehtyjä muokkauksia toiminnon käyttämisen jälkeen.
+* Koska työkalun toiminnot käyttävät suoraan QGIS-työtilan karttatasoja, niin työkalu olettaa, että työtilasta löytyy esim. kaavakohdekarttatasot nimillä “Aluevaraukset”, “Täydentävät aluekohteet (osa-alueet)”, “Viivamaiset kaavakohteet” ja “Pistemäiset kaavakohteet” sekä esim. taulut “kaavamääräykset” ja “kaavaobjekti_kaavamaarays_yhteys”. Näitä työtilan mukana alunperin tulleita karttatasoja ei saa poistaa tai uudelleen nimetä. Työkalu ei toimi, jos näitä tasoja uudelleen nimeää tai poistaa. Työtilaan voi kyllä vapaasti lisätä uusia karttatasoja ja tehdä niille vapaasti haluamiaan käsittelyjä.
+* Jotkin työkalun ominaisuudet toimivat hieman erilailla riippuen miten kaavakohdetasojen kohteita on suodatettu. Osa toiminnoista esim. listaa kaavakohteiden käyttötarkoitukset dialogissa, jolloin jos kaavakohdetasolla on suodatettu kohteita vaikkapa niin, että vain tietyn käyttötarkoituksen mukaiset kohteet on suodatettu karttatasolle, niin työkalu listaa vain tämän yhden käyttötarkoituksen.</p>
 <div class="toctree-wrapper compound">
 </div>
-</div>
 <div class="section" id="toiminnot">
-<h1>Toiminnot<a class="headerlink" href="#toiminnot" title="Permalink to this headline">¶</a></h1>
+<h2>Toiminnot<a class="headerlink" href="#toiminnot" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="#kopioi-lahdeaineistoa-tietokantaan"><span class="std std-ref">Kopioi lähdeaineistoa tietokantaan</span></a></p></li>
 <li><p><a class="reference internal" href="#kaavamaarayksen-paivitys-joukolle-kaavakohteita"><span class="std std-ref">Kaavamääräyksen päivitys joukolle kaavakohteita</span></a></p></li>
+<li><p><a class="reference internal" href="#teeman-paivitys-joukolle-kaavakohteita"><span class="std std-ref">Teeman päivitys joukolle kaavakohteita</span></a></p></li>
+<li><p><a class="reference internal" href="#vaihda-kenttien-arvoja-joukolle-kaavakohteita"><span class="std std-ref">Vaihda kenttien arvoja joukolle kaavakohteita</span></a></p></li>
+<li><p><a class="reference internal" href="#kaavakohteiden-kopiointi-ja-geometrinen-muokkaus"><span class="std std-ref">Kaavakohteiden kopiointi ja geometrinen muokkaus</span></a></p></li>
+<li><p><a class="reference internal" href="#paivita-kaavakohteiden-indeksointia"><span class="std std-ref">Päivitä kaavakohteiden indeksointia</span></a></p></li>
+<li><p><a class="reference internal" href="#lisaa-linkkeja-lahtoaineistoihin"><span class="std std-ref">Lisää linkkejä lähtöaineistoihin</span></a></p></li>
+<li><p><a class="reference internal" href="#asetukset"><span class="std std-ref">Asetukset</span></a></p></li>
+<li><p><a class="reference internal" href="#ohje"><span class="std std-ref">Ohje</span></a></p></li>
 </ul>
 <div class="section" id="kopioi-lahdeaineistoa-tietokantaan">
-<h2>Kopioi lähdeaineistoa tietokantaan<a class="headerlink" href="#kopioi-lahdeaineistoa-tietokantaan" title="Permalink to this headline">¶</a></h2>
+<h3>Kopioi lähdeaineistoa tietokantaan<a class="headerlink" href="#kopioi-lahdeaineistoa-tietokantaan" title="Permalink to this headline">¶</a></h3>
 <p>Kopiointi lähdekarttatasosta yleiskaavan tietokantaan onnistuu seuraavin vaihein:</p>
-<ol class="arabic simple">
-<li><p>Valitse lähdekarttataso sekä kohdekaavakohdetaulu ja kohdekentät haluamillesi lähdekarttatason kentille. Kun jätät lähdekenttää vastaavan kohdekentän arvon tyhjäksi, niin ko. lähdekentän arvoja ei kopioida kohdetauluun, mutta esim. kaavan nimi ja numero huomioidaan silti myöhemmin. Kun jätät kohdekentän valitsematta, niin sille ei kopioida lähdetaulusta arvoa, mutta voit myöhemmin halutessasi asettaa sille joka tapauksessa oletusarvon. Klikkaa Seuraava-painiketta, kun olet asettanut haluamillesi lähdekarttatason kentille kohdetaulun kentän.</p></li>
-<li><p>Valitse lähdekarttatason attribuuttitaulusta tietokantaan kopioitavat kohteet ja klikkaa sitten Seuraava-painiketta. Voit halutessasi sulkea lähdekarttatason attribuuttitaulun valittuasi kopioitavat kohteet.</p></li>
-<li><p>Valitse tarvittaessa oletusarvot pakollisille kohdetaulujen kentille ja mahdollisesti muita kopiointiasetuksia, kuten tehdäänkö kaavamääräysotsikkoa vastaava kaavamääräys, jos sitä ei jo ole. Klikkaa Aja-painiketta aloittaaksesi lähdekarttatason kohteiden kopioinnin yleiskaavan tietokantaan.</p></li>
+<ol class="arabic">
+<li><p>Valitse lähdekarttataso sekä kohdekaavakohdetaulu ja kohdekentät haluamillesi lähdekarttatason kentille. Kun jätät lähdekenttää vastaavan kohdekentän arvon tyhjäksi, niin ko. lähdekentän arvoja ei kopioida kohdetauluun, mutta esim. kaavan nimi ja numero huomioidaan silti myöhemmin. Kun jätät kohdekentän valitsematta, niin sille ei kopioida lähdetaulusta arvoa, mutta voit myöhemmin halutessasi asettaa sille joka tapauksessa oletusarvon. Jos haluat yhdistää useamman lähdekentän samaan kohdekenttään, niin se on mahdollista, jos kenttien tyypit ovat yhteensopivia. Klikkaa Seuraava-painiketta, kun olet asettanut haluamillesi lähdekarttatason kentille kohdetaulun kentän.</p>
+<div class="figure align-default">
+<img alt="_images/kopiointi_d1.png" src="_images/kopiointi_d1.png" />
+</div>
+</li>
+<li><p>Valitse lähdekarttatason attribuuttitaulusta tietokantaan kopioitavat kohteet ja klikkaa sitten Seuraava-painiketta. Voit halutessasi sulkea lähdekarttatason attribuuttitaulun valittuasi kopioitavat kohteet.</p>
+<div class="figure align-default">
+<img alt="_images/kopiointi_d2.png" src="_images/kopiointi_d2.png" />
+</div>
+</li>
+<li><p>Valitse tarvittaessa oletusarvot pakollisille kohdetaulujen kentille ja mahdollisesti muita kopiointiasetuksia, kuten tehdäänkö kaavamääräysotsikkoa vastaava kaavamääräys, jos sitä ei jo ole. Klikkaa Aja-painiketta aloittaaksesi lähdekarttatason kohteiden kopioinnin yleiskaavan tietokantaan.</p>
+<div class="figure align-default">
+<img alt="_images/kopiointi_d3.png" src="_images/kopiointi_d3.png" />
+</div>
+</li>
+<li><p>Jos aineistoa on paljon, niin näet avautuvasta dialogista kopioinnin edistymisen. Kun kopiointi on valmis, niin tästä annetaan ilmoitus.</p></li>
 </ol>
+<p>Lähdeaineiston koordinaattijärjestelmä voi erota tietokannan koordinaattijärjestelmästä. Työkalu tekee tarvittaessa automaattisen muunnoksen.</p>
 </div>
 <div class="section" id="kaavamaarayksen-paivitys-joukolle-kaavakohteita">
-<h2>Kaavamääräyksen päivitys joukolle kaavakohteita<a class="headerlink" href="#kaavamaarayksen-paivitys-joukolle-kaavakohteita" title="Permalink to this headline">¶</a></h2>
-<p>Tällä ominaisuudella käyttäjä voi päivittää kaavamääräyksen kerralla halutulle joukolle kaavakohteita. Kaavamääräys, joka kohteille päivitetään valitaan “Valitse kaavamääräys”-kohdasta. Myös kaavamääräyksen otsikon, tekstin ja kuvauksen voi päivittää tämän dialogin kautta.</p>
+<h3>Kaavamääräyksen päivitys joukolle kaavakohteita<a class="headerlink" href="#kaavamaarayksen-paivitys-joukolle-kaavakohteita" title="Permalink to this headline">¶</a></h3>
+<p>Tällä ominaisuudella käyttäjä voi päivittää kaavamääräyksen kerralla halutulle joukolle kaavakohteita.</p>
+<div class="figure align-default">
+<img alt="_images/kaavamaarays_d.png" src="_images/kaavamaarays_d.png" />
+</div>
+<p>Kaavamääräys, joka kohteille päivitetään valitaan “Valitse kaavamääräys”-kohdasta. Myös kaavamääräyksen otsikon, tekstin ja kuvauksen voi päivittää tämän dialogin kautta.</p>
 <p>Asetuksella “Poista kaavakohteilta vanhat kaavamääräykset” poistetaan valituilla kaavakohteilla jo olevat kaavamääräykset. Käyttäjä valitsee päivitettävät kaavakohteet “Valitse päivitettävät aluekohteet”-, “Valitse päivitettävät täydentävät aluekohteet”-, “Valitse päivitettävät viivamaiset kohteet”- ja “Valitse päivitettävät pistemäiset kohteet”-painikkeiden kautta avatuvien karttatasojen attribuuttitaulujen kautta. Käyttäjä voi myös valita kohteet jo ennen “Kaavamääräyksen päivitys joukolle kaavakohteita”-dialogin avaamista, mutta ko. kohteiden valinta pitää varmistaa avaamalla haluamansa karttatasojen attribuuttitailut em. mainituilla painikkeilla ennen “Tee päivitykset”-painikkeen painamista.</p>
 <p>Jos kaavakohteille on asetettu yleiskaava ja yleiskaavalle numero, niin käyttötarkoituksen lyhenne koitetaan huomioida aluevarausten kaavamääräysten päivityksessä.</p>
 <p>Teknisesti ei ole aina mahdollista visualisoida kaavakohteita suoraan kaavamääräys-taulun kaavamääräyksen perusteella ainakin siksi, että kaavakohteeseen voi liittyä useita kaavamääräyksiä ja siksi QGIS-työtilassa kaavakohteiden visualisointityyli on valittu kaavakohde-taulujen kayttotarkoitus_lyhenne-kentän perusteella, johon muiden kuin käyttötarkoitusalueiden tapauksessa, on tallennettu lyhenteen sijaan kaavamääräys-taulussa olevan kaavakohteeseen liittyvän kaavamääräyksen otsikko. Jos kaavakohteeseen liittyy useita kaavamääräyksiä, niin käyttäjä voi “Päivitä käyttötarkoitus vaikka kohteella olisi useita kaavamääräyksiä”-asetuksella valita miten tässä tilanteessa toimitaan. Kaavakohteiden käyttötarkoituksen (kenttä kayttotarkoitus_lyhenne) arvo päivitetään myös (ja samalla päivitetään kaavakohteiden kaavamaaraysotsikko-kentän arvo), kun “Päivitä käyttötarkoitus vaikka kohteella olisi useita kaavamääräyksiä”-asetus on valittu, vaikka kohteella olisi useita kaavamääräyksiä päivityksen jälkeen. Jos ko. asetus ei ole käytössä, niin valittu kaavamääräys lisätään kohteelle, mutta käyttötarkoitukseen ei tehdä muutoksia, jos kohteella on useita kaavamääräyksiä päivityksen jälkeen. Jos kuitenkin asetus “Poista kaavakohteilta vanhat kaavamääräykset” on käytössä, niin “Päivitä käyttötarkoitus vaikka kohteella olisi useita kaavamääräyksiä”-asetuksella ei ole vaikutusta.</p>
 <p>Jos et valitse kaavamääräystä ja jätät “Poista kaavakohteilta vanhat kaavamääräykset”-asetuksen valituksi, niin valitsemiltasi kaavakohteilta poistetaan kaavamääräykset, mutta ei lisätä uusia. Jos myös asetus “Päivitä käyttötarkoitus vaikka kohteella olisi useita kaavamääräyksiä” on valittu, niin myös käyttötarkoituksen (kenttä kayttotarkoitus_lyhenne) arvo poistetaan myös (ja samalla poistetaan myös kaavakohteiden kaavamaaraysotsikko-kentän arvo).</p>
 </div>
+<div class="section" id="teeman-paivitys-joukolle-kaavakohteita">
+<h3>Teeman päivitys joukolle kaavakohteita<a class="headerlink" href="#teeman-paivitys-joukolle-kaavakohteita" title="Permalink to this headline">¶</a></h3>
+<p>Teeman päivitys tapahtuu hyvin samaan tapaan kuin kaavamääräyksen, mutta asetuksia on hieman vähemmän.</p>
+<div class="figure align-default">
+<img alt="_images/teema_d.png" src="_images/teema_d.png" />
 </div>
-<div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
-<ul class="simple">
-<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
-<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
-<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
-</ul>
+<p>Kuten kaavamääräyksen päivtyksen tapauksessa, niin teemankin tapauksessa, päivityksen voi halutesaan tehdä kerralla aluevarauksille, täydentäville aluekohteille, viiva- ja pistekohteille. Päivitys ei kohdetyypille tapahdu ennen kuin on avannut “Valitse …”-painikkeella attribuuttitaulun. “Valitse …”-painiketta painaessa myös painikkeen vieressä oleva “Päivitä …”-valintaruutu valitaan automaattisesti.</p>
 </div>
-
-
-            <div class="clearer"></div>
-          </div>
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="#">Table of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Tervetuloa Yleiskaava-työkalun dokumentaatioon!</a></li>
-<li><a class="reference internal" href="#toiminnot">Toiminnot</a><ul>
-<li><a class="reference internal" href="#kopioi-lahdeaineistoa-tietokantaan">Kopioi lähdeaineistoa tietokantaan</a></li>
-<li><a class="reference internal" href="#kaavamaarayksen-paivitys-joukolle-kaavakohteita">Kaavamääräyksen päivitys joukolle kaavakohteita</a></li>
-</ul>
+<div class="section" id="vaihda-kenttien-arvoja-joukolle-kaavakohteita">
+<h3>Vaihda kenttien arvoja joukolle kaavakohteita<a class="headerlink" href="#vaihda-kenttien-arvoja-joukolle-kaavakohteita" title="Permalink to this headline">¶</a></h3>
+<p>Tällä toiminnolla voi vaihtaa kerralla joukolle haluamiaan kaavakohteita ominaisuustietojen arvoja.</p>
+<ol class="arabic">
+<li><p>Valitse ensiksi kohteet, joiden tietoja päivitetään “Valitse päivitettävät …”-painikkeella.</p>
+<div class="figure align-default">
+<img alt="_images/vaihda_ominaisuustietoja_d1.png" src="_images/vaihda_ominaisuustietoja_d1.png" />
+</div>
 </li>
-<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
-</ul>
-
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/index.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
-      <input type="submit" value="Go" />
-    </form>
-    </div>
+<li><p>Kohteiden valinnan jälkeen “Valitse päivitykset …”-painikkeella avaa dialogi, jossa voit valita päivitettävät kentät ja niille asetettavat arvot. Päivitykset valituille kohteille tehdään, kun klikkaat “Päivitä arvot valituille kohteille”-painiketta.</p>
+<div class="figure align-default">
+<img alt="_images/vaihda_ominaisuustietoja_d2.png" src="_images/vaihda_ominaisuustietoja_d2.png" />
 </div>
-<script>$('#searchbox').show(0);</script>
-        </div>
+</li>
+</ol>
+</div>
+<div class="section" id="kaavakohteiden-kopiointi-ja-geometrinen-muokkaus">
+<h3>Kaavakohteiden kopiointi ja geometrinen muokkaus<a class="headerlink" href="#kaavakohteiden-kopiointi-ja-geometrinen-muokkaus" title="Permalink to this headline">¶</a></h3>
+<p>Kaavakohteiden (aluevaraukset, täydentävät aluekohteet ja viivamaiset kaavakohteet -karttatasot) geometrisessa jakamisessa saat kaavamääräykset ja teemat säilymään kaikilla jaetuilla kohteilla, kun avaat tämän toiminnon paneelin. Myös kaavakohdetason sisällä tapahtuva kohteiden kopionti ja liittäminen säilyttää halutessa kaavamääräys- ja teema-relaatiot, kun tämän toiminnon paneeli on avattuna.</p>
+<div class="figure align-default">
+<img alt="_images/editointi_paneeli.png" src="_images/editointi_paneeli.png" />
+</div>
+<div class="section" id="kaavakohteiden-geometrinen-jakaminen">
+<h4>Kaavakohteiden geometrinen jakaminen<a class="headerlink" href="#kaavakohteiden-geometrinen-jakaminen" title="Permalink to this headline">¶</a></h4>
+<p>“Jaa kohteet”-painikkeella (<img alt="splitfeatures" src="_images/editointi_split_features.png" />) voit halutessasi jakaa kaavakohteita kuten normaalisti. Yleiskaava-työkalu havaitsee kohten jakamisen ja lisää jaon seurauksena syntyneelle uudelle kohteelle kaavamääräyksen ja teeman. Kaavamääräysten ja teeman automaattinen lisääminen edellyttää, että “Jaa kohteet”-toiminto on valittu vasta “Kaavakohteiden kopiointi ja geometrinen muokkaus”-toiminnon paneelinen avaamisen jälkeen.</p>
+<p>Huomaa, että tasolla on hyvä suodattaa kohteet esim. tietyn käyttötarkoituksen mukaan ennen jakamista, koska kaavamääräyksen ja teeman säilyminen jakamisessa ei luultavasti onnistu, kun tasolla on vaikka tyylin kautta piilotettujakin, kaavakohteita samassa kohtaa, jossa jako tehdään. QGIS siis jakaa “Jaa kohteet”-painikkeella myös karttasolla piilossa olevat kohteet, jos niitä ei ole suodatettu pois. Tämän vuoksi paneelissa on kohta “Tason muokattavien kohteiden käyttötarkoitustyyppien lkm”, joka varoittaa mahdollisesti piilossa olevista kaavakohteista, joihin jako saattaa vaikuttaa.</p>
+</div>
+<div class="section" id="kaavakohteiden-kopiointi-ja-liittaminen-kaavakohdetasolla">
+<h4>Kaavakohteiden kopiointi ja liittäminen kaavakohdetasolla<a class="headerlink" href="#kaavakohteiden-kopiointi-ja-liittaminen-kaavakohdetasolla" title="Permalink to this headline">¶</a></h4>
+<p>Kun valintaruutu “Säilytä kaavamääräys ja teemat kohteiden kopioinnissa” on aktivoitu, niin silloin myös kaavakohdetason sisäinen kohteiden kopionti (tai leikkaus) ja liittäminen säilyttävät kaavamääräykset ja teemat.</p>
+<div class="figure align-default">
+<img alt="_images/editointi_copy_cut_paste_fi.png" src="_images/editointi_copy_cut_paste_fi.png" />
+</div>
+</div>
+</div>
+<div class="section" id="paivita-kaavakohteiden-indeksointia">
+<h3>Päivitä kaavakohteiden indeksointia<a class="headerlink" href="#paivita-kaavakohteiden-indeksointia" title="Permalink to this headline">¶</a></h3>
+<p>Tietyillä kaavakohteilla kuten muinaisjäännöskohteilla ja kemikaalilaitosten konsultointivyöhykkeillä on usein indeksointi. Tämän toiminnon avulla on mahdollista lisätä jo indeksoitujen kohteiden väliin uusi kaavakohde ja päivittää sen jälkeen seuraavien kohteiden indeksointia.</p>
+<div class="figure align-default">
+<img alt="_images/indeksointi_d.png" src="_images/indeksointi_d.png" />
+</div>
+<p>Edellä kuvassa on esitetty mahdollinen päivitystilanne, jossa muinaisjäännöskohteiden väliin halutaan lisätä kohteelle indeksi SM8 ja kasvattaa sen jälkeisten kohteiden indeksointeja.</p>
+<p>Tällä hetkellä indeksointi toimii aakkosilla (a, b, c, …) sekä kokonaisluvuilla (1, 2, 3, …). Indeksoinnin ei tarvitse tosin alkaa a-kirjaimesta tai 1:stä. Lisäksi indeksissä voi olla vakioalku- ja/tai loppuosa. Esimerkissä on kokonaislukuindeksointi ja indeksissä vakioalkuosa SM.</p>
+</div>
+<div class="section" id="lisaa-linkkeja-lahtoaineistoihin">
+<h3>Lisää linkkejä lähtöaineistoihin<a class="headerlink" href="#lisaa-linkkeja-lahtoaineistoihin" title="Permalink to this headline">¶</a></h3>
+<p>Lähtöaineistolinkkien lisääminen on tällä hetkellä mahdollista vain Siiri-rajapinnalta.</p>
+<div class="figure align-default">
+<img alt="_images/linkit_d.png" src="_images/linkit_d.png" />
+</div>
+<p>Kun toiminnon dialogissa on valinnut kaavakohteen, jolle halutaan lisätä lähdetietoja sekä lähderajapinnan ja lähdetason, jolta tietoja haetaan, niin haetaan määritellyltä etäisyydeltä kaavakohteesta sijaitsevat lähdeaineiston kohteet. Halutun kohteen voi yhdistää eli lisätä lähtöaineistolinkin kaavakohteelle. Lisäksi kunkin lähtöaineistokohteen osalta on mahdollista katsoa sen tarkempia tietoja sekä infoikkunasta, että lähdetietosivulta. Voit myös katsoa mahdollisesti jo johonkin lähtöaineistokohteeseen yhdistetyn kaavakohteen tiedot.</p>
+</div>
+<div class="section" id="asetukset">
+<h3>Asetukset<a class="headerlink" href="#asetukset" title="Permalink to this headline">¶</a></h3>
+<p>Asetukset-dialogissa on tällä hetkellä vain asetus, jolla voi valita pidetäänkö toimintoihin liittyvät dialogit päälimmäisinä vai ei.</p>
+</div>
+<div class="section" id="ohje">
+<h3>Ohje<a class="headerlink" href="#ohje" title="Permalink to this headline">¶</a></h3>
+<p>Ohje-toiminnosta aukeaa tämä ohje.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="nav-item nav-item-0"><a href="#">Yleiskaava 0.1 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Tervetuloa Yleiskaava-työkalun dokumentaatioon!</a></li> 
-      </ul>
+    <div class="footer">
+      &copy;2020, Tampereen kaupunki.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.1.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
     </div>
-    <div class="footer" role="contentinfo">
-        &#169; Copyright 2013, Tampereen kaupunki.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
-    </div>
+
+    
+
+    
   </body>
 </html>
