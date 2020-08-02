@@ -26,7 +26,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Kopioi lähdeaineistoa tietokantaan...</string>
+         <string>Kopioi lähdeaineistoa tietokantaan</string>
         </property>
        </widget>
       </item>
@@ -39,7 +39,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Kaavamääräyksen päivitys joukolle kaavakohteita...</string>
+         <string>Kaavamääräyksen päivitys joukolle kaavakohteita</string>
         </property>
        </widget>
       </item>
@@ -55,7 +55,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Teeman päivitys joukolle kaavakohteita...</string>
+         <string>Teeman päivitys joukolle kaavakohteita</string>
         </property>
        </widget>
       </item>
@@ -71,7 +71,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Vaihda kenttien arvoja joukolle kaavakohteita...</string>
+         <string>Vaihda kenttien arvoja joukolle kaavakohteita</string>
         </property>
        </widget>
       </item>
@@ -84,7 +84,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Kaavakohteiden kopiointi ja geometrinen muokkaus... </string>
+         <string>Kaavakohteiden kopiointi ja geometrinen muokkaus</string>
         </property>
        </widget>
       </item>
@@ -100,7 +100,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Päivitä kaavakohteiden indeksointia...</string>
+         <string>Päivitä kaavakohteiden indeksointia</string>
         </property>
        </widget>
       </item>
@@ -116,7 +116,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Lisää linkkejä lähtöaineistoihin...</string>
+         <string>Lisää linkkejä lähtöaineistoihin</string>
         </property>
        </widget>
       </item>
@@ -136,7 +136,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Asetukset...</string>
+         <string>Asetukset</string>
         </property>
        </widget>
       </item>

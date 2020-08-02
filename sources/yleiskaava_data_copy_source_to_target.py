@@ -4,7 +4,12 @@ from qgis.PyQt.QtCore import Qt, QVariant, QSize
 from qgis.PyQt.QtWidgets import QWidget, QGridLayout, QLabel, QComboBox, QCheckBox
 
 from qgis.core import (
-    Qgis, QgsProject, QgsFeature, QgsWkbTypes, QgsMessageLog, QgsMapLayer,  QgsMapLayerProxyModel, QgsGeometry, QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsApplication)
+    Qgis, QgsProject,
+    QgsFeature, QgsWkbTypes,
+    QgsMessageLog, QgsMapLayer,
+    QgsMapLayerProxyModel, QgsGeometry,
+    QgsCoordinateReferenceSystem, QgsCoordinateTransform,
+    QgsApplication, QgsExpressionContextUtils)
 
 from qgis.gui import QgsFilterLineEdit, QgsDateTimeEdit, QgsMessageBarItem
 
@@ -606,6 +611,10 @@ class DataCopySourceToTarget:
         if widget != None:
             widget.setObjectName(DataCopySourceToTarget.OBJECT_NAME_UNIQUE_IDENTIFIERS["DEFAULT_VALUES_INPUT"] + str(fieldIndex))
             self.dialogCopySettings.tableWidgetDefaultFieldValues.setCellWidget(fieldIndex, DataCopySourceToTarget.DEFAULT_VALUES_INPUT_INDEX, widget)
+
+            if targetFieldName == 'muokkaaja':
+                if QgsExpressionContextUtils.globalScope().hasVariable('user_account_name'):
+                    widget.setText(QgsExpressionContextUtils.globalScope().variable('user_account_name'))
         else:
             self.iface.messageBar().pushMessage('Bugi koodissa: showFieldInSettingsDialogDefaults widget == None', Qgis.Warning)
             #QgsMessageLog.logMessage('showFieldInSettingsDialogDefaults widget == None', 'Yleiskaava-työkalu', Qgis.Critical)
