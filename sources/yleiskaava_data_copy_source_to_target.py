@@ -698,7 +698,7 @@ class DataCopySourceToTarget:
             self.iface.messageBar().popWidget()
         self.yleiskaavaUtils.refreshTargetLayersInProject() # Päivitä lopuksi työtilan karttatasot, jotka liittyvät T1:n ajoon
         if not self.hasUserCanceledCopy:
-            self.iface.messageBar().pushMessage('Lähdeaineisto kopioitu tietokantaan', Qgis.Info, duration=0)
+            self.iface.messageBar().pushMessage('Lähdeaineisto {} kopioitu tietokantaan'.format(self.sourceLayer.name()), Qgis.Info, duration=60)
         else:
             self.iface.messageBar().pushMessage('Lähdeaineistoa ei kopioitu kokonaisuudessaan tietokantaan', Qgis.Info, duration=0)
 
