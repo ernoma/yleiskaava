@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Tervetuloa Yleiskaava-työkalun dokumentaatioon!
-***********************************************
+Yleiskaava-työkalun ohjeistus
+*****************************
 
 Tässä ohjeessa on kuvattu kunkin käyttöliittymästä löytyvä toiminto sillä tasolla, että sitä pitäisi pystyä ohjeen perusteella käyttämään. Kaikkea toimintojen osalta ei kuitenkaan varmasti ole huomattu dokumentoida. Joitakin yleisiä huomioita:
 

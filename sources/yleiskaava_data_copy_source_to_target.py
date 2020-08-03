@@ -213,8 +213,10 @@ class DataCopySourceToTarget:
 
             index = 0
             for field in sourceLayer.fields().toList():
-                if field.name() != 'id' and self.yleiskaavaUtils.getStringTypeForFeatureField(field) != 'uuid':
+                if True: #field.name() == 'id' or self.yleiskaavaUtils.getStringTypeForFeatureField(field) != 'uuid':
+                    QgsMessageLog.logMessage('updateUIBasedOnSourceLayer - field.name(): ' + field.name(), 'Yleiskaava-työkalu', Qgis.Info)
                     sourceFieldnameLabel = QLabel(field.name())
+                    QgsMessageLog.logMessage('updateUIBasedOnSourceLayer - sourceFieldnameLabel != None? ' + str(sourceFieldnameLabel is not None), 'Yleiskaava-työkalu', Qgis.Info)
                     sourceFieldnameLabel.setObjectName(DataCopySourceToTarget.OBJECT_NAME_UNIQUE_IDENTIFIERS["SOURCE_FIELD_NAME"] + str(index))
                     sourceFieldTypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
                     sourceFieldtypeLabel = QLabel(sourceFieldTypeName)
@@ -240,7 +242,7 @@ class DataCopySourceToTarget:
                     self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setCellWidget(index, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX, targetFieldNameComboBox)
 
                     targetTableComboBox.currentTextChanged.connect(partial(self.handleTargetTableSelectChanged, index, sourceFieldTypeName, targetTableComboBox, targetFieldNameComboBox))
-
+                    QgsMessageLog.logMessage('updateUIBasedOnSourceLayer - lisätty rivi tableWidgetSourceTargetMatch', 'Yleiskaava-työkalu', Qgis.Info)
                     index += 1
 
             self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.resizeColumnsToContents()
@@ -812,7 +814,7 @@ class DataCopySourceToTarget:
         if self.sourceLayer is not None:
             fields = self.sourceLayer.fields().toList()
             for index, field in enumerate(fields):
-                if field.name() != 'id' and self.yleiskaavaUtils.getStringTypeForFeatureField(field) != 'uuid':
+                if True: # field.name() != 'id' and self.yleiskaavaUtils.getStringTypeForFeatureField(field) != 'uuid':
                     count += 1
 
         return count
