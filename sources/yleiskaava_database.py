@@ -435,53 +435,59 @@ class YleiskaavaDatabase:
 
         regulationList = []
 
-        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-            query = "SELECT id, kaavamaarays_otsikko, maaraysteksti, kuvaus_teksti FROM yk_yleiskaava.kaavamaarays"
+        if includeAreaRegulations:
+            query = None
+            if onlyUsedRegulations:
+                query = "SELECT DISTINCT id_kaavamaarays FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_alue IS NOT NULL AND id_kaavaobjekti_alue in (SELECT id FROM yk_yleiskaava.kaavaobjekti_alue WHERE version_loppumispvm IS NULL)"
+            else:
+                query = "SELECT DISTINCT id_kaavamaarays FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_alue IS NOT NULL"
 
-            cursor.execute(query)
-            rows = cursor.fetchall()
+            regulationList.extend(self.getgetSpecificRegulationsForSubQuery(query))
 
-            for row in rows:
-                QgsMessageLog.logMessage('getSpecificRegulations - row["id"]: ' + str(row["id"]) + ', row["kaavamaarays_otsikko"]: ' + str(row["kaavamaarays_otsikko"]), 'Yleiskaava-työkalu', Qgis.Info)
-                #  + ', row["maaraysteksti"]: ' + str(row["maaraysteksti"]) + ', row["kuvaus_teksti"]: ' + str(row["kuvaus_teksti"])
-                
-                if not row['kaavamaarays_otsikko'] is None:
+        if includeSuplementaryAreaRegulations:
+            query = None
+            if onlyUsedRegulations:
+                query = "SELECT DISTINCT id_kaavamaarays FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_alue_taydentava IS NOT NULL AND id_kaavaobjekti_alue_taydentava in (SELECT id FROM yk_yleiskaava.kaavaobjekti_alue_taydentava WHERE version_loppumispvm IS NULL)"
+            else:
+                query = "SELECT DISTINCT id_kaavamaarays FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_alue_taydentava IS NOT NULL"
 
-                    shouldAdd = True
-                    if onlyUsedRegulations or not includeAreaRegulations or not includeSuplementaryAreaRegulations or not includeLineRegulations or not includePointRegulations:
-                        shouldAdd = self.shouldAddRegulation(row['id'], onlyUsedRegulations, includeAreaRegulations, includeSuplementaryAreaRegulations, includeLineRegulations, includePointRegulations)
+            regulationList.extend(self.getgetSpecificRegulationsForSubQuery(query))
+        
+        if includeLineRegulations:
+            query = None
+            if onlyUsedRegulations:
+                query = "SELECT DISTINCT id_kaavamaarays FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_viiva IS NOT NULL AND id_kaavaobjekti_viiva in (SELECT id FROM yk_yleiskaava.kaavaobjekti_viiva WHERE version_loppumispvm IS NULL)"
+            else:
+                query = "SELECT DISTINCT id_kaavamaarays FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_viiva IS NOT NULL"
 
-                    if shouldAdd:
-                        regulationList.append({
-                            "id": row['id'],
-                            "alpha_sort_key": row['kaavamaarays_otsikko'],
-                            "kaavamaarays_otsikko": QVariant(row['kaavamaarays_otsikko']),
-                            "maaraysteksti": QVariant(row['maaraysteksti']),
-                            "kuvaus_teksti": QVariant(row['kuvaus_teksti'])
-                            })
+            regulationList.extend(self.getgetSpecificRegulationsForSubQuery(query))
 
-        # targetLayer = self.getProjectLayer("yk_yleiskaava.kaavamaarays")
-        # featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "kaavamaarays_otsikko", "maaraysteksti", "kuvaus_teksti"], targetLayer.fields())
-        # features = targetLayer.getFeatures(featureRequest)
-        # regulationList = []
-        # for index, feature in enumerate(features):
-        #     kaavamaarays_otsikko = QVariant(feature["kaavamaarays_otsikko"])
-        #     maaraysteksti = QVariant(feature['maaraysteksti'])
-        #     kuvausteksti = QVariant(feature['kuvaus_teksti'])
+        if includePointRegulations:
+            query = None
+            if onlyUsedRegulations:
+                query = "SELECT DISTINCT id_kaavamaarays FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_piste IS NOT NULL AND id_kaavaobjekti_piste in (SELECT id FROM yk_yleiskaava.kaavaobjekti_piste WHERE version_loppumispvm IS NULL)"
+            else:
+                query = "SELECT DISTINCT id_kaavamaarays FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_piste IS NOT NULL"
 
-        #     if not kaavamaarays_otsikko.isNull():
-        #         shouldAdd = True
-        #         if onlyUsedRegulations or not includeAreaRegulations or not includeSuplementaryAreaRegulations or not includeLineRegulations or not includePointRegulations:
-        #             shouldAdd = self.shouldAddRegulation(feature['id'], onlyUsedRegulations, includeAreaRegulations, includeSuplementaryAreaRegulations, includeLineRegulations, includePointRegulations)
+            regulationList.extend(self.getgetSpecificRegulationsForSubQuery(query))
 
-        #         if shouldAdd:
-        #             regulationList.append({
-        #                 "id": feature['id'],
-        #                 "alpha_sort_key": str(kaavamaarays_otsikko.value()),
-        #                 "kaavamaarays_otsikko": kaavamaarays_otsikko,
-        #                 "maaraysteksti": maaraysteksti,
-        #                 "kuvaus_teksti": kuvausteksti
-        #                 })
+        return regulationList
+
+
+    def getgetSpecificRegulationsForSubQuery(self, subQuery):
+        regulationList = []
+        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as regulationCursor:
+            query = "SELECT id, kaavamaarays_otsikko, maaraysteksti, kuvaus_teksti FROM yk_yleiskaava.kaavamaarays WHERE kaavamaarays_otsikko IS NOT NULL and id in ({})".format(subQuery)
+            regulationCursor.execute(query)
+            regulationRows = regulationCursor.fetchall()
+            for regulationRow in regulationRows:
+                regulationList.append({
+                    "id": regulationRow['id'],
+                    "alpha_sort_key": regulationRow['kaavamaarays_otsikko'],
+                    "kaavamaarays_otsikko": QVariant(regulationRow['kaavamaarays_otsikko']),
+                    "maaraysteksti": QVariant(regulationRow['maaraysteksti']),
+                    "kuvaus_teksti": QVariant(regulationRow['kuvaus_teksti'])
+                    })
 
         return regulationList
 
