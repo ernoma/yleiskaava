@@ -16,6 +16,15 @@ class YleiskaavaDatabase:
     KAAVAOBJEKTI_VIIVA = "Viivamaiset kaavakohteet"
     KAAVAOBJEKTI_PISTE = "Pistemäiset kaavakohteet"
 
+    QGS_SETTINGS_PSYCOPG2_PARAM_MAP = {
+        'database': 'dbname',
+        'host': 'host',
+        'password': 'password',
+        'port': 'port',
+        'username': 'user'
+    }
+    
+
     def __init__(self, iface, plugin_dir):
 
         self.iface = iface
@@ -1157,3 +1166,10 @@ class YleiskaavaDatabase:
 
         return relationFeatureID
 
+
+    def setDatabaseConnection(self, databaseConnectionParams):
+        self.databaseConnectionParams = databaseConnectionParams
+
+        if  self.databaseConnectionParams is not None:
+            for key in self.databaseConnectionParams:
+                QgsMessageLog.logMessage('setDatabaseConnection - databaseConnectionParams[' + key + ']: ' + str(databaseConnectionParams[key]), 'Yleiskaava-työkalu', Qgis.Info)

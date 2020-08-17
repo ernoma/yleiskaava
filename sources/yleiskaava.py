@@ -90,10 +90,11 @@ class Yleiskaava:
         self.dockwidget = None
         self.openProjectMessageBarItem = None
 
-        self.yleiskaavaSettings = YleiskaavaSettings(self.iface, self.plugin_dir)
         self.yleiskaavaDatabase = YleiskaavaDatabase(self.iface, self.plugin_dir)
         self.yleiskaavaUtils = YleiskaavaUtils(self.plugin_dir, self.yleiskaavaDatabase)
         self.yleiskaavaDatabase.setYleiskaavaUtils(self.yleiskaavaUtils)
+
+        self.yleiskaavaSettings = YleiskaavaSettings(self.iface, self.plugin_dir, self.yleiskaavaDatabase)
 
         self.dataCopySourceToTarget = DataCopySourceToTarget(self.iface, self.plugin_dir, self.yleiskaavaSettings, self.yleiskaavaDatabase, self.yleiskaavaUtils)
         self.updateRegulationOfGroup = UpdateRegulationOfGroup(self.iface, self.plugin_dir, self.yleiskaavaSettings, self.yleiskaavaDatabase, self.yleiskaavaUtils)
