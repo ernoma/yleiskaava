@@ -8,6 +8,9 @@ from qgis.gui import QgsFileWidget
 import os.path
 import uuid
 
+import psycopg2
+import psycopg2.extras
+
 
 class YleiskaavaDatabase:
 
@@ -23,7 +26,7 @@ class YleiskaavaDatabase:
         'port': 'port',
         'username': 'user'
     }
-    
+
 
     def __init__(self, iface, plugin_dir):
 
@@ -32,6 +35,9 @@ class YleiskaavaDatabase:
         self.yleiskaavaUtils = None
 
         self.plugin_dir = plugin_dir
+
+        self.dbConnection = None
+
 
         self.yleiskaava_target_tables = [
             {"name": "yk_yleiskaava.yleiskaava", "userFriendlyTableName": 'Yleiskaavan ulkorajaus (yleiskaava)', "geomFieldName": "kaavan_ulkorajaus", "geometryType": QgsWkbTypes.PolygonGeometry, "showInCopySourceToTargetUI": False},
@@ -97,7 +103,6 @@ class YleiskaavaDatabase:
 
     def setYleiskaavaUtils(self, yleiskaavaUtils):
         self.yleiskaavaUtils = yleiskaavaUtils
-
 
     def getProjectLayer(self, name):
         layer = None
@@ -427,96 +432,111 @@ class YleiskaavaDatabase:
 
 
     def getSpecificRegulations(self, onlyUsedRegulations=False, includeAreaRegulations=True, includeSuplementaryAreaRegulations=True, includeLineRegulations=True, includePointRegulations=True):
-        targetLayer = self.getProjectLayer("yk_yleiskaava.kaavamaarays")
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "kaavamaarays_otsikko", "maaraysteksti", "kuvaus_teksti"], targetLayer.fields())
-        features = targetLayer.getFeatures(featureRequest)
+
         regulationList = []
-        for index, feature in enumerate(features):
-            kaavamaarays_otsikko = QVariant(feature["kaavamaarays_otsikko"])
-            maaraysteksti = QVariant(feature['maaraysteksti'])
-            kuvausteksti = QVariant(feature['kuvaus_teksti'])
 
-            if not kaavamaarays_otsikko.isNull():
-                shouldAdd = True
-                if onlyUsedRegulations or not includeAreaRegulations or not includeSuplementaryAreaRegulations or not includeLineRegulations or not includePointRegulations:
-                    shouldAdd = self.shouldAddRegulation(feature['id'], onlyUsedRegulations, includeAreaRegulations, includeSuplementaryAreaRegulations, includeLineRegulations, includePointRegulations)
+        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+            query = "SELECT id, kaavamaarays_otsikko, maaraysteksti, kuvaus_teksti FROM yk_yleiskaava.kaavamaarays"
 
-                if shouldAdd:
-                    regulationList.append({
-                        "id": feature['id'],
-                        "alpha_sort_key": str(kaavamaarays_otsikko.value()),
-                        "kaavamaarays_otsikko": kaavamaarays_otsikko,
-                        "maaraysteksti": maaraysteksti,
-                        "kuvaus_teksti": kuvausteksti
-                        })
+            cursor.execute(query)
+            rows = cursor.fetchall()
+
+            for row in rows:
+                QgsMessageLog.logMessage('getSpecificRegulations - row["id"]: ' + str(row["id"]) + ', row["kaavamaarays_otsikko"]: ' + str(row["kaavamaarays_otsikko"]), 'Yleiskaava-työkalu', Qgis.Info)
+                #  + ', row["maaraysteksti"]: ' + str(row["maaraysteksti"]) + ', row["kuvaus_teksti"]: ' + str(row["kuvaus_teksti"])
+                
+                if not row['kaavamaarays_otsikko'] is None:
+
+                    shouldAdd = True
+                    if onlyUsedRegulations or not includeAreaRegulations or not includeSuplementaryAreaRegulations or not includeLineRegulations or not includePointRegulations:
+                        shouldAdd = self.shouldAddRegulation(row['id'], onlyUsedRegulations, includeAreaRegulations, includeSuplementaryAreaRegulations, includeLineRegulations, includePointRegulations)
+
+                    if shouldAdd:
+                        regulationList.append({
+                            "id": row['id'],
+                            "alpha_sort_key": row['kaavamaarays_otsikko'],
+                            "kaavamaarays_otsikko": QVariant(row['kaavamaarays_otsikko']),
+                            "maaraysteksti": QVariant(row['maaraysteksti']),
+                            "kuvaus_teksti": QVariant(row['kuvaus_teksti'])
+                            })
+
+        # targetLayer = self.getProjectLayer("yk_yleiskaava.kaavamaarays")
+        # featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "kaavamaarays_otsikko", "maaraysteksti", "kuvaus_teksti"], targetLayer.fields())
+        # features = targetLayer.getFeatures(featureRequest)
+        # regulationList = []
+        # for index, feature in enumerate(features):
+        #     kaavamaarays_otsikko = QVariant(feature["kaavamaarays_otsikko"])
+        #     maaraysteksti = QVariant(feature['maaraysteksti'])
+        #     kuvausteksti = QVariant(feature['kuvaus_teksti'])
+
+        #     if not kaavamaarays_otsikko.isNull():
+        #         shouldAdd = True
+        #         if onlyUsedRegulations or not includeAreaRegulations or not includeSuplementaryAreaRegulations or not includeLineRegulations or not includePointRegulations:
+        #             shouldAdd = self.shouldAddRegulation(feature['id'], onlyUsedRegulations, includeAreaRegulations, includeSuplementaryAreaRegulations, includeLineRegulations, includePointRegulations)
+
+        #         if shouldAdd:
+        #             regulationList.append({
+        #                 "id": feature['id'],
+        #                 "alpha_sort_key": str(kaavamaarays_otsikko.value()),
+        #                 "kaavamaarays_otsikko": kaavamaarays_otsikko,
+        #                 "maaraysteksti": maaraysteksti,
+        #                 "kuvaus_teksti": kuvausteksti
+        #                 })
 
         return regulationList
 
 
     def shouldAddRegulation(self, regulationID, onlyUsedRegulations=False, includeAreaRegulations=True, includeSuplementaryAreaRegulations=True, includeLineRegulations=True, includePointRegulations=True):
 
-        # Käytössä, jos liittyy johonkin kaavakohteeseen, jonka version_loppumispvm is None
-        relationLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
-        featureRequest = QgsFeatureRequest().setFilterExpression("\"id_kaavamaarays\" = '{}'".format(regulationID))
-        for relationFeature in relationLayer.getFeatures(featureRequest):
-            if includeAreaRegulations and not QVariant(relationFeature["id_kaavaobjekti_alue"]).isNull():
-                if onlyUsedRegulations:
-                    layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE)[0]
-                    subsetString = layer.subsetString()
-                    layer.setSubsetString("")
-                    featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setNoAttributes().setFilterExpression("\"id\"='{}' AND \"version_loppumispvm\" IS NULL".format(relationFeature["id_kaavaobjekti_alue"]))
-                    features = layer.getFeatures(featureRequest)
-                    layer.setSubsetString(subsetString)
-                    # spatialFeature = self.getSpatialFeature(relationFeature["id_kaavaobjekti_alue"], "alue")
-                    
-                    # QgsMessageLog.logMessage('isRegulationInUse - spatialFeature["version_loppumispvm"]: ' + str(spatialFeature["version_loppumispvm"]), 'Yleiskaava-työkalu', Qgis.Info)
-                    for feature in features:
+        # Kaavamääräys on käytössä, jos liittyy johonkin kaavakohteeseen, jonka version_loppumispvm is None
+        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as relationCursor:
+            query = "SELECT id_kaavaobjekti_alue, id_kaavaobjekti_alue_taydentava, id_kaavaobjekti_viiva, id_kaavaobjekti_piste FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavamaarays = (%s)"
+            relationCursor.execute(query, (regulationID, ))
+            relationRows = relationCursor.fetchall()
+            for relationFeature in relationRows:
+                if includeAreaRegulations and not QVariant(relationFeature["id_kaavaobjekti_alue"]).isNull():
+                    if onlyUsedRegulations:
+                        
+                        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                            query = "SELECT id, version_loppumispvm FROM yk_yleiskaava.kaavaobjekti_alue WHERE id = (%s) AND version_loppumispvm IS NULL"
+                            cursor.execute(query, (relationFeature["id_kaavaobjekti_alue"], ))
+                            rows = relationCursor.fetchall()
+                            if len(rows) > 0:
+                                return True
+                    else:
                         return True
-                else:
-                    return True
-            # else:
-            #     QgsMessageLog.logMessage('isRegulationInUse - relationFeature["id_kaavaobjekti_alue"]: ' + str(relationFeature["id_kaavaobjekti_alue"]) + ', QVariant(relationFeature["id_kaavaobjekti_alue"]).isNull(): ' + str(QVariant(relationFeature["id_kaavaobjekti_alue"]).isNull()), 'Yleiskaava-työkalu', Qgis.Info)
-            elif includeSuplementaryAreaRegulations and not QVariant(relationFeature["id_kaavaobjekti_alue_taydentava"]).isNull():
-                if onlyUsedRegulations:
-                    layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE_TAYDENTAVA)[0]
-                    subsetString = layer.subsetString()
-                    layer.setSubsetString("")
-                    featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setNoAttributes().setFilterExpression("\"id\"='{}' AND \"version_loppumispvm\" IS NULL".format(relationFeature["id_kaavaobjekti_alue_taydentava"]))
-                    features = layer.getFeatures(featureRequest)
-                    layer.setSubsetString(subsetString)
-                    # spatialFeature = self.getSpatialFeature(relationFeature["id_kaavaobjekti_alue_taydentava"], "alue_taydentava")
-                    # QgsMessageLog.logMessage('isRegulationInUse - spatialFeature["version_loppumispvm"]: ' + str(spatialFeature["version_loppumispvm"]), 'Yleiskaava-työkalu', Qgis.Info)
-                    for feature in features:
+                # else:
+                #     QgsMessageLog.logMessage('isRegulationInUse - relationFeature["id_kaavaobjekti_alue"]: ' + str(relationFeature["id_kaavaobjekti_alue"]) + ', QVariant(relationFeature["id_kaavaobjekti_alue"]).isNull(): ' + str(QVariant(relationFeature["id_kaavaobjekti_alue"]).isNull()), 'Yleiskaava-työkalu', Qgis.Info)
+                elif includeSuplementaryAreaRegulations and not QVariant(relationFeature["id_kaavaobjekti_alue_taydentava"]).isNull():
+                    if onlyUsedRegulations:
+                        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                            query = "SELECT id, version_loppumispvm FROM yk_yleiskaava.kaavaobjekti_alue_taydentava WHERE id = (%s) AND version_loppumispvm IS NULL"
+                            cursor.execute(query, (relationFeature["id_kaavaobjekti_alue_taydentava"], ))
+                            rows = relationCursor.fetchall()
+                            if len(rows) > 0:
+                                return True
+                    else:
                         return True
-                else:
-                    return True
-            elif includeLineRegulations and not QVariant(relationFeature["id_kaavaobjekti_viiva"]).isNull():
-                if onlyUsedRegulations:
-                    layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA)[0]
-                    subsetString = layer.subsetString()
-                    layer.setSubsetString("")
-                    featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setNoAttributes().setFilterExpression("\"id\"='{}' AND \"version_loppumispvm\" IS NULL".format(relationFeature["id_kaavaobjekti_viiva"]))
-                    features = layer.getFeatures(featureRequest)
-                    layer.setSubsetString(subsetString)
-                    # QgsMessageLog.logMessage('isRegulationInUse - spatialFeature["version_loppumispvm"]: ' + str(spatialFeature["version_loppumispvm"]), 'Yleiskaava-työkalu', Qgis.Info)
-                    for feature in features:
+                elif includeLineRegulations and not QVariant(relationFeature["id_kaavaobjekti_viiva"]).isNull():
+                    if onlyUsedRegulations:
+                        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                            query = "SELECT id, version_loppumispvm FROM yk_yleiskaava.kaavaobjekti_viiva WHERE id = (%s) AND version_loppumispvm IS NULL"
+                            cursor.execute(query, (relationFeature["id_kaavaobjekti_viiva"], ))
+                            rows = relationCursor.fetchall()
+                            if len(rows) > 0:
+                                return True
+                    else:
                         return True
-                else:
-                    return True
-            elif includePointRegulations and not QVariant(relationFeature["id_kaavaobjekti_piste"]).isNull():
-                if onlyUsedRegulations:
-                    layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_PISTE)[0]
-                    subsetString = layer.subsetString()
-                    layer.setSubsetString("")
-                    featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setNoAttributes().setFilterExpression("\"id\"='{}' AND \"version_loppumispvm\" IS NULL".format(relationFeature["id_kaavaobjekti_piste"]))
-                    features = layer.getFeatures(featureRequest)
-                    layer.setSubsetString(subsetString)
-                    # spatialFeature = self.getSpatialFeature(relationFeature["id_kaavaobjekti_piste"], "piste")
-                    # QgsMessageLog.logMessage('isRegulationInUse - spatialFeature["version_loppumispvm"]: ' + str(spatialFeature["version_loppumispvm"]), 'Yleiskaava-työkalu', Qgis.Info)
-                    for feature in features:
+                elif includePointRegulations and not QVariant(relationFeature["id_kaavaobjekti_piste"]).isNull():
+                    if onlyUsedRegulations:
+                        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                            query = "SELECT id, version_loppumispvm FROM yk_yleiskaava.kaavaobjekti_piste WHERE id = (%s) AND version_loppumispvm IS NULL"
+                            cursor.execute(query, (relationFeature["id_kaavaobjekti_piste"], ))
+                            rows = relationCursor.fetchall()
+                            if len(rows) > 0:
+                                return True
+                    else:
                         return True
-                else:
-                    return True
 
         return False
 
@@ -1173,3 +1193,11 @@ class YleiskaavaDatabase:
         if  self.databaseConnectionParams is not None:
             for key in self.databaseConnectionParams:
                 QgsMessageLog.logMessage('setDatabaseConnection - databaseConnectionParams[' + key + ']: ' + str(databaseConnectionParams[key]), 'Yleiskaava-työkalu', Qgis.Info)
+
+            try:
+                self.dbConnection = psycopg2.connect(**self.databaseConnectionParams)
+                self.iface.messageBar().pushMessage('Tietokantaan yhdistäminen onnistui', Qgis.Info, duration=20)
+            except psycopg2.OperationalError:
+                self.iface.messageBar().pushMessage('Tietokantaan yhdistäminen ei onnistunut', Qgis.Critical)
+
+            

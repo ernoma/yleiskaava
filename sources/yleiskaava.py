@@ -95,6 +95,7 @@ class Yleiskaava:
         self.yleiskaavaDatabase.setYleiskaavaUtils(self.yleiskaavaUtils)
 
         self.yleiskaavaSettings = YleiskaavaSettings(self.iface, self.plugin_dir, self.yleiskaavaDatabase)
+        self.yleiskaavaSettings.readDatabaseConnectionSettings()
 
         self.dataCopySourceToTarget = DataCopySourceToTarget(self.iface, self.plugin_dir, self.yleiskaavaSettings, self.yleiskaavaDatabase, self.yleiskaavaUtils)
         self.updateRegulationOfGroup = UpdateRegulationOfGroup(self.iface, self.plugin_dir, self.yleiskaavaSettings, self.yleiskaavaDatabase, self.yleiskaavaUtils)
@@ -221,7 +222,6 @@ class Yleiskaava:
         # self.dockwidget = None
 
         self.geometryEditSettings.onClosePlugin()
-
 
         self.pluginIsActive = False
 

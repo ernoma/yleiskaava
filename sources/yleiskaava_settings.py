@@ -66,20 +66,28 @@ class YleiskaavaSettings:
         self.dialogSettings.comboBoxUsedDBConnection.clear()
         self.dialogSettings.comboBoxUsedDBConnection.addItem("")
 
-        s = QSettings()
-        s.beginGroup(YleiskaavaSettings.PG_CONNECTIONS)
-        keys = s.allKeys()
-        s.endGroup()
-        connections = {key.split('/')[0] for key in keys if '/' in key}
+        settings = QSettings()
+        settings.beginGroup(YleiskaavaSettings.PG_CONNECTIONS)
+        keys = settings.allKeys()
+        settings.endGroup()
+        connections = sorted({key.split('/')[0] for key in keys if '/' in key})
         
         for conn in connections:
             # QgsMessageLog.logMessage('readSettings - connection: ' + conn, 'Yleiskaava-työkalu', Qgis.Info)
             self.dialogSettings.comboBoxUsedDBConnection.addItem(conn)
 
-        usedDatabaseConnection = s.value("/yleiskaava_tyokalu/usedDatabaseConnection", "")
+        self.readDatabaseConnectionSettings()
 
-        QgsMessageLog.logMessage('setupDatabaseConnectionSettings - usedDatabaseConnection: ' + usedDatabaseConnection, 'Yleiskaava-työkalu', Qgis.Info)
-        self.dialogSettings.comboBoxUsedDBConnection.setCurrentText(usedDatabaseConnection)
+
+    def readDatabaseConnectionSettings(self):
+        settings = QSettings()
+
+        usedDatabaseConnectionName = settings.value("/yleiskaava_tyokalu/usedDatabaseConnection", "")
+
+        QgsMessageLog.logMessage('setupDatabaseConnectionSettings - usedDatabaseConnection: ' + usedDatabaseConnectionName, 'Yleiskaava-työkalu', Qgis.Info)
+        self.dialogSettings.comboBoxUsedDBConnection.setCurrentText(usedDatabaseConnectionName)
+
+        self.updateDatabaseConnection(usedDatabaseConnectionName)
 
 
     def handleCheckBoxKeepDialogsOnTopStateChanged(self):
@@ -94,20 +102,23 @@ class YleiskaavaSettings:
         return QSettings().value("/yleiskaava_tyokalu/keepDialogsOnTop", True, type=bool)
 
 
-    def handleComboBoxUsedDBConnectionCurrentTextChanged(self, connName):
-        QSettings().setValue("/yleiskaava_tyokalu/usedDatabaseConnection", connName)
+    def handleComboBoxUsedDBConnectionCurrentTextChanged(self, usedDatabaseConnectionName):
+        QSettings().setValue("/yleiskaava_tyokalu/usedDatabaseConnection", usedDatabaseConnectionName)
+        self.updateDatabaseConnection(usedDatabaseConnectionName)
 
+
+    def updateDatabaseConnection(self, usedDatabaseConnectionName):
         databaseConnectionParams = None
 
-        if connName != "":
-            databaseConnectionParams = self. readDatabaseParamsFromSettings(connName)
+        if usedDatabaseConnectionName != "":
+            databaseConnectionParams = self.readDatabaseParamsFromSettings(usedDatabaseConnectionName)
 
         self.yleiskaavaDatabase.setDatabaseConnection(databaseConnectionParams)
 
 
-    def readDatabaseParamsFromSettings(self, connName):
+    def readDatabaseParamsFromSettings(self, usedDatabaseConnectionName):
         settings = QSettings()
-        settings.beginGroup(YleiskaavaSettings.PG_CONNECTIONS + "/" + connName)
+        settings.beginGroup(YleiskaavaSettings.PG_CONNECTIONS + "/" + usedDatabaseConnectionName)
         
         params = {}
 
