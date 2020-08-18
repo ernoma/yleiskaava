@@ -38,6 +38,7 @@ class YleiskaavaDatabase:
 
         self.dbConnection = None
 
+        self.codeTableCodes = {}
 
         self.yleiskaava_target_tables = [
             {"name": "yk_yleiskaava.yleiskaava", "userFriendlyTableName": 'Yleiskaavan ulkorajaus (yleiskaava)', "geomFieldName": "kaavan_ulkorajaus", "geometryType": QgsWkbTypes.PolygonGeometry, "showInCopySourceToTargetUI": False},
@@ -832,16 +833,16 @@ class YleiskaavaDatabase:
 
     def getCodeListValuesForPlanObjectField(self, targetFieldName):
         name = "yk_koodiluettelot." + targetFieldName[3:]
-        # QgsMessageLog.logMessage('getCodeListValuesForPlanObjectField - targetFieldName: ' + targetFieldName + ', name: ' + str(name), 'Yleiskaava-työkalu', Qgis.Info)
-        
-        targetLayer = self.getProjectLayer(name)
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["koodi"], targetLayer.fields())
-        features = targetLayer.getFeatures(featureRequest)
-        values = None
-        # if table_name == "kansallinen_prosessin_vaihe" or table_name == "prosessin_vaihe" or table_name == "kaavoitusprosessin_tila" or table_name == "laillinen_sitovuus":
-        values = [feature['koodi'] for feature in features]
 
-        return values
+        if name not in self.codeTableCodes:
+            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                query = "SELECT koodi FROM {}".format(name)
+                cursor.execute(query)
+                rows = cursor.fetchall()
+                self.codeTableCodes[name] = [row['koodi'] for row in rows]
+                        
+        return self.codeTableCodes[name]
+
 
     def getCodeListValueForPlanObjectFieldUUID(self, targetFieldName, value):
         codeValue = None
@@ -870,6 +871,457 @@ class YleiskaavaDatabase:
                 uuid =  feature['id']
                 break
         return uuid
+
+
+    def getSchemaTableFieldInfos(self, name):
+        fieldInfos = []
+
+        if name == "yk_yleiskaava.kaavaobjekti_alue":
+           fieldInfos = [
+                {
+                "name": "id",
+                "type": "uuid"
+                },
+                {
+                "name": "muokkaaja",
+                "type": "String"
+                },
+                {
+                "name": "voimaantulopvm",
+                "type": "Date"
+                },
+                {
+                "name": "kumoamispvm",
+                "type": "Date"
+                },
+                {
+                "name": "version_alkamispvm",
+                "type": "Date"
+                },
+                {
+                "name": "version_loppumispvm",
+                "type": "Date"
+                },
+                {
+                "name": "kaavamaaraysotsikko",
+                "type": "String"
+                },
+                {
+                "name": "kayttotarkoitus_lyhenne",
+                "type": "String"
+                },
+                {
+                "name": "nro",
+                "type": "String"
+                },
+                {
+                "name": "paikan_nimi",
+                "type": "String"
+                },
+                {
+                "name": "katuosoite",
+                "type": "String"
+                },
+                {
+                "name": "karttamerkinta_teksti",
+                "type": "String"
+                },
+                {
+                "name": "pinta_ala_ha",
+                "type": "Double"
+                },
+                {
+                "name": "luokittelu",
+                "type": "String"
+                },
+                {
+                "name": "lisatieto",
+                "type": "String"
+                },
+                {
+                "name": "lisatieto2",
+                "type": "String"
+                },
+                {
+                "name": "muutos_lisatieto",
+                "type": "String"
+                },
+                {
+                "name": "aineisto_lisatieto",
+                "type": "String"
+                },
+                {
+                "name": "id_yleiskaava",
+                "type": "uuid"
+                },
+                {
+                "name": "id_kansallinen_prosessin_vaihe",
+                "type": "uuid"
+                },
+                {
+                "name": "id_kaavakohteen_olemassaolo",
+                "type": "uuid"
+                },
+                {
+                "name": "id_kansallisen_kaavakohteen_olemassaolo",
+                "type": "uuid"
+                },
+                {
+                "name": "id_laillinen_sitovuus",
+                "type": "uuid"
+                },
+                {
+                "name": "id_prosessin_vaihe",
+                "type": "uuid"
+                },
+                {
+                "name": "id_kaavoitusprosessin_tila",
+                "type": "uuid"
+                },
+                {
+                "name": "rakennusoikeus_kem",
+                "type": "Int"
+                },
+                {
+                "name": "rakennusoikeus_lkm",
+                "type": "Int"
+                }]
+        elif name == "yk_yleiskaava.kaavaobjekti_alue_taydentava":
+           fieldInfos = [
+                {
+                "name": "id",
+                "type": "uuid"
+                },
+                {
+                "name": "muokkaaja",
+                "type": "String"
+                },
+                {
+                "name": "voimaantulopvm",
+                "type": "Date"
+                },
+                {
+                "name": "kumoamispvm",
+                "type": "Date"
+                },
+                {
+                "name": "version_alkamispvm",
+                "type": "Date"
+                },
+                {
+                "name": "version_loppumispvm",
+                "type": "Date"
+                },
+                {
+                "name": "kaavamaaraysotsikko",
+                "type": "String"
+                },
+                {
+                "name": "kayttotarkoitus_lyhenne",
+                "type": "String"
+                },
+                {
+                "name": "nro",
+                "type": "String"
+                },
+                {
+                "name": "paikan_nimi",
+                "type": "String"
+                },
+                {
+                "name": "katuosoite",
+                "type": "String"
+                },
+                {
+                "name": "karttamerkinta_teksti",
+                "type": "String"
+                },
+                {
+                "name": "pinta_ala_ha",
+                "type": "Double"
+                },
+                {
+                "name": "luokittelu",
+                "type": "String"
+                },
+                {
+                "name": "lisatieto",
+                "type": "String"
+                },
+                {
+                "name": "lisatieto2",
+                "type": "String"
+                },
+                {
+                "name": "muutos_lisatieto",
+                "type": "String"
+                },
+                {
+                "name": "aineisto_lisatieto",
+                "type": "String"
+                },
+                {
+                "name": "kohde_periytyy_muualta",
+                "type": "Bool"
+                },
+                {
+                "name": "kansallinen_laillinen_sitovuus",
+                "type": "String"
+                },
+                {
+                "name": "id_yleiskaava",
+                "type": "uuid"
+                },
+                {
+                "name": "id_kansallinen_prosessin_vaihe",
+                "type": "uuid"
+                },
+                {
+                "name": "id_kaavakohteen_olemassaolo",
+                "type": "uuid"
+                },
+                {
+                "name": "id_kansallisen_kaavakohteen_olemassaolo",
+                "type": "uuid"
+                },
+                {
+                "name": "id_laillinen_sitovuus",
+                "type": "uuid"
+                },
+                {
+                "name": "id_prosessin_vaihe",
+                "type": "uuid"
+                },
+                {
+                "name": "id_kaavoitusprosessin_tila",
+                "type": "uuid"
+                },
+                {
+                "name": "rakennusoikeus_kem",
+                "type": "Int"
+                },
+                {
+                "name": "rakennusoikeus_lkm",
+                "type": "Int"
+                }]
+        elif name == "yk_yleiskaava.kaavaobjekti_viiva":
+            fieldInfos = [
+                {
+                "name": "id",
+                "type": "uuid"
+                },
+                {
+                "name": "muokkaaja",
+                "type": "String"
+                },
+                {
+                "name": "voimaantulopvm",
+                "type": "Date"
+                },
+                {
+                "name": "kumoamispvm",
+                "type": "Date"
+                },
+                {
+                "name": "version_alkamispvm",
+                "type": "Date"
+                },
+                {
+                "name": "version_loppumispvm",
+                "type": "Date"
+                },
+                {
+                "name": "kaavamaaraysotsikko",
+                "type": "String"
+                },
+                {
+                "name": "kayttotarkoitus_lyhenne",
+                "type": "String"
+                },
+                {
+                "name": "nro",
+                "type": "String"
+                },
+                {
+                "name": "paikan_nimi",
+                "type": "String"
+                },
+                {
+                "name": "katuosoite",
+                "type": "String"
+                },
+                {
+                "name": "karttamerkinta_teksti",
+                "type": "String"
+                },
+                {
+                "name": "pituus_km",
+                "type": "Double"
+                },
+                {
+                "name": "luokittelu",
+                "type": "String"
+                },
+                {
+                "name": "lisatieto",
+                "type": "String"
+                },
+                {
+                "name": "lisatieto2",
+                "type": "String"
+                },
+                {
+                "name": "muutos_lisatieto",
+                "type": "String"
+                },
+                {
+                "name": "aineisto_lisatieto",
+                "type": "String"
+                },
+                {
+                "name": "kohde_periytyy_muualta",
+                "type": "Bool"
+                },
+                {
+                "name": "kansallinen_laillinen_sitovuus",
+                "type": "String"
+                },
+                {
+                "name": "id_yleiskaava",
+                "type": "uuid"
+                },
+                {
+                "name": "id_kansallinen_prosessin_vaihe",
+                "type": "uuid"
+                },
+                {
+                "name": "id_kaavakohteen_olemassaolo",
+                "type": "uuid"
+                },
+                {
+                "name": "id_kansallisen_kaavakohteen_olemassaolo",
+                "type": "uuid"
+                },
+                {
+                "name": "id_laillinen_sitovuus",
+                "type": "uuid"
+                },
+                {
+                "name": "id_prosessin_vaihe",
+                "type": "uuid"
+                },
+                {
+                "name": "id_kaavoitusprosessin_tila",
+                "type": "uuid"
+                }]
+        elif name == "yk_yleiskaava.kaavaobjekti_piste":
+            fieldInfos = [
+                {
+                "name": "id",
+                "type": "uuid"
+                },
+                {
+                "name": "muokkaaja",
+                "type": "String"
+                },
+                {
+                "name": "voimaantulopvm",
+                "type": "Date"
+                },
+                {
+                "name": "kumoamispvm",
+                "type": "Date"
+                },
+                {
+                "name": "version_alkamispvm",
+                "type": "Date"
+                },
+                {
+                "name": "version_loppumispvm",
+                "type": "Date"
+                },
+                {
+                "name": "kaavamaaraysotsikko",
+                "type": "String"
+                },
+                {
+                "name": "kayttotarkoitus_lyhenne",
+                "type": "String"
+                },
+                {
+                "name": "nro",
+                "type": "String"
+                },
+                {
+                "name": "paikan_nimi",
+                "type": "String"
+                },
+                {
+                "name": "katuosoite",
+                "type": "String"
+                },
+                {
+                "name": "karttamerkinta_teksti",
+                "type": "String"
+                },
+                {
+                "name": "luokittelu",
+                "type": "String"
+                },
+                {
+                "name": "lisatieto",
+                "type": "String"
+                },
+                {
+                "name": "lisatieto2",
+                "type": "String"
+                },
+                {
+                "name": "muutos_lisatieto",
+                "type": "String"
+                },
+                {
+                "name": "aineisto_lisatieto",
+                "type": "String"
+                },
+                {
+                "name": "kohde_periytyy_muualta",
+                "type": "Bool"
+                },
+                {
+                "name": "kansallinen_laillinen_sitovuus",
+                "type": "String"
+                },
+                {
+                "name": "id_yleiskaava",
+                "type": "uuid"
+                },
+                {
+                "name": "id_kansallinen_prosessin_vaihe",
+                "type": "uuid"
+                },
+                {
+                "name": "id_kaavakohteen_olemassaolo",
+                "type": "uuid"
+                },
+                {
+                "name": "id_kansallisen_kaavakohteen_olemassaolo",
+                "type": "uuid"
+                },
+                {
+                "name": "id_laillinen_sitovuus",
+                "type": "uuid"
+                },
+                {
+                "name": "id_prosessin_vaihe",
+                "type": "uuid"
+                },
+                {
+                "name": "id_kaavoitusprosessin_tila",
+                "type": "uuid"
+                }]
+
+        return fieldInfos
 
 
     def getSchemaTableFields(self, name):

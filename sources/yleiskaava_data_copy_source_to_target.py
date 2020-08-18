@@ -529,7 +529,7 @@ class DataCopySourceToTarget:
         count = 0
         spatialTargetTableFields = []
         if self.targetSchemaTableName is not None:
-            count, spatialTargetTableFields = self.getDefaultFieldValuesRowCountAndFields()
+            count, spatialTargetTableFieldInfos = self.getDefaultFieldValuesRowCountAndFieldInfos()
 
         self.dialogCopySettings.tableWidgetDefaultFieldValues.clearContents()
         self.dialogCopySettings.tableWidgetDefaultFieldValues.setRowCount(count)
@@ -540,14 +540,14 @@ class DataCopySourceToTarget:
         ])
 
         if self.targetSchemaTableName is not None:
-
             index = 0
 
-            for field in spatialTargetTableFields:
-                targetFieldName = field.name()
+            for fieldInfo in spatialTargetTableFieldInfos:
+                targetFieldName = fieldInfo["name"]
 
                 if self.yleiskaavaUtils.isShownTargetFieldName(targetFieldName):
-                    success = self.showFieldInSettingsDialogDefaults(self.targetSchemaTableName, index, field)
+                    success = False
+                    success = self.showFieldInSettingsDialogDefaults(self.targetSchemaTableName, index, fieldInfo)
                     if success:
                         index += 1
 
@@ -578,12 +578,12 @@ class DataCopySourceToTarget:
     #     return names
 
 
-    def showFieldInSettingsDialogDefaults(self, schemaTableName, fieldIndex, field):
+    def showFieldInSettingsDialogDefaults(self, schemaTableName, fieldIndex, fieldInfo):
         # targetSchemaTableLabel = QLabel(schemaTableName)
         # targetFieldLabel = QLabel(field.name())
 
-        targetFieldName = field.name()
-        targetFieldTypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
+        targetFieldName = fieldInfo["name"]
+        targetFieldTypeName = fieldInfo["type"]
 
         userFriendlyTableName = self.yleiskaavaDatabase.getUserFriendlyschemaTableName(schemaTableName)
         userFriendlyFieldName = self.yleiskaavaDatabase.getUserFriendlytargetFieldName(targetFieldName)
@@ -806,18 +806,18 @@ class DataCopySourceToTarget:
 
     def getDefaultFieldValuesRowCount(self):
         count = 0
-        count, spatialTargetTableFields = self.getDefaultFieldValuesRowCountAndFields()
+        count, spatialTargetTableFields = self.getDefaultFieldValuesRowCountAndFieldInfos()
         return count
 
 
-    def getDefaultFieldValuesRowCountAndFields(self):
+    def getDefaultFieldValuesRowCountAndFieldInfos(self):
         count = 0
-        spatialTargetTableFields = []
+        spatialTargetTableFieldInfos = []
         if self.targetSchemaTableName is not None:
-            spatialTargetTableFields = self.yleiskaavaDatabase.getSchemaTableFields(self.targetSchemaTableName)
-            count = self.yleiskaavaUtils.getShownFieldNameCount(spatialTargetTableFields)
+            spatialTargetTableFieldInfos = self.yleiskaavaDatabase.getSchemaTableFieldInfos(self.targetSchemaTableName)
+            count = self.yleiskaavaUtils.getShownFieldNameCountForFieldInfos(spatialTargetTableFieldInfos)
 
-        return count, spatialTargetTableFields
+        return count, spatialTargetTableFieldInfos
 
 
     def pushButtonChooseExistingRegulationForDefaultClicked(self):

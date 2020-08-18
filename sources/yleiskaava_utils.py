@@ -162,10 +162,10 @@ class YleiskaavaUtils:
             #checkBox = QCheckBox("Kyllä / ei")
         elif fieldTypeName == 'uuid':
             values = self.yleiskaavaDatabase.getCodeListValuesForPlanObjectField(fieldName)
-            values.insert(0, "")
             # for value in values:
             #     QgsMessageLog.logMessage('getWidgetForSpatialFeatureFieldType - value: ' + str(value), 'Yleiskaava-työkalu', Qgis.Info)
             widget = QComboBox()
+            widget.addItem("")
             widget.addItems(values)
 
         return widget
@@ -304,6 +304,18 @@ class YleiskaavaUtils:
                 shownFieldNamesAndTypes.append(fieldNamesAndType)
 
         return shownFieldNamesAndTypes
+
+
+    def getShownFieldNameCountForFieldInfos(self, fieldInfos):
+        count = 0
+
+        for fieldInfo in fieldInfos:
+            targetFieldName = fieldInfo['name']
+
+            if self.isShownTargetFieldName(targetFieldName):
+                count += 1
+
+        return count
 
 
     def getShownFieldNameCount(self, fields):
