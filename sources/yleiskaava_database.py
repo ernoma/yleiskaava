@@ -40,6 +40,9 @@ class YleiskaavaDatabase:
 
         self.codeTableCodes = {}
 
+        self.plans = None
+        self.planLevelList = None
+
         self.yleiskaava_target_tables = [
             {"name": "yk_yleiskaava.yleiskaava", "userFriendlyTableName": 'Yleiskaavan ulkorajaus (yleiskaava)', "geomFieldName": "kaavan_ulkorajaus", "geometryType": QgsWkbTypes.PolygonGeometry, "showInCopySourceToTargetUI": False},
             {"name": "yk_yleiskaava.kaavaobjekti_alue", "userFriendlyTableName": YleiskaavaDatabase.KAAVAOBJEKTI_ALUE, "featureType": "alue", "geomFieldName": "geom", "geometryType": QgsWkbTypes.PolygonGeometry, "showInCopySourceToTargetUI": True},
@@ -190,65 +193,77 @@ class YleiskaavaDatabase:
 
 
     def getSpatialPlans(self):
-        plans = []
+        if self.plans is None:
+            self.plans = []
+            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                query = "SELECT id, nimi, nro, id_kaavan_taso FROM yk_yleiskaava.yleiskaava"
+                cursor.execute(query)
+                rows = cursor.fetchall()
 
-        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-            query = "SELECT id, nimi, nro, id_kaavan_taso FROM yk_yleiskaava.yleiskaava"
-            cursor.execute(query)
-            rows = cursor.fetchall()
+                planLevels = self.getYleiskaavaPlanLevelList()
 
-        # layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
-        # featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "nimi", "nro", "id_kaavan_taso"], layer.fields())
-        # features = layer.getFeatures(featureRequest)
+                for index, row in enumerate(rows):
+                    planLevelCode = None
+                    if row['id_kaavan_taso'] is not None:
+                        for planLevel in planLevels:
+                            if planLevel['id'] == row['id_kaavan_taso']:
+                                planLevelCode = planLevel['koodi']
+                                break
 
-            for index, row in enumerate(rows):
-                planLevelCode = None
-                if row['id_kaavan_taso'] is not None:
-                    planLevelCode = self.getYleiskaavaPlanLevelCode(row['id_kaavan_taso'])
+                    self.plans.append({
+                        "id": row['id'],
+                        "nimi": row['nimi'],
+                        "nro": row['nro'],
+                        "kaavan_taso_koodi": planLevelCode
+                        })
 
-                plans.append({
-                    "id": row['id'],
-                    "nimi": row['nimi'],
-                    "nro": row['nro'],
-                    "kaavan_taso_koodi": planLevelCode
-                    })
+        return self.plans
 
-        return plans
+
+    def getSpatialPlanIDAndNumberForPlanName(self, planName):
+        id = None
+        nro = None
+
+        plans = self.getSpatialPlans()
+        for plan in plans:
+            if plan["nimi"] == planName:
+                id = plan["id"]
+                nro = plan["nro"]
+                break
+
+        return id, nro
 
 
     def getSpatialPlansAndPlanLevels(self):
-        plans = []
 
         planLevels = self.getYleiskaavaPlanLevelList()
 
-        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-            query = "SELECT id, nimi, nro, id_kaavan_taso FROM yk_yleiskaava.yleiskaava"
-            cursor.execute(query)
-            rows = cursor.fetchall()
+        if self.plans is None:
+            self.plans = []
+            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                query = "SELECT id, nimi, nro, id_kaavan_taso FROM yk_yleiskaava.yleiskaava"
+                cursor.execute(query)
+                rows = cursor.fetchall()
 
-        # layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
-        # featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "nimi", "nro", "id_kaavan_taso"], layer.fields())
-        # features = layer.getFeatures(featureRequest)
+                for index, row in enumerate(rows):
+                    planLevelCode = None
+                    if row['id_kaavan_taso'] is not None:
+                        for planLevel in planLevels:
+                            if planLevel['id'] == row['id_kaavan_taso']:
+                                planLevelCode = planLevel['koodi']
+                                break
 
-            for index, row in enumerate(rows):
-                planLevelCode = None
-                if row['id_kaavan_taso'] is not None:
-                    for planLevel in planLevels:
-                        if planLevel['id'] == row['id_kaavan_taso']:
-                            planLevelCode = planLevel['koodi']
-                            break
-
-                plans.append({
-                    "id": row['id'],
-                    "nimi": row['nimi'],
-                    "nro": row['nro'],
-                    "kaavan_taso_koodi": planLevelCode
-                    })
+                    self.plans.append({
+                        "id": row['id'],
+                        "nimi": row['nimi'],
+                        "nro": row['nro'],
+                        "kaavan_taso_koodi": planLevelCode
+                        })
 
         # for planLevel in planLevels:
         #     QgsMessageLog.logMessage('getSpatialPlansAndPlanLevels - row[id]: ' + row['id'], 'Yleiskaava-työkalu', Qgis.Info)
 
-        return plans, planLevels
+        return self.plans, planLevels
 
 
     def getPlanNumberForName(self, planName):
@@ -332,21 +347,23 @@ class YleiskaavaDatabase:
 
 
     def getYleiskaavaPlanLevelList(self):
-        planLevelList = []
 
-        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-            query = "SELECT id, koodi, kuvaus FROM yk_koodiluettelot.kaavan_taso"
-            cursor.execute(query)
-            rows = cursor.fetchall()
+        if self.planLevelList == None:
+            self.planLevelList = []
 
-        for row in rows:
-            # QgsMessageLog.logMessage('getYleiskaavaPlanLevelList - row[id]: ' + row['id'], 'Yleiskaava-työkalu', Qgis.Info)
-            planLevelList.append({
-                "id": row['id'],
-                "koodi": row['koodi'],
-                "kuvaus": row['kuvaus']})
+            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                query = "SELECT id, koodi, kuvaus FROM yk_koodiluettelot.kaavan_taso"
+                cursor.execute(query)
+                rows = cursor.fetchall()
 
-        return planLevelList
+            for row in rows:
+                # QgsMessageLog.logMessage('getYleiskaavaPlanLevelList - row[id]: ' + row['id'], 'Yleiskaava-työkalu', Qgis.Info)
+                self.planLevelList.append({
+                    "id": row['id'],
+                    "koodi": row['koodi'],
+                    "kuvaus": row['kuvaus']})
+
+        return self.planLevelList
 
 
     def getSpatialPlanIDForPlanName(self, planName):

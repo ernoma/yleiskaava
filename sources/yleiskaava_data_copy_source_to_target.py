@@ -82,7 +82,7 @@ class DataCopySourceToTarget:
         self.includePointRegulations = False
 
         self.hasUserCanceledCopy = False
-
+        
 
     def setup(self):
         self.setupDialogCopySourceDataToDatabase()
@@ -615,10 +615,9 @@ class DataCopySourceToTarget:
 
         if reason == None:
             transformContext = QgsProject.instance().transformContext() # OK - QgsCoordinateTransformContext: "QgsCoordinateTransformContext objects are thread safe for read and write.", https://qgis.org/pyqgis/3.4/core/QgsCoordinateTransformContext.html
-            planNumber = self.yleiskaavaDatabase.getPlanNumberForName(self.getPlanNameFromCopySettings()) # ok
-            shouldLinkToSpatialPlan = self.dialogCopySettings.checkBoxLinkToSpatialPlan.isChecked() # ok
             spatialPlanName = self.dialogCopySettings.comboBoxSpatialPlanName.currentText() # ok
-            spatialPlanID = self.yleiskaavaDatabase.getSpatialPlanIDForPlanName(spatialPlanName) # ok
+            spatialPlanID, planNumber = self.yleiskaavaDatabase.getSpatialPlanIDAndNumberForPlanName(spatialPlanName) # ok
+            shouldLinkToSpatialPlan = self.dialogCopySettings.checkBoxLinkToSpatialPlan.isChecked() # ok
             fieldMatches = self.getSourceTargetFieldMatches() # ok
             includeFieldNamesForMultiValues = self.dialogCopySettings.checkBoxIncludeFieldNamesForMultiValues.isChecked() # ok
             targetFieldValueSeparator = self.dialogCopySettings.lineEditMultiValuesSeparator.text() # ok
@@ -699,10 +698,6 @@ class DataCopySourceToTarget:
             self.iface.messageBar().pushMessage('Lähdeaineiston kopiointi tietokantaan epäonnistui', Qgis.Critical, duration=0)
         else:
             self.hasUserCanceledCopy = False
-
-
-    def getPlanNameFromCopySettings(self):
-        return self.dialogCopySettings.comboBoxSpatialPlanName.currentText()
 
 
     def getSourceTargetFieldMatches(self):
@@ -797,9 +792,7 @@ class DataCopySourceToTarget:
         count = 0
         if self.sourceLayer is not None:
             fields = self.sourceLayer.fields().toList()
-            for index, field in enumerate(fields):
-                if True: # field.name() != 'id' and self.yleiskaavaUtils.getStringTypeForFeatureField(field) != 'uuid':
-                    count += 1
+            count = len(fields)
 
         return count
 
@@ -842,7 +835,7 @@ class DataCopySourceToTarget:
 
         if self.targetLayer.name() == YleiskaavaDatabase.KAAVAOBJEKTI_ALUE and defaultRegulationTitle != "":
             lineEdit = self.findDefaultValuesInputLineEditFromTableWidget("Käyttötarkoituksen lyhenne (esim. A, C)")
-            planNumber = self.yleiskaavaDatabase.getPlanNumberForName(self.getPlanNameFromCopySettings())
+            planNumber = self.yleiskaavaDatabase.getPlanNumberForName(self.dialogCopySettings.comboBoxSpatialPlanName.currentText())
             landUseClassificationName = self.yleiskaavaUtils.getLandUseClassificationNameForRegulation(planNumber, self.targetSchemaTableName, defaultRegulationTitle)
             lineEdit.setText(landUseClassificationName)
 
