@@ -115,7 +115,7 @@ class DataCopySourceToTarget:
 
     def setupDialogChooseFeatures(self):
         self.dialogChooseFeatures.pushButtonCancel.clicked.connect(self.hideAllDialogs)
-        self.dialogChooseFeatures.pushButtonPrevious.clicked.connect(self.showDialogCopySourceDataToDatabase)
+        self.dialogChooseFeatures.pushButtonPrevious.clicked.connect(self.openDialogCopySourceDataToDatabase)
         self.dialogChooseFeatures.pushButtonNext.clicked.connect(self.chooseCopySettings)
 
 
@@ -150,6 +150,8 @@ class DataCopySourceToTarget:
 
 
     def openDialogCopySourceDataToDatabase(self):
+        self.dialogChooseFeatures.hide()
+        self.dialogCopySettings.hide()
         self.dialogCopySourceDataToDatabase.mMapLayerComboBoxSource.setFilters(QgsMapLayerProxyModel.HasGeometry)
         self.dialogCopySourceDataToDatabase.resize(QSize(DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_WIDTH, DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_HEIGHT))
         if self.yleiskaavaSettings.shouldKeepDialogsOnTop():
@@ -161,18 +163,7 @@ class DataCopySourceToTarget:
         if self.sourceLayer is not None:
             # QgsMessageLog.logMessage(layer.name(), 'Yleiskaava-työkalu', Qgis.Info)
             self.updateUIBasedOnSourceLayer(self.sourceLayer)
-
-
-    def showDialogCopySourceDataToDatabase(self):
-        #self.dialogCopySourceDataToDatabase.hide()
-        self.dialogChooseFeatures.hide()
-        self.dialogCopySettings.hide()
-        self.dialogCopySourceDataToDatabase.resize(QSize(DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_WIDTH, DataCopySourceToTarget.COPY_SOURCE_DATA_DIALOG_MIN_HEIGHT))
-        if self.yleiskaavaSettings.shouldKeepDialogsOnTop():
-            self.dialogCopySourceDataToDatabase.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
-        else:
-            self.dialogCopySourceDataToDatabase.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
-        self.dialogCopySourceDataToDatabase.show()
+            self.selectTargetLayerBasedOnSourceLayerGeometryType()
 
 
     def handleMapLayerComboBoxSourceChanged(self, layer):
@@ -180,13 +171,16 @@ class DataCopySourceToTarget:
             # QgsMessageLog.logMessage(layer.name(), 'Yleiskaava-työkalu', Qgis.Info)
             self.sourceLayer = layer
             self.updateUIBasedOnSourceLayer(self.sourceLayer)
-            
-            geomType = self.sourceLayer.geometryType()
+            self.selectTargetLayerBasedOnSourceLayerGeometryType()
 
-            if geomType == QgsWkbTypes.PointGeometry:
-                self.selectTargetLayer(YleiskaavaDatabase.KAAVAOBJEKTI_PISTE)
-            elif geomType == QgsWkbTypes.LineGeometry:
-                self.selectTargetLayer(YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA)
+
+    def selectTargetLayerBasedOnSourceLayerGeometryType(self):
+        geomType = self.sourceLayer.geometryType()
+
+        if geomType == QgsWkbTypes.PointGeometry:
+            self.selectTargetLayer(YleiskaavaDatabase.KAAVAOBJEKTI_PISTE)
+        elif geomType == QgsWkbTypes.LineGeometry:
+            self.selectTargetLayer(YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA)
         
 
     def selectTargetLayer(self, layerName):
