@@ -35,15 +35,6 @@ class DataCopySourceToTarget:
     DEFAULT_VALUES_LABEL_INDEX = 0
     DEFAULT_VALUES_INPUT_INDEX = 1
 
-    OBJECT_NAME_UNIQUE_IDENTIFIERS = {
-        "SOURCE_FIELD_NAME": "sn",
-        "SOURCE_FIELD_TYPE_NAME":"st",
-        "TARGET_TABLE_NAME": "ttn",
-        "TARGET_TABLE_FIELD_NAME": "tfn",
-        "DEFAULT_VALUES_LABEL": "dl",
-        "DEFAULT_VALUES_INPUT": "di"
-    }
-
     SETTINGS_DIALOG_MIN_WIDTH = 1068
     SETTINGS_DIALOG_MIN_HEIGHT = 1182
 
@@ -211,13 +202,10 @@ class DataCopySourceToTarget:
                     QgsMessageLog.logMessage('updateUIBasedOnSourceLayer - field.name(): ' + field.name(), 'Yleiskaava-työkalu', Qgis.Info)
                     sourceFieldnameLabel = QLabel(field.name())
                     QgsMessageLog.logMessage('updateUIBasedOnSourceLayer - sourceFieldnameLabel != None? ' + str(sourceFieldnameLabel is not None), 'Yleiskaava-työkalu', Qgis.Info)
-                    sourceFieldnameLabel.setObjectName(DataCopySourceToTarget.OBJECT_NAME_UNIQUE_IDENTIFIERS["SOURCE_FIELD_NAME"] + str(index))
                     sourceFieldTypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
                     sourceFieldtypeLabel = QLabel(sourceFieldTypeName)
-                    sourceFieldtypeLabel.setObjectName(DataCopySourceToTarget.OBJECT_NAME_UNIQUE_IDENTIFIERS["SOURCE_FIELD_TYPE_NAME"] + str(index))
                     
                     targetTableComboBox = QComboBox()
-                    targetTableComboBox.setObjectName(DataCopySourceToTarget.OBJECT_NAME_UNIQUE_IDENTIFIERS["TARGET_TABLE_NAME"] + str(index))
 
                     # anna valita vain geometrialtaan lähdetason kanssa yhteensopiva kohdetaso
                     targetTableNames = sorted(self.yleiskaavaDatabase.getTargetSchemaTableNamesShownInCopySourceToTargetUI(geometry_type = sourceLayer.geometryType()))
@@ -227,7 +215,6 @@ class DataCopySourceToTarget:
                     self.targetTableComboBoxes.append(targetTableComboBox)
                     
                     targetFieldNameComboBox = QComboBox()
-                    targetFieldNameComboBox.setObjectName(DataCopySourceToTarget.OBJECT_NAME_UNIQUE_IDENTIFIERS["TARGET_TABLE_FIELD_NAME"] + str(index))
                     self.targetFieldNameComboBoxes.append(targetFieldNameComboBox)
                     
                     self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setCellWidget(index, DataCopySourceToTarget.SOURCE_FIELD_NAME_INDEX, sourceFieldnameLabel)
@@ -492,7 +479,7 @@ class DataCopySourceToTarget:
     def initializeDialogCopySettingsPlanPart(self):
 
         # hae kaikki yleiskaavataulun yleiskaavojen nimet, täytä comboBoxSpatialPlanName ja valitse tyypillisin nimi
-        plans = self.yleiskaavaDatabase.getSpatialPlans()
+        plans, planLevelList = self.yleiskaavaDatabase.getSpatialPlansAndPlanLevels()
 
         planNames = [plan["nimi"] for plan in plans]
 
@@ -502,17 +489,22 @@ class DataCopySourceToTarget:
 
         self.dialogCopySettings.comboBoxSpatialPlanName.clear()
         if len(planNamesOrdered) > 0:
-            self.dialogCopySettings.comboBoxSpatialPlanName.addItems(sorted(planNamesOrdered))
+            self.dialogCopySettings.comboBoxSpatialPlanName.addItems(planNamesOrdered)
             self.dialogCopySettings.comboBoxSpatialPlanName.setCurrentText(planNamesOrdered[0])
 
         # hae kaikki kaavatasot, täytä comboBoxLevelOfSpatialPlan niiden nimillä ja valitse sopiva yleiskaavataso
-        planLevelList = self.yleiskaavaDatabase.getYleiskaavaPlanLevelList()
-        planLevelNames = [item["koodi"] for item in planLevelList]
+        planLevelNames = []
+        for item in planLevelList:
+            # QgsMessageLog.logMessage('initializeDialogCopySettingsPlanPart - type(item): ' + str(type(item)), 'Yleiskaava-työkalu', Qgis.Info)
+            planLevelNames.append(item["koodi"])
 
         # kun käyttäjä vaihtaa yleiskaavan, niin vaihda automaattisesti kaavataso (tarvittaessa)
         self.dialogCopySettings.comboBoxLevelOfSpatialPlan.addItems(sorted(planLevelNames))
         if len(planNamesOrdered) > 0:
-            self.dialogCopySettings.comboBoxLevelOfSpatialPlan.setCurrentText(self.yleiskaavaDatabase.getYleiskaavaPlanLevelCodeWithPlanName(self.dialogCopySettings.comboBoxSpatialPlanName.currentText()))
+            for plan in plans:
+                if plan["nimi"] == planNamesOrdered[0]:
+                    self.dialogCopySettings.comboBoxLevelOfSpatialPlan.setCurrentText(plan["kaavan_taso_koodi"])
+                    break
 
         # disabloi ja ruksi pois self.dialogCopySettings.checkBoxLinkToSpatialPlan, jos ei kaavoja
         if len(planNames) == 0:
@@ -527,7 +519,6 @@ class DataCopySourceToTarget:
             #self.dialogCopySettings.comboBoxLevelOfSpatialPlan.setEnabled(True)
 
 
-
     def initializeDialogCopySettingsDefaultFieldsPart(self):
         # 
         # esitä dialogissa sellaiset kohdekentät, joilla ei ole vielä arvoa tauluissa
@@ -535,19 +526,20 @@ class DataCopySourceToTarget:
         # käyttäjän jo tekemien valintojen muukaan, esim. yleiskaavan nro nimen mukaan
         # Käsittele id_* kentät ja eri tyyppiset kentät jotenkin järkevästi
         #
+        count = 0
+        spatialTargetTableFields = []
+        if self.targetSchemaTableName is not None:
+            count, spatialTargetTableFields = self.getDefaultFieldValuesRowCountAndFields()
+
         self.dialogCopySettings.tableWidgetDefaultFieldValues.clearContents()
-        self.dialogCopySettings.tableWidgetDefaultFieldValues.setRowCount(self.getDefaultFieldValuesRowCount())
+        self.dialogCopySettings.tableWidgetDefaultFieldValues.setRowCount(count)
         self.dialogCopySettings.tableWidgetDefaultFieldValues.setColumnCount(2)
         self.dialogCopySettings.tableWidgetDefaultFieldValues.setHorizontalHeaderLabels([
             "Kohdekarttaso (kaavaobjekti) ja kenttä",
             "Kohdekentän oletusarvo"
         ])
 
-
         if self.targetSchemaTableName is not None:
-            spatialTargetTableLayer = self.yleiskaavaDatabase.getProjectLayer(self.targetSchemaTableName)
-
-            spatialTargetTableFields = self.yleiskaavaDatabase.getSchemaTableFields(self.targetSchemaTableName)
 
             index = 0
 
@@ -555,7 +547,7 @@ class DataCopySourceToTarget:
                 targetFieldName = field.name()
 
                 if self.yleiskaavaUtils.isShownTargetFieldName(targetFieldName):
-                    success = self.showFieldInSettingsDialogDefaults(self.targetSchemaTableName, spatialTargetTableLayer, index, field)
+                    success = self.showFieldInSettingsDialogDefaults(self.targetSchemaTableName, index, field)
                     if success:
                         index += 1
 
@@ -586,7 +578,7 @@ class DataCopySourceToTarget:
     #     return names
 
 
-    def showFieldInSettingsDialogDefaults(self, schemaTableName, layer, fieldIndex, field):
+    def showFieldInSettingsDialogDefaults(self, schemaTableName, fieldIndex, field):
         # targetSchemaTableLabel = QLabel(schemaTableName)
         # targetFieldLabel = QLabel(field.name())
 
@@ -599,13 +591,11 @@ class DataCopySourceToTarget:
         # targetFieldLabel = QLabel('' + targetFieldName + ' (' + targetFieldTypeName + ')')
         # targetSchemaTableFieldLabel = QLabel(schemaTableName + '.' + targetFieldName + ' (' + targetFieldTypeName + ')')
         targetSchemaTableFieldLabel = QLabel(userFriendlyTableName + ' - ' + userFriendlyFieldName)
-        targetSchemaTableFieldLabel.setObjectName(DataCopySourceToTarget.OBJECT_NAME_UNIQUE_IDENTIFIERS["DEFAULT_VALUES_LABEL"] + str(fieldIndex))
         self.dialogCopySettings.tableWidgetDefaultFieldValues.setCellWidget(fieldIndex, DataCopySourceToTarget.DEFAULT_VALUES_LABEL_INDEX, targetSchemaTableFieldLabel)
 
         widget = self.yleiskaavaUtils.getWidgetForSpatialFeatureFieldType(targetFieldTypeName, targetFieldName)
 
         if widget != None:
-            widget.setObjectName(DataCopySourceToTarget.OBJECT_NAME_UNIQUE_IDENTIFIERS["DEFAULT_VALUES_INPUT"] + str(fieldIndex))
             self.dialogCopySettings.tableWidgetDefaultFieldValues.setCellWidget(fieldIndex, DataCopySourceToTarget.DEFAULT_VALUES_INPUT_INDEX, widget)
 
             if targetFieldName == 'muokkaaja':
@@ -816,14 +806,20 @@ class DataCopySourceToTarget:
 
     def getDefaultFieldValuesRowCount(self):
         count = 0
+        count, spatialTargetTableFields = self.getDefaultFieldValuesRowCountAndFields()
+        return count
 
+
+    def getDefaultFieldValuesRowCountAndFields(self):
+        count = 0
+        spatialTargetTableFields = []
         if self.targetSchemaTableName is not None:
             spatialTargetTableFields = self.yleiskaavaDatabase.getSchemaTableFields(self.targetSchemaTableName)
             count = self.yleiskaavaUtils.getShownFieldNameCount(spatialTargetTableFields)
 
-        return count
+        return count, spatialTargetTableFields
 
-    
+
     def pushButtonChooseExistingRegulationForDefaultClicked(self):
         self.setupRegulationsInDialog()
         if self.yleiskaavaSettings.shouldKeepDialogsOnTop():
