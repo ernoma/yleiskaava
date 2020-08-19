@@ -723,9 +723,6 @@ class YleiskaavaDatabase:
     def createFeatureRegulationRelationWithRegulationID(self, targetSchemaTableName, targetFeatureID, regulationID):
         # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - targetSchemaTableName: " + targetSchemaTableName + ", targetFeatureID: " + str(targetFeatureID) + ", regulationID: " + str(regulationID), 'Yleiskaava-työkalu', Qgis.Info)
 
-        relationLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
-        #relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_kaavamaarays_yhteys")[0]
-
         schema, table_name = targetSchemaTableName.split('.')
 
         with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
@@ -1554,41 +1551,29 @@ class YleiskaavaDatabase:
 
     def createFeatureThemeRelationWithThemeID(self, targetSchemaTableName, targetFeatureID, themeID):
         # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - targetSchemaTableName: " + targetSchemaTableName + ", targetFeatureID: " + str(targetFeatureID) + ", regulationID: " + str(regulationID), 'Yleiskaava-työkalu', Qgis.Info)
-
-        relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_teema_yhteys")[0]
-
         schema, table_name = targetSchemaTableName.split('.')
 
-        relationLayerFeature = QgsFeature()
-        relationLayerFeature.setFields(relationLayer.fields())
-        relationLayerFeature.setAttribute("id", str(uuid.uuid4()))
-        relationLayerFeature.setAttribute("id_" + table_name, targetFeatureID)
-        relationLayerFeature.setAttribute("id_teema", themeID)
-
-        provider = relationLayer.dataProvider()
-        
-        success = provider.addFeatures([relationLayerFeature])
-        if not success:
-            self.iface.messageBar().pushMessage('Bugi koodissa: createFeatureThemeRelationWithThemeID - addFeatures() failed"', Qgis.Critical)
-
+        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+            query = "INSERT INTO yk_kuvaustekniikka.kaavaobjekti_teema_yhteys (id, id_{}, id_teema) VALUES (%s, %s, %s)".format(table_name)
+            cursor.execute(query, (str(uuid.uuid4()), targetFeatureID, themeID))
+            self.dbConnection.commit()
+            
 
     def existsFeatureThemeRelation(self, featureID, featureType, themeID):
-        relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_teema_yhteys")[0]
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id_teema", "id_kaavaobjekti_" + featureType], relationLayer.fields())
-        for feature in relationLayer.getFeatures(featureRequest):
-            if (feature["id_teema"] == themeID and feature["id_kaavaobjekti_" + featureType] == featureID):
+        with self.dbConnection.cursor() as cursor:
+            query = "SELECT id FROM yk_kuvaustekniikka.kaavaobjekti_teema_yhteys WHERE id_kaavaobjekti_{} = %s AND id_teema = %s".format(featureType)
+            cursor.execute(query, (featureID, themeID))
+            if len(cursor.fetchall()) > 0:
                 return True
 
         return False
 
 
     def removeThemeRelationsFromSpatialFeature(self, featureID, featureType):
-        relationLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_teema_yhteys")[0]
-
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id_kaavaobjekti_" + featureType], relationLayer.fields())
-        for feature in relationLayer.getFeatures(featureRequest):
-            if (feature["id_kaavaobjekti_" + featureType] == featureID):
-                relationLayer.dataProvider().deleteFeatures([feature.id()])
+        with self.dbConnection.cursor() as cursor:
+            query = "DELETE FROM yk_kuvaustekniikka.kaavaobjekti_teema_yhteys WHERE id_kaavaobjekti_{} = %s".format(featureType)
+            cursor.execute(query, (featureID, ))
+            self.dbConnection.commit()
 
 
     def getSourceDataFeatures(self, linkType):
