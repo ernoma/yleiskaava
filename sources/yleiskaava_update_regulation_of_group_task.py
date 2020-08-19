@@ -43,6 +43,7 @@ class UpdateRegulationOfGroupTask(QgsTask):
 
             # QgsMessageLog.logMessage("updateRegulationsAndLandUseClassificationsForSpatialFeatures - feature['feature']['kaavammaraysotsikko']: " + feature['feature']['kaavammaraysotsikko'] + ", regulationCount for feature: " + str(regulationCount), 'Yleiskaava-työkalu', Qgis.Info)
 
+            success = True
             success = self.yleiskaavaDatabase.updateSpatialFeatureRegulationAndLandUseClassification(feature["id"], self.featureType, self.regulationID, self.regulationTitle, self.shouldRemoveOldRegulationRelations, shouldUpdateOnlyRelation)
 
             if not success:

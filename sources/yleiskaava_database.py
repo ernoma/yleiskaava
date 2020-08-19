@@ -432,11 +432,11 @@ class YleiskaavaDatabase:
     def getRegulationCountForSpatialFeature(self, featureID, featureType):
         count = 0
 
-        targetLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id_kaavaobjekti_" + featureType], targetLayer.fields())
-        for feature in targetLayer.getFeatures(featureRequest):
-            if feature["id_kaavaobjekti_" + featureType] == featureID:
-                count += 1
+        with self.dbConnection.cursor() as cursor:
+            query = "SELECT COUNT(*) FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_{} = %s".format(featureType)
+            cursor.execute(query, (featureID, ))
+            rows = cursor.fetchall()
+            count = rows[0][0]
 
         return count
 
@@ -665,43 +665,47 @@ class YleiskaavaDatabase:
         if not self.existsFeatureRegulationRelation(featureID, featureType, regulationID):
             self.createFeatureRegulationRelationWithRegulationID("yk_yleiskaava.kaavaobjekti_" + featureType, featureID, regulationID)
 
-        layer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_" + featureType)
-        feature = self.findSpatialFeatureFromFeatureLayerWithID(layer, featureID)
+        # return True
 
         if not shouldUpdateOnlyRelation:
-            fid = feature.id()
-            indexTitle = layer.fields().indexFromName("kaavamaaraysotsikko")
-            indexLandUseClass = layer.fields().indexFromName("kayttotarkoitus_lyhenne")
             landUseClassificationName = regulationTitle
-            if feature["id_yleiskaava"] is not None:
-                planNumber = self.getPlanNumberForPlanID(feature["id_yleiskaava"])
-                landUseClassificationName = self.yleiskaavaUtils.getLandUseClassificationNameForRegulation(planNumber, "yk_yleiskaava.kaavaobjekti_" + featureType, regulationTitle)
-            attrs = { indexTitle: regulationTitle, indexLandUseClass: landUseClassificationName }
-            success = layer.dataProvider().changeAttributeValues({ fid: attrs })
-            if not success:
-                self.iface.messageBar().pushMessage('updateSpatialFeatureRegulationAndLandUseClassificationTexts - commitChanges() failed', Qgis.Critical)
+
+            with self.dbConnection.cursor() as cursor:
+                query = "SELECT nro FROM yk_yleiskaava.yleiskaava WHERE id = (SELECT id_yleiskaava FROM yk_yleiskaava.kaavaobjekti_{} ko WHERE id = %s)".format(featureType)
+
+                # QgsMessageLog.logMessage("updateSpatialFeatureRegulationAndLandUseClassification - query: " + query, 'Yleiskaava-työkalu', Qgis.Info)
+
+                cursor.execute(query, (featureID, ))
+                row = cursor.fetchone()
+                if row is not None and row[0] is not None:
+                    planNumber = row[0]
+                    landUseClassificationName = self.yleiskaavaUtils.getLandUseClassificationNameForRegulation(planNumber, "yk_yleiskaava.kaavaobjekti_" + featureType, regulationTitle)
+
+                query = "UPDATE yk_yleiskaava.kaavaobjekti_{} SET kaavamaaraysotsikko = %s, kayttotarkoitus_lyhenne = %s WHERE id = %s".format(featureType)
+                cursor.execute(query, (regulationTitle, landUseClassificationName, featureID))
+                self.dbConnection.commit()
+
+            # if not success:
+            #     self.iface.messageBar().pushMessage('updateSpatialFeatureRegulationAndLandUseClassificationTexts - commitChanges() failed', Qgis.Critical)
 
         return True
 
 
     def existsFeatureRegulationRelation(self, featureID, featureType, regulationID):
-        relationLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id_kaavamaarays", "id_kaavaobjekti_" + featureType], relationLayer.fields())
-        for feature in relationLayer.getFeatures(featureRequest):
-            if (feature["id_kaavamaarays"] == regulationID and feature["id_kaavaobjekti_" + featureType] == featureID):
+        with self.dbConnection.cursor() as cursor:
+            query = "SELECT id FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_{} = %s AND id_kaavamaarays = %s".format(featureType)
+            cursor.execute(query, (featureID, regulationID))
+            if len(cursor.fetchall()) > 0:
                 return True
 
         return False
 
 
     def removeRegulationRelationsFromSpatialFeature(self, featureID, featureType):
-        relationLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
-
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id_kaavaobjekti_" + featureType], relationLayer.fields())
-        for feature in relationLayer.getFeatures(featureRequest):
-            if (feature["id_kaavaobjekti_" + featureType] == featureID):
-                relationLayer.dataProvider().deleteFeatures([feature.id()])
-
+        with self.dbConnection.cursor() as cursor:
+            query = "DELETE FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_{} = %s".format(featureType)
+            cursor.execute(query, (featureID, ))
+            self.dbConnection.commit()
 
     def deleteSpatialFeature(self, featureID, featureType):
         layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.kaavaobjekti_" + featureType)
@@ -726,17 +730,10 @@ class YleiskaavaDatabase:
 
         schema, table_name = targetSchemaTableName.split('.')
 
-        relationLayerFeature = QgsFeature()
-        relationLayerFeature.setFields(relationLayer.fields())
-        relationLayerFeature.setAttribute("id", str(uuid.uuid4()))
-        relationLayerFeature.setAttribute("id_" + table_name, targetFeatureID)
-        relationLayerFeature.setAttribute("id_kaavamaarays", regulationID)
-
-        provider = relationLayer.dataProvider()
-        
-        success = provider.addFeatures([relationLayerFeature])
-        if not success:
-            self.iface.messageBar().pushMessage('Bugi koodissa: createFeatureRegulationRelationWithRegulationID - addFeatures() failed"', Qgis.Critical)
+        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+            query = "INSERT INTO yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys (id, id_{}, id_kaavamaarays) VALUES (%s, %s, %s)".format(table_name)
+            cursor.execute(query, (str(uuid.uuid4()), targetFeatureID, regulationID))
+            self.dbConnection.commit()
 
 
     def addRegulationRelationsToLayer(self, sourceFeatureID, targetFeatureID, featureType):

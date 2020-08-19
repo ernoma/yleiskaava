@@ -207,7 +207,7 @@ class UpdateRegulationOfGroup:
                 if not self.hasUserSelectedLineFeaturesForUpdate:
                     self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä viivamaisia kohteita; viivamaisia ei päivitetty', Qgis.Warning)
                 else:
-                    self.progressDialog = QProgressDialog("Päivitetään viimamaisten kohteiden kaavamääräyksiä...", "Keskeytä", 0, 100)
+                    self.progressDialog = QProgressDialog("Päivitetään viivamaisten kohteiden kaavamääräyksiä...", "Keskeytä", 0, 100)
                     self.progressDialog.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowStaysOnTopHint)
                     self.updateRegulationsAndLandUseClassificationsForSpatialFeatures("viiva")
             if self.dialogUpdateRegulationOfGroup.checkBoxUpdateLandUseClassificationsForPointFeatures.isChecked():
@@ -312,7 +312,7 @@ class UpdateRegulationOfGroup:
     def updateRegulationsAndLandUseClassificationsForSpatialFeatures(self, featureType):
         if self.currentRegulation != None:
             regulationID = self.currentRegulation["id"]
-            regulationTitle = self.currentRegulation["kaavamaarays_otsikko"]
+            regulationTitle = self.currentRegulation["kaavamaarays_otsikko"].value() if not self.currentRegulation["kaavamaarays_otsikko"].isNull() else None
             shouldRemoveOldRegulationRelations = self.dialogUpdateRegulationOfGroup.checkBoxRemoveOldRegulationsFromSpatialFeatures.isChecked()
             shouldUpdateOnlyRelation = False
             shouldUpdateRegulationTextsEvenIfSpatialFeatureHasMultipleRegulations = self.dialogUpdateRegulationOfGroup.checkBoxUpdateRegulationTextsEvenIfSpatialFeatureHasMultipleRegulations.isChecked()
