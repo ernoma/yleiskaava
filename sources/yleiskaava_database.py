@@ -42,6 +42,7 @@ class YleiskaavaDatabase:
 
         self.plans = None
         self.planLevelList = None
+        self.themes = None
 
         self.yleiskaava_target_tables = [
             {"name": "yk_yleiskaava.yleiskaava", "userFriendlyTableName": 'Yleiskaavan ulkorajaus (yleiskaava)', "geomFieldName": "kaavan_ulkorajaus", "geometryType": QgsWkbTypes.PolygonGeometry, "showInCopySourceToTargetUI": False},
@@ -303,15 +304,12 @@ class YleiskaavaDatabase:
     def getPlanNameForPlanID(self, planID):
         planName = None
 
-        layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.yleiskaava")
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "nimi"], layer.fields())
-        features = layer.getFeatures(featureRequest)
-
-        plans = []
-        for index, feature in enumerate(features):
-            if feature['id'] == planID:
-                if feature['nimi'] is not None:
-                    planName = feature['nimi']
+        plans = self.getSpatialPlans()
+    
+        for index, plan in enumerate(plans):
+            if plan['id'] == planID:
+                if plan['nimi'] is not None:
+                    planName = plan['nimi']
                 break
 
         return planName
@@ -746,26 +744,30 @@ class YleiskaavaDatabase:
 
 
     def getThemes(self):
-        targetLayer = self.getProjectLayer("yk_kuvaustekniikka.teema")
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "nimi", "kuvaus", "id_yleiskaava"], targetLayer.fields())
-        features = targetLayer.getFeatures(featureRequest)
-        themeList = []
-        for index, feature in enumerate(features):
-            nimi = QVariant(feature["nimi"])
-            kuvaus = QVariant(feature['kuvaus'])
-            id_yleiskaava = QVariant(feature['id_yleiskaava'])
+        if self.themes is None:
+            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                query = "SELECT id, nimi, kuvaus, id_yleiskaava FROM yk_kuvaustekniikka.teema"
+                cursor.execute(query)
+                rows = cursor.fetchall()
 
-            if not nimi.isNull():
-                themeList.append({
-                    "id": feature['id'],
-                    "alpha_sort_key": str(nimi.value()),
-                    "nimi": nimi,
-                    "kuvaus": kuvaus,
-                    "id_yleiskaava": id_yleiskaava,
-                    "yleiskaava_nimi": QVariant(self.getPlanNameForPlanID(id_yleiskaava))
-                    })
+                self.themes = []
 
-        return themeList
+                for row in rows:
+                    if row["nimi"] is not None:
+                        nimi = row["nimi"]
+                        kuvaus = row['kuvaus']
+                        id_yleiskaava = row['id_yleiskaava']
+
+                        self.themes.append({
+                            "id": row['id'],
+                            "alpha_sort_key": nimi,
+                            "nimi": nimi,
+                            "kuvaus": kuvaus,
+                            "id_yleiskaava": id_yleiskaava,
+                            "yleiskaava_nimi": self.getPlanNameForPlanID(id_yleiskaava)
+                            })
+
+        return self.themes
 
 
     def getThemesForSpatialFeature(self, featureID, featureType):
@@ -773,19 +775,21 @@ class YleiskaavaDatabase:
 
         themes = self.getThemes()
 
-        themeRelationLayer = self.getProjectLayer("yk_kuvaustekniikka.kaavaobjekti_teema_yhteys")
-        #targetLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_kaavamaarays_yhteys")[0]
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id_teema", "id_kaavaobjekti_" + featureType], themeRelationLayer.fields())
-        for feature in themeRelationLayer.getFeatures(featureRequest):
-            if feature["id_kaavaobjekti_" + featureType] == featureID:
-                # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavakohde löytyi yhteyksistä, id_kaavaobjekti_*: " + str(feature["id_kaavaobjekti_" + featureType]), 'Yleiskaava-työkalu', Qgis.Info)
-                for theme in themes:
-                    if theme["id"] == feature["id_teema"]:
-                        # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, jos kaavamaarays_otsikko ei null, feature['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
-                        if not theme["nimi"].isNull():
-                            # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, regulation['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
-                            themeList.append(theme)
-                        break
+        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+            query = "SELECT id_teema, id_kaavaobjekti_{} FROM yk_kuvaustekniikka.kaavaobjekti_teema_yhteys".format(featureType)
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            
+            for row in rows:
+                if row["id_kaavaobjekti_" + featureType] == featureID:
+                    # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavakohde löytyi yhteyksistä, id_kaavaobjekti_*: " + str(feature["id_kaavaobjekti_" + featureType]), 'Yleiskaava-työkalu', Qgis.Info)
+                    for theme in themes:
+                        if theme["id"] == row["id_teema"]:
+                            # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, jos kaavamaarays_otsikko ei null, feature['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
+                            if theme["nimi"] is not None:
+                                # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, regulation['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
+                                themeList.append(theme)
+                            break
 
         return themeList
 

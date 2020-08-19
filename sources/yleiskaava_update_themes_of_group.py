@@ -258,10 +258,10 @@ class UpdateThemesOfGroup:
 
 
     def equalsThemeAndFormTexts(self, formThemeName, formThemeDescription):
-        themeName = self.currentTheme["nimi"].value()
+        themeName = self.currentTheme["nimi"]
         themeDescription = ""
-        if not self.currentTheme["kuvaus"].isNull():
-            themeDescription = self.currentTheme["kuvaus"].value()
+        if self.currentTheme["kuvaus"] is not None:
+            themeDescription = self.currentTheme["kuvaus"]
 
         if formThemeName == themeName and formThemeDescription == themeDescription:
             return True
@@ -357,10 +357,10 @@ class UpdateThemesOfGroup:
         self.themes = sorted(self.yleiskaavaDatabase.getThemes(), key=itemgetter('alpha_sort_key'))
         self.themeNames = []
         for index, theme in enumerate(self.themes):
-            #QgsMessageLog.logMessage("setupThemesInDialog - index: " + str(index) + ", theme['kaavamaarays_otsikko']: " + str(theme['kaavamaarays_otsikko'].value()) + ", theme['maaraysteksti']: " + str(theme['maaraysteksti'].value()) + ", theme['kuvaus_teksti']: " + str(theme['kuvaus_teksti'].value()), 'Yleiskaava-työkalu', Qgis.Info)
-            # QgsMessageLog.logMessage("setupThemesInDialog - index: " + str(index) + ", theme['kaavamaarays_otsikko']: " + str(theme['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
-            kuvaus = (theme["kuvaus"].value()[:25] + '..') if len(theme["kuvaus"].value()) > 25 else theme["kuvaus"].value()
-            self.themeNames.append(theme["nimi"].value() + ' - ' + kuvaus)
+            #QgsMessageLog.logMessage("setupThemesInDialog - index: " + str(index) + ", theme['kaavamaarays_otsikko']: " + str(theme['kaavamaarays_otsikko']) + ", theme['maaraysteksti']: " + str(theme['maaraysteksti']) + ", theme['kuvaus_teksti']: " + str(theme['kuvaus_teksti']), 'Yleiskaava-työkalu', Qgis.Info)
+            # QgsMessageLog.logMessage("setupThemesInDialog - index: " + str(index) + ", theme['kaavamaarays_otsikko']: " + str(theme['kaavamaarays_otsikko']), 'Yleiskaava-työkalu', Qgis.Info)
+            kuvaus = (theme["kuvaus"][:25] + '..') if len(theme["kuvaus"]) > 25 else theme["kuvaus"]
+            self.themeNames.append(theme["nimi"] + ' - ' + kuvaus)
         self.dialogUpdateThemeOfGroup.comboBoxThemeNames.clear()
         self.dialogUpdateThemeOfGroup.comboBoxThemeNames.addItems(self.themeNames)
 
@@ -373,13 +373,13 @@ class UpdateThemesOfGroup:
         self.currentTheme = self.themes[currentIndex - 1]
 
         if currentIndex > 0:
-            self.dialogUpdateThemeOfGroup.lineEditThemeName.setText(self.currentTheme["nimi"].value())
-            if not self.currentTheme["kuvaus"].isNull():
-                self.dialogUpdateThemeOfGroup.plainTextEditThemeDescription.setPlainText(self.currentTheme["kuvaus"].value())
+            self.dialogUpdateThemeOfGroup.lineEditThemeName.setText(self.currentTheme["nimi"])
+            if self.currentTheme["kuvaus"] is not None:
+                self.dialogUpdateThemeOfGroup.plainTextEditThemeDescription.setPlainText(self.currentTheme["kuvaus"])
             else:
                 self.dialogUpdateThemeOfGroup.plainTextEditThemeDescription.setPlainText("")
-            if not self.currentTheme["yleiskaava_nimi"].isNull():
-                self.dialogUpdateThemeOfGroup.lineEditPlanName.setText(self.currentTheme["yleiskaava_nimi"].value())
+            if self.currentTheme["yleiskaava_nimi"] is not None:
+                self.dialogUpdateThemeOfGroup.lineEditPlanName.setText(self.currentTheme["yleiskaava_nimi"])
             else:
                 self.dialogUpdateThemeOfGroup.lineEditPlanName.setText("")
         else:
