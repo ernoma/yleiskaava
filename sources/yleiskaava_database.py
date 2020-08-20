@@ -38,7 +38,7 @@ class YleiskaavaDatabase:
 
         self.dbConnection = None
 
-        self.codeTableCodes = {}
+        self.codeTableCodes = {} # {'id': , row['id'], 'koodi': row['koodi'] }
 
         self.plans = None
         self.planLevelList = None
@@ -1293,11 +1293,7 @@ class YleiskaavaDatabase:
         name = "yk_koodiluettelot." + targetFieldName[3:]
 
         if name not in self.codeTableCodes:
-            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-                query = "SELECT koodi FROM {}".format(name)
-                cursor.execute(query)
-                rows = cursor.fetchall()
-                self.codeTableCodes[name] = [row['koodi'] for row in rows]
+            self.readCodeTableCodesFromDatabase(name)
                         
         return self.codeTableCodes[name]
 
@@ -1305,30 +1301,42 @@ class YleiskaavaDatabase:
     def getCodeListValueForPlanObjectFieldUUID(self, targetFieldName, value):
         codeValue = None
         name = "yk_koodiluettelot." + targetFieldName[3:]
-        targetLayer = self.getProjectLayer(name)
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "koodi"], targetLayer.fields())
-        features = targetLayer.getFeatures(featureRequest)
 
-        for feature in features:
-            if feature['id'] == value:
-                codeValue =  feature['koodi']
+        if name not in self.codeTableCodes:
+            self.readCodeTableCodesFromDatabase(name)
+
+        for item in self.codeTableCodes[name]:
+            if item['id'] == value:
+                codeValue =  item['koodi']
                 break
+
         return codeValue
 
 
     def getCodeListUUIDForPlanObjectFieldCodeValue(self, targetFieldName, value):
         uuid = None
         name = "yk_koodiluettelot." + targetFieldName[3:]
-        targetLayer = self.getProjectLayer(name)
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "koodi"], targetLayer.fields())
-        features = targetLayer.getFeatures(featureRequest)
+
+        if name not in self.codeTableCodes:
+            self.readCodeTableCodesFromDatabase(name)
         
         # if table_name == "kansallinen_prosessin_vaihe" or table_name == "prosessin_vaihe" or table_name == "kaavoitusprosessin_tila" or table_name == "laillinen_sitovuus":
-        for feature in features:
-            if feature['koodi'] == value:
-                uuid =  feature['id']
+        for item in self.codeTableCodes[name]:
+            if item['koodi'] == value:
+                uuid =  item['id']
                 break
+
         return uuid
+
+
+    def readCodeTableCodesFromDatabase(self, name):
+        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+            query = "SELECT id, koodi FROM {}".format(name)
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            self.codeTableCodes[name] = []
+            for row in rows:
+                self.codeTableCodes[name].append({'id': row['id'], 'koodi': row['koodi']})
 
 
     def getSchemaTableFieldInfos(self, name):
@@ -1487,24 +1495,32 @@ class YleiskaavaDatabase:
 
 
     def updateSelectedSpatialFeaturesWithFieldValues(self, featureType, updatedFieldData):
-        layer = self.getTargetLayer(featureType)
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes([updatedFieldDataItem["fieldName"] for updatedFieldDataItem in updatedFieldData], layer.fields())
-        features = layer.getSelectedFeatures(featureRequest)
+        with self.dbConnection.cursor() as cursor:
+            layer = self.getTargetLayer(featureType)
+            fieldNames = [updatedFieldDataItem["fieldName"] for updatedFieldDataItem in updatedFieldData]
+            fieldNames.append("id")
+            featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(fieldNames, layer.fields())
+            features = layer.getSelectedFeatures(featureRequest)
 
-        for feature in features:
-            for updatedFieldDataItem in updatedFieldData:
-                fid = feature.id()
-                index = layer.fields().indexFromName(updatedFieldDataItem["fieldName"])
-                attrs = { index: updatedFieldDataItem["value"] }
-                success = layer.dataProvider().changeAttributeValues({ fid: attrs })
-                if not success:
-                    self.iface.messageBar().pushMessage('Bugi koodissa: updateSelectedSpatialFeaturesWithFieldValues - commitChanges() failed', Qgis.Critical)
-                    # QgsMessageLog.logMessage("copySourceFeaturesToTargetLayer - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
-                    # for error in self.targetLayer.commitErrors():
-                    #     self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
-                        # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
+            for feature in features:
+                attrTuple = tuple()
 
-                    return False
+                query = "UPDATE yk_yleiskaava.kaavaobjekti_{} SET ".format(featureType)
+
+                for updatedFieldDataItem in updatedFieldData:
+                    query += updatedFieldDataItem["fieldName"] + " = %s, "
+                    attrTuple += (updatedFieldDataItem["value"], )
+
+                if len(updatedFieldData) > 0:
+                    query = query[:-2]
+                attrTuple += (feature["id"], )
+                query += " WHERE id = %s"
+
+                # QgsMessageLog.logMessage("updateSelectedSpatialFeaturesWithFieldValues - query: " + query, 'Yleiskaava-työkalu', Qgis.Info)
+                # QgsMessageLog.logMessage("updateSelectedSpatialFeaturesWithFieldValues - attrTuple: " + ', '.join(str(item) for item in attrTuple), 'Yleiskaava-työkalu', Qgis.Info)
+
+                cursor.execute(query, attrTuple)
+                self.dbConnection.commit()
 
         return True
 
