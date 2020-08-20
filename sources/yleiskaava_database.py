@@ -1185,29 +1185,32 @@ class YleiskaavaDatabase:
 
     def getThemes(self):
         if self.themes is None:
-            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-                query = "SELECT id, nimi, kuvaus, id_yleiskaava FROM yk_kuvaustekniikka.teema"
-                cursor.execute(query)
-                rows = cursor.fetchall()
-
-                self.themes = []
-
-                for row in rows:
-                    if row["nimi"] is not None:
-                        nimi = row["nimi"]
-                        kuvaus = row['kuvaus']
-                        id_yleiskaava = row['id_yleiskaava']
-
-                        self.themes.append({
-                            "id": row['id'],
-                            "alpha_sort_key": nimi,
-                            "nimi": nimi,
-                            "kuvaus": kuvaus,
-                            "id_yleiskaava": id_yleiskaava,
-                            "yleiskaava_nimi": self.getPlanNameForPlanID(id_yleiskaava)
-                            })
-
+            self.readThemes()
         return self.themes
+
+
+    def readThemes(self):
+        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+            query = "SELECT id, nimi, kuvaus, id_yleiskaava FROM yk_kuvaustekniikka.teema"
+            cursor.execute(query)
+            rows = cursor.fetchall()
+
+            self.themes = []
+
+            for row in rows:
+                if row["nimi"] is not None:
+                    nimi = row["nimi"]
+                    kuvaus = row['kuvaus']
+                    id_yleiskaava = row['id_yleiskaava']
+
+                    self.themes.append({
+                        "id": row['id'],
+                        "alpha_sort_key": nimi,
+                        "nimi": nimi,
+                        "kuvaus": kuvaus,
+                        "id_yleiskaava": id_yleiskaava,
+                        "yleiskaava_nimi": self.getPlanNameForPlanID(id_yleiskaava)
+                        })
 
 
     def getThemesForSpatialFeature(self, featureID, featureType):
@@ -1526,25 +1529,13 @@ class YleiskaavaDatabase:
 
 
     def updateTheme(self, themeID, themeName, themeDescription):
-        layer = QgsProject.instance().mapLayersByName("teema")[0]
+        with self.dbConnection.cursor() as cursor:
+            query = "UPDATE yk_kuvaustekniikka.teema SET nimi = %s, kuvaus = %s WHERE id = %s"
+            cursor.execute(query, (themeName, themeDescription, themeID))
+            self.dbConnection.commit()
 
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "nimi", "kuvaus"], layer.fields())
-        for feature in layer.getFeatures(featureRequest):
-            if feature["id"] == themeID:
-                fid = feature.id()
-                indexThemeName = layer.fields().indexFromName("nimi")
-                indexThemeDescription = layer.fields().indexFromName("kuvaus")
-                attrs = { indexThemeName: themeName, indexThemeDescription: themeDescription }
-                success = layer.dataProvider().changeAttributeValues({ fid: attrs })
-                if not success:
-                    self.iface.messageBar().pushMessage('updateTheme - commitChanges() failed', Qgis.Critical)
-                    # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
-                    # for error in layer.commitErrors():
-                    #     self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
-                    #     # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
-                    return False
-                break
-
+        self.readThemes()
+        
         return True
 
     

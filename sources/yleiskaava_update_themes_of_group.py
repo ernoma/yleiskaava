@@ -357,10 +357,13 @@ class UpdateThemesOfGroup:
         self.themes = sorted(self.yleiskaavaDatabase.getThemes(), key=itemgetter('alpha_sort_key'))
         self.themeNames = []
         for index, theme in enumerate(self.themes):
-            #QgsMessageLog.logMessage("setupThemesInDialog - index: " + str(index) + ", theme['kaavamaarays_otsikko']: " + str(theme['kaavamaarays_otsikko']) + ", theme['maaraysteksti']: " + str(theme['maaraysteksti']) + ", theme['kuvaus_teksti']: " + str(theme['kuvaus_teksti']), 'Yleiskaava-työkalu', Qgis.Info)
-            # QgsMessageLog.logMessage("setupThemesInDialog - index: " + str(index) + ", theme['kaavamaarays_otsikko']: " + str(theme['kaavamaarays_otsikko']), 'Yleiskaava-työkalu', Qgis.Info)
-            kuvaus = (theme["kuvaus"][:25] + '..') if len(theme["kuvaus"]) > 25 else theme["kuvaus"]
-            self.themeNames.append(theme["nimi"] + ' - ' + kuvaus)
+            # QgsMessageLog.logMessage("setupThemesInDialog - index: " + str(index) + ", theme['kuvaus']: " + str(theme['kuvaus']) + ", theme['nimi']: " + str(theme['nimi']), 'Yleiskaava-työkalu', Qgis.Info)
+            nimi = ""
+            kuvaus = ""
+            if theme["nimi"] is not None or theme["kuvaus"] is not None:
+                if theme["kuvaus"] is not None:
+                    kuvaus = (theme["kuvaus"][:25] + '..') if len(theme["kuvaus"]) > 25 else theme["kuvaus"]
+            self.themeNames.append(str(theme["nimi"]) + ' - ' + kuvaus)
         self.dialogUpdateThemeOfGroup.comboBoxThemeNames.clear()
         self.dialogUpdateThemeOfGroup.comboBoxThemeNames.addItems(self.themeNames)
 
