@@ -127,7 +127,7 @@ class UpdateIndexingOfFeatures:
 
         for index, fieldNamesAndType in enumerate(self.shownFieldNamesAndTypes):
             fieldName = fieldNamesAndType["name"]
-            fieldTypeName =  fieldNamesAndType["typeName"]
+            fieldTypeName =  fieldNamesAndType["type"]
             if fieldTypeName in self.yleiskaavaUtils.getIndexableTypes():
                 userFriendlyFieldName = self.yleiskaavaDatabase.getUserFriendlytargetFieldName(fieldName)
                 text = self.getTargetFieldComboBoxText(userFriendlyFieldName, fieldName, fieldTypeName)
@@ -220,7 +220,7 @@ class UpdateIndexingOfFeatures:
 
         for index, fieldNamesAndType in enumerate(shownFieldNamesAndTypes):
             fieldName = fieldNamesAndType["name"]
-            fieldTypeName =  fieldNamesAndType["typeName"]
+            fieldTypeName =  fieldNamesAndType["type"]
             userFriendlyFieldName = self.yleiskaavaDatabase.getUserFriendlytargetFieldName(fieldName)
             userFriendlyFieldNames.append(userFriendlyFieldName)
 

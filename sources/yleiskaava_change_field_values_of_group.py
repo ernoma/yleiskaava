@@ -142,12 +142,11 @@ class ChangeFieldValuesOfGroup:
         fieldNamesAndTypes = self.yleiskaavaDatabase.getFieldNamesAndTypes(featureType)
         self.shownFieldNamesAndTypes = self.yleiskaavaUtils.getShownFieldNamesAndTypes(fieldNamesAndTypes)
 
-        self.dialogChooseAndUpdateFieldValuesForFeatureType.tableWidgetFeatureAttributesAndValues.setRowCount(len(fieldNamesAndTypes))
-
+        self.dialogChooseAndUpdateFieldValuesForFeatureType.tableWidgetFeatureAttributesAndValues.setRowCount(len(self.shownFieldNamesAndTypes))
 
         for index, fieldNamesAndType in enumerate(self.shownFieldNamesAndTypes):
             fieldName = fieldNamesAndType["name"]
-            fieldTypeName =  fieldNamesAndType["typeName"]
+            fieldTypeName =  fieldNamesAndType["type"]
             userFriendlyFieldName = self.yleiskaavaDatabase.getUserFriendlytargetFieldName(fieldName)
             
             fieldNameLabel = QLabel(fieldName)
