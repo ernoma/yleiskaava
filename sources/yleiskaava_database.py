@@ -876,22 +876,22 @@ class YleiskaavaDatabase:
         with self.dbConnection.cursor() as cursor:
             query = "SELECT COUNT(*) FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_{} = %s".format(featureType)
             cursor.execute(query, (featureID, ))
-            rows = cursor.fetchall()
-            count = rows[0][0]
+            row = cursor.fetchone()
+            count = row[0]
 
         return count
 
 
     def getDistinctLandUseClassificationsOfLayer(self, userFriendlyTableName):
         classifications = []
-
         featureType = self.getFeatureTypeForUserFriendlyTargetSchemaTableName(userFriendlyTableName)
-        layer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_" + featureType)
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["kayttotarkoitus_lyhenne"], layer.fields())
-        
-        for feature in layer.getFeatures(featureRequest):
-            if not QVariant(feature['kayttotarkoitus_lyhenne']).isNull() and feature['kayttotarkoitus_lyhenne'] not in classifications:
-                classifications.append(feature['kayttotarkoitus_lyhenne'])
+
+        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+            query = "SELECT DISTINCT kayttotarkoitus_lyhenne FROM yk_yleiskaava.kaavaobjekti_{} WHERE kayttotarkoitus_lyhenne IS NOT NULL AND kayttotarkoitus_lyhenne != ''".format(featureType)
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            for row in rows:
+                classifications.append(row['kayttotarkoitus_lyhenne'])
 
         return classifications
 
@@ -900,15 +900,16 @@ class YleiskaavaDatabase:
         featureIDsAndValues = []
 
         featureType = self.getFeatureTypeForUserFriendlyTargetSchemaTableName(userFriendlyTableName)
-        layer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_" + featureType)
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "kayttotarkoitus_lyhenne", fieldName], layer.fields())
-        for feature in layer.getFeatures(featureRequest):
-            if feature['kayttotarkoitus_lyhenne'] == landUseClassification:
-                if not QVariant(feature[fieldName]).isNull() and str(feature[fieldName]) != '':
-                    featureIDsAndValues.append({
-                        "id": feature["id"],
-                        "value": str(feature[fieldName])
-                    })
+
+        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+            query = "SELECT id, {} FROM yk_yleiskaava.kaavaobjekti_{} WHERE %(fieldName)s IS NOT NULL AND %(fieldName)s != '' AND kayttotarkoitus_lyhenne = %(landUseClassification)s".format(fieldName, featureType)
+            cursor.execute(query, {"fieldName" : fieldName, "landUseClassification": landUseClassification})
+            rows = cursor.fetchall()
+            for row in rows:
+                featureIDsAndValues.append({
+                    "id": row["id"],
+                    "value": row[fieldName]
+                })
 
         return featureIDsAndValues
 
@@ -1474,25 +1475,14 @@ class YleiskaavaDatabase:
 
     
     def updateSpatialFeaturesWithFieldValues(self, layer, featureIDsAndValues, fieldName):
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", fieldName], layer.fields())
-        features = layer.getFeatures(featureRequest)
-        index = layer.fields().indexFromName(fieldName)
+        with self.dbConnection.cursor() as cursor:
+            schemaTableName = self.getTargetSchemaTableNameForUserFriendlyTableName(layer.name())
 
-        for feature in features:
-            for featureIDsAndValue in featureIDsAndValues:
-                if feature["id"] == featureIDsAndValue["id"]:
-                    # QgsMessageLog.logMessage("updateSpatialFeaturesWithFieldValues - changing attribute value for feature id: " + featureIDsAndValue["id"] + ", value: " + featureIDsAndValue["value"], 'Yleiskaava-työkalu', Qgis.Info)
-                    fid = feature.id()
-                    attrs = { index: featureIDsAndValue["value"] }
-                    success = layer.dataProvider().changeAttributeValues({ fid: attrs })
-                    if not success:
-                        self.iface.messageBar().pushMessage('Bugi koodissa: updateSpatialFeaturesWithFieldValues - commitChanges() failed', Qgis.Critical)
-                        # QgsMessageLog.logMessage("copySourceFeaturesToTargetLayer - commitChanges() failed, reason(s): ", 'Yleiskaava-työkalu', Qgis.Critical)
-                        # for error in self.targetLayer.commitErrors():
-                        #     self.iface.messageBar().pushMessage(error + ".", Qgis.Critical)
-                        #     # QgsMessageLog.logMessage(error + ".", 'Yleiskaava-työkalu', Qgis.Critical)
+            for featureIDAndValue in featureIDsAndValues:
+                query = "UPDATE {} SET {} = %s WHERE id = %s".format(schemaTableName, fieldName)
+                cursor.execute(query, (featureIDAndValue["value"], featureIDAndValue["id"]))
 
-                        return False
+            self.dbConnection.commit()
 
         return True
 
