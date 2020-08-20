@@ -1238,26 +1238,6 @@ class YleiskaavaDatabase:
         return themeList
 
 
-    def createFeatureThemeRelationWithThemeID(self, targetSchemaTableName, targetFeatureID, themeID):
-        # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - targetSchemaTableName: " + targetSchemaTableName + ", targetFeatureID: " + str(targetFeatureID) + ", regulationID: " + str(regulationID), 'Yleiskaava-työkalu', Qgis.Info)
-
-        relationLayer = self.getProjectLayer("yk_kuvaustekniikka.kaavaobjekti_teema_yhteys")
-
-        schema, table_name = targetSchemaTableName.split('.')
-
-        relationLayerFeature = QgsFeature()
-        relationLayerFeature.setFields(relationLayer.fields())
-        relationLayerFeature.setAttribute("id", str(uuid.uuid4()))
-        relationLayerFeature.setAttribute("id_" + table_name, targetFeatureID)
-        relationLayerFeature.setAttribute("id_teema", themeID)
-
-        provider = relationLayer.dataProvider()
-        
-        success = provider.addFeatures([relationLayerFeature])
-        if not success:
-            self.iface.messageBar().pushMessage('Bugi koodissa: createFeatureThemeRelationWithThemeID - addFeatures() failed"', Qgis.Critical)
-
-
     def addThemeRelationsToLayer(self, sourceFeatureID, targetFeatureID, featureType):
         themes = self.getThemesForSpatialFeature(sourceFeatureID, featureType)
         targetSchemaTableName = "yk_yleiskaava.kaavaobjekti_" + featureType
@@ -1562,7 +1542,25 @@ class YleiskaavaDatabase:
             query = "INSERT INTO yk_kuvaustekniikka.kaavaobjekti_teema_yhteys (id, id_{}, id_teema) VALUES (%s, %s, %s)".format(table_name)
             cursor.execute(query, (str(uuid.uuid4()), targetFeatureID, themeID))
             self.dbConnection.commit()
-            
+
+    # def createFeatureThemeRelationWithThemeID(self, targetSchemaTableName, targetFeatureID, themeID):
+    #     # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - targetSchemaTableName: " + targetSchemaTableName + ", targetFeatureID: " + str(targetFeatureID) + ", regulationID: " + str(regulationID), 'Yleiskaava-työkalu', Qgis.Info)
+
+    #     relationLayer = self.getProjectLayer("yk_kuvaustekniikka.kaavaobjekti_teema_yhteys")
+
+    #     schema, table_name = targetSchemaTableName.split('.')
+
+    #     relationLayerFeature = QgsFeature()
+    #     relationLayerFeature.setFields(relationLayer.fields())
+    #     relationLayerFeature.setAttribute("id", str(uuid.uuid4()))
+    #     relationLayerFeature.setAttribute("id_" + table_name, targetFeatureID)
+    #     relationLayerFeature.setAttribute("id_teema", themeID)
+
+    #     provider = relationLayer.dataProvider()
+        
+    #     success = provider.addFeatures([relationLayerFeature])
+    #     if not success:
+    #         self.iface.messageBar().pushMessage('Bugi koodissa: createFeatureThemeRelationWithThemeID - addFeatures() failed"', Qgis.Critical)   
 
     def existsFeatureThemeRelation(self, featureID, featureType, themeID):
         with self.dbConnection.cursor() as cursor:
