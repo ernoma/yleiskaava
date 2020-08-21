@@ -1587,13 +1587,21 @@ class YleiskaavaDatabase:
 
 
     def getSourceDataFeatures(self, linkType):
-        layer = QgsProject.instance().mapLayersByName("lahtoaineisto")[0]
-        
         features = []
 
-        for feature in layer.getFeatures():
-            if feature["linkitys_tyyppi"] == linkType:
-                features.append(feature)
+        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+            query = "SELECT id, nimi, lahde, kuvaus, linkitys_tyyppi, linkki_data FROM yk_prosessi.lahtoaineisto WHERE linkitys_tyyppi = %s"
+            cursor.execute(query, (linkType, ))
+            rows = cursor.fetchall()
+            for row in rows:
+                features.append({
+                    "id": row["id"],
+                    "nimi": row["nimi"],
+                    "lahde": row["lahde"],
+                    "kuvaus": row["kuvaus"],
+                    "linkitys_tyyppi": row["linkitys_tyyppi"],
+                    "linkki_data": row["linkki_data"]
+                })
 
         return features
 
@@ -1627,14 +1635,15 @@ class YleiskaavaDatabase:
     def getLinkedFeatureIDsForSourceDataFeature(self, spatialFeatureLayer, linkedSourceDataFeature):
         linkedFeatureIDs = []
 
-        relationLayer = QgsProject.instance().mapLayersByName("lahtoaineisto_yleiskaava_yhteys")[0]
-
         targetSchemaTableName = self.getTargetSchemaTableNameForUserFriendlyTableName(spatialFeatureLayer.name())
         schema, table_name = targetSchemaTableName.split('.')
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id_lahtoaineisto", "id_" + table_name], relationLayer.fields())
-        for relationFeature in relationLayer.getFeatures(featureRequest):
-            if relationFeature["id_lahtoaineisto"] == linkedSourceDataFeature["id"] and relationFeature["id_" + table_name] is not None:
-                linkedFeatureIDs.append(relationFeature["id_" + table_name])
+
+        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+            query = "SELECT id_{} FROM yk_prosessi.lahtoaineisto_yleiskaava_yhteys WHERE id_lahtoaineisto = %s AND id_{} IS NOT NULL".format(table_name, table_name)
+            cursor.execute(query, (linkedSourceDataFeature["id"], ))
+            rows = cursor.fetchall()
+            for row in rows:
+                linkedFeatureIDs.append(row["id_" + table_name])
 
         return linkedFeatureIDs
 
@@ -1644,16 +1653,23 @@ class YleiskaavaDatabase:
 
         sourceDataFeatureID = str(uuid.uuid4())
 
-        sourceDataFeature = QgsFeature()
-        sourceDataFeature.setFields(sourceDataLayer.fields())
-        sourceDataFeature.setAttribute("id", sourceDataFeatureID)
-        for key in sourceData.keys():
-            sourceDataFeature.setAttribute(key, sourceData[key])
-        provider = sourceDataLayer.dataProvider()
-        success = provider.addFeatures([sourceDataFeature])
-        if not success:
-            self.iface.messageBar().pushMessage('Bugi koodissa: createSourceDataFeature - addFeatures() failed"', Qgis.Critical)
-            return None
+        with self.dbConnection.cursor() as cursor:
+            query = "INSERT INTO yk_prosessi.lahtoaineisto (id"
+            
+            attrTuple = (sourceDataFeatureID, )
+
+            for key in sourceData.keys():
+                attrTuple += (sourceData[key], )
+
+                query += ", {}".format(key)
+
+            query += ") VALUES (%s"
+            for key in sourceData.keys():
+                 query += ", %s"
+            query += ")"
+
+            cursor.execute(query, attrTuple)
+            self.dbConnection.commit()
 
         return sourceDataFeatureID
 
@@ -1681,24 +1697,16 @@ class YleiskaavaDatabase:
 
 
     def createSourceDataRelationToSpatialFeature(self, linkedSourceDataFeatureID, spatialFeatureLayer, targetFeatureID):
-        relationLayer = QgsProject.instance().mapLayersByName("lahtoaineisto_yleiskaava_yhteys")[0]
 
         targetSchemaTableName = self.getTargetSchemaTableNameForUserFriendlyTableName(spatialFeatureLayer.name())
         schema, table_name = targetSchemaTableName.split('.')
 
         relationFeatureID = str(uuid.uuid4())
 
-        relationFeature = QgsFeature()
-        relationFeature.setFields(relationLayer.fields())
-        relationFeature.setAttribute("id", relationFeatureID)
-        relationFeature.setAttribute("id_lahtoaineisto", linkedSourceDataFeatureID)
-        relationFeature.setAttribute("id_" + table_name, targetFeatureID)
-        
-        provider = relationLayer.dataProvider()
-        success = provider.addFeatures([relationFeature])
-        if not success:
-            self.iface.messageBar().pushMessage('Bugi koodissa: createSourceDataFeature - addFeatures() failed"', Qgis.Critical)
-            return None
+        with self.dbConnection.cursor() as cursor:
+            query = "INSERT INTO yk_prosessi.lahtoaineisto_yleiskaava_yhteys (id, id_lahtoaineisto, id_{}) VALUES (%s, %s, %s)".format(table_name)
+            cursor.execute(query, (relationFeatureID, linkedSourceDataFeatureID, targetFeatureID))
+            self.dbConnection.commit()
 
         return relationFeatureID
 
