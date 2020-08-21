@@ -917,18 +917,26 @@ class YleiskaavaDatabase:
     def getRegulationsForSpatialFeature(self, featureID, featureType):
         regulationList = []
 
-        regulations = self.getSpecificRegulations()
+        regulations = None
+        if featureType == "alue":
+            regulations = self.getSpecificRegulations(includeSuplementaryAreaRegulations=False, includeLineRegulations=False, includePointRegulations=False)
+        elif featureType == "alue_taydentava":
+            regulations = self.getSpecificRegulations(includeAreaRegulations=False, includeLineRegulations=False, includePointRegulations=False)
+        elif featureType == "viiva":
+            regulations = self.getSpecificRegulations(includeAreaRegulations=False, includeSuplementaryAreaRegulations=False, includePointRegulations=False)
+        elif featureType == "piste":
+            regulations = self.getSpecificRegulations(includeAreaRegulations=False, includeSuplementaryAreaRegulations=False, includeLineRegulations=False)
 
-        targetLayer = self.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
-        #targetLayer = QgsProject.instance().mapLayersByName("kaavaobjekti_kaavamaarays_yhteys")[0]
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id_kaavamaarays", "id_kaavaobjekti_" + featureType], targetLayer.fields())
-        for feature in targetLayer.getFeatures(featureRequest):
-            if feature["id_kaavaobjekti_" + featureType] == featureID:
-                # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavakohde löytyi yhteyksistä, id_kaavaobjekti_*: " + str(feature["id_kaavaobjekti_" + featureType]), 'Yleiskaava-työkalu', Qgis.Info)
-                for regulation in regulations:
-                    if regulation["id"] == feature["id_kaavamaarays"]:
-                        # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, jos kaavamaarays_otsikko ei null, feature['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
-                        if not regulation["kaavamaarays_otsikko"].isNull():
+        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+            query = "SELECT id_kaavamaarays FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_{} = %s".format(featureType)
+            cursor.execute(query, (featureID, ))
+            rows = cursor.fetchall()
+
+            for row in rows:
+               for regulation in regulations:
+                   if regulation["id"] == row["id_kaavamaarays"]:
+                       # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, jos kaavamaarays_otsikko ei null, feature['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
+                        if regulation["kaavamaarays_otsikko"] is not None:
                             # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, regulation['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
                             regulationList.append(regulation)
                         break
@@ -1149,13 +1157,12 @@ class YleiskaavaDatabase:
             cursor.execute(query, (featureID, ))
             self.dbConnection.commit()
 
+
     def deleteSpatialFeature(self, featureID, featureType):
-        layer = self.getLayerByTargetSchemaTableName("yk_yleiskaava.kaavaobjekti_" + featureType)
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id"], layer.fields())
-        for feature in layer.getFeatures(featureRequest):
-            if (feature["id"] == featureID):
-                layer.dataProvider().deleteFeatures([feature.id()])
-                break
+        with self.dbConnection.cursor() as cursor:
+            query = "DELETE FROM yk_yleiskaava.kaavaobjekti_{} WHERE id = %s".format(featureType)
+            cursor.execute(query, (featureID, ))
+            self.dbConnection.commit()
 
 
     def createFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationTitle):
