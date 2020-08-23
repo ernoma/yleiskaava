@@ -138,7 +138,10 @@ Kun toiminnon dialogissa on valinnut kaavakohteen, jolle halutaan lisätä lähd
 Asetukset
 .........
 
-Asetukset-dialogissa on tällä hetkellä vain asetus, jolla voi valita pidetäänkö toimintoihin liittyvät dialogit päälimmäisinä vai ei.
+Asetukset-dialogissa on tällä hetkellä vain kaksi asetusta:
+
+* Asetus, jolla voi valita pidetäänkö toimintoihin liittyvät dialogit päälimmäisinä vai ei
+* Asetus, jolla valitaan QGIS-työtilaan liittyvä tietokantayhteys
 
 Ohje
 ....
