@@ -177,6 +177,9 @@ class UpdateRegulationOfGroup:
             regulationDescription = self.dialogUpdateRegulationOfGroup.plainTextEditRegulationDescription.toPlainText()
 
             if not self.equalsRegulationAndFormTexts(regulationTitle, regulationText, regulationDescription):
+
+                self.yleiskaavaDatabase.reconnectToDB()
+
                 success = self.yleiskaavaDatabase.updateRegulation(regulationID, regulationTitle, regulationText, regulationDescription)
 
                 if success:
@@ -311,6 +314,9 @@ class UpdateRegulationOfGroup:
 
     def updateRegulationsAndLandUseClassificationsForSpatialFeatures(self, featureType):
         if self.currentRegulation != None:
+
+            self.yleiskaavaDatabase.reconnectToDB()
+
             regulationID = self.currentRegulation["id"]
             regulationTitle = self.currentRegulation["kaavamaarays_otsikko"].value() if not self.currentRegulation["kaavamaarays_otsikko"].isNull() else None
             shouldRemoveOldRegulationRelations = self.dialogUpdateRegulationOfGroup.checkBoxRemoveOldRegulationsFromSpatialFeatures.isChecked()
@@ -368,6 +374,9 @@ class UpdateRegulationOfGroup:
 
 
     def removeRegulationsAndLandUseClassificationsFromSpatialFeatures(self, featureType, shouldUpdateOnlyRelation):
+
+        self.yleiskaavaDatabase.reconnectToDB()
+
         spatialFeatures = self.yleiskaavaDatabase.getSelectedFeatures(featureType, ["id"])
         # spatialFeatures = self.yleiskaavaDatabase.getSpatialFeaturesWithRegulationForType(regulationID, featureType)
 
@@ -398,6 +407,8 @@ class UpdateRegulationOfGroup:
             includeLineRegulations = True
         if self.dialogUpdateRegulationOfGroup.checkBoxShowPointRegulations.isChecked():
             includePointRegulations = True
+
+        self.yleiskaavaDatabase.reconnectToDB()
 
         self.regulations = sorted(self.yleiskaavaDatabase.getSpecificRegulations(shouldShowOnlyUsedRegulations, includeAreaRegulations, includeSuplementaryAreaRegulations, includeLineRegulations, includePointRegulations), key=itemgetter('alpha_sort_key'))
         self.regulationTitles = []

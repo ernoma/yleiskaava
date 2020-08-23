@@ -1776,3 +1776,16 @@ class YleiskaavaDatabase:
                         return False
         
         return True
+
+
+    def reconnectToDB(self):
+        if self.databaseConnectionParams is not None:
+            try:
+                self.dbConnection = psycopg2.connect(**self.databaseConnectionParams)
+                # self.iface.messageBar().pushMessage('Tietokantaan yhdistäminen onnistui', Qgis.Info, duration=20)
+            except psycopg2.OperationalError:
+                return False
+        else:
+            return False
+
+        return True

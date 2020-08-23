@@ -171,6 +171,8 @@ class UpdateThemesOfGroup:
             themeDescription = self.dialogUpdateThemeOfGroup.plainTextEditThemeDescription.toPlainText()
 
             if not self.equalsThemeAndFormTexts(themeName, themeDescription):
+                self.yleiskaavaDatabase.reconnectToDB()
+
                 success = self.yleiskaavaDatabase.updateTheme(themeID, themeName, themeDescription)
 
                 if success:
@@ -293,6 +295,8 @@ class UpdateThemesOfGroup:
             themeName = self.currentTheme["nimi"]
             shouldRemoveOldThemeRelations = self.dialogUpdateThemeOfGroup.checkBoxRemoveOldThemesFromSpatialFeatures.isChecked()
 
+            self.yleiskaavaDatabase.reconnectToDB()
+
             self.updateThemesOfGroupTask = UpdateThemesOfGroupTask(self.yleiskaavaDatabase, featureType, themeID, themeName, shouldRemoveOldThemeRelations)
 
             targetLayer = self.yleiskaavaDatabase.getTargetLayer(featureType)
@@ -339,6 +343,9 @@ class UpdateThemesOfGroup:
 
 
     def removeThemesFromSpatialFeatures(self, featureType):
+
+        self.yleiskaavaDatabase.reconnectToDB()
+
         spatialFeatures = self.yleiskaavaDatabase.getSelectedFeatures(featureType, ["id"])
         # spatialFeatures = self.yleiskaavaDatabase.getSpatialFeaturesWithRegulationForType(regulationID, featureType)
 
@@ -354,6 +361,8 @@ class UpdateThemesOfGroup:
 
 
     def setupThemesInDialog(self):
+        self.yleiskaavaDatabase.reconnectToDB()
+        
         self.themes = sorted(self.yleiskaavaDatabase.getThemes(), key=itemgetter('alpha_sort_key'))
         self.themeNames = []
         for index, theme in enumerate(self.themes):

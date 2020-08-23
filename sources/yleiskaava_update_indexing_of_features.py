@@ -39,6 +39,8 @@ class UpdateIndexingOfFeatures:
         self.featureIDsAndNewIndexValues = None
 
     def setup(self):
+        self.yleiskaavaDatabase.reconnectToDB()
+
         targetTableNames = self.yleiskaavaDatabase.getAllTargetSchemaTableNamesShownInCopySourceToTargetUI()
         targetTableNames.insert(0, "Valitse kohdekarttataso")
         self.dialogUpdateIndexingOfFeatures.comboBoxChooseTargetLayer.addItems(targetTableNames)
@@ -110,6 +112,8 @@ class UpdateIndexingOfFeatures:
 
 
     def fillComboBoxChooseRegulation(self):
+        self.yleiskaavaDatabase.reconnectToDB()
+
         userFriendlyTableName = self.dialogUpdateIndexingOfFeatures.comboBoxChooseTargetLayer.currentText()
         landUseClassificationNames = sorted(self.yleiskaavaDatabase.getDistinctLandUseClassificationsOfLayer(userFriendlyTableName))
         landUseClassificationNames.insert(0, "Valitse")
@@ -118,6 +122,8 @@ class UpdateIndexingOfFeatures:
         
         
     def addFieldInfoToComboBoxChooseIndexFieldToUpdate(self):
+        self.yleiskaavaDatabase.reconnectToDB()
+
         userFriendlyTableName = self.dialogUpdateIndexingOfFeatures.comboBoxChooseTargetLayer.currentText()
         featureType = self.yleiskaavaDatabase.getFeatureTypeForUserFriendlyTargetSchemaTableName(userFriendlyTableName)
         fieldNamesAndTypes = self.yleiskaavaDatabase.getFieldNamesAndTypes(featureType)
@@ -157,6 +163,8 @@ class UpdateIndexingOfFeatures:
 
     def fillComboBoxTargetLayerFeatureIndexValuesCurrent(self):
         if self.dialogUpdateIndexingOfFeatures.comboBoxChooseLandUseClassification.currentIndex() > 0 and self.dialogUpdateIndexingOfFeatures.comboBoxChooseLandUseClassification.currentIndex() > 0 and self.dialogUpdateIndexingOfFeatures.comboBoxChooseIndexFieldToUpdate.currentIndex() > 0:
+            self.yleiskaavaDatabase.reconnectToDB()
+
             userFriendlyTableName = self.dialogUpdateIndexingOfFeatures.comboBoxChooseTargetLayer.currentText()
             landUseClassification = self.dialogUpdateIndexingOfFeatures.comboBoxChooseLandUseClassification.currentText()
             fieldNameText = self.dialogUpdateIndexingOfFeatures.comboBoxChooseIndexFieldToUpdate.currentText()
@@ -209,6 +217,9 @@ class UpdateIndexingOfFeatures:
     def fillTableWidgetTargetFeatureInfo(self, feature):
         self.clearTableWidgetTargetFeatureInfo()
         userFriendlyTableName = self.dialogUpdateIndexingOfFeatures.comboBoxChooseTargetLayer.currentText()
+        
+        self.yleiskaavaDatabase.reconnectToDB()
+
         featureType = self.yleiskaavaDatabase.getFeatureTypeForUserFriendlyTargetSchemaTableName(userFriendlyTableName)
         fieldNamesAndTypes = self.yleiskaavaDatabase.getFieldNamesAndTypes(featureType)
         shownFieldNamesAndTypes = self.yleiskaavaUtils.getShownFieldNamesAndTypes(fieldNamesAndTypes)
@@ -548,6 +559,8 @@ class UpdateIndexingOfFeatures:
 
     
     def updateFeatureValues(self):
+        self.yleiskaavaDatabase.reconnectToDB()
+        
         success = self.yleiskaavaDatabase.updateSpatialFeaturesWithFieldValues(self.selectedLayer, self.featureIDsAndNewIndexValues, self.selectedFieldName)
         if success:
             self.iface.messageBar().pushMessage('Kaavakohteiden indeksointi päivitetty', Qgis.Info, 30)

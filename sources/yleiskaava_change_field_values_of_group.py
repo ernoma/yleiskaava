@@ -139,6 +139,8 @@ class ChangeFieldValuesOfGroup:
 
     def chooseUpdatedAttributesAndValuesForSpatialFeatures(self, featureType):
 
+        self.yleiskaavaDatabase.reconnectToDB()
+
         fieldNamesAndTypes = self.yleiskaavaDatabase.getFieldNamesAndTypes(featureType)
         self.shownFieldNamesAndTypes = self.yleiskaavaUtils.getShownFieldNamesAndTypes(fieldNamesAndTypes)
 
@@ -179,6 +181,8 @@ class ChangeFieldValuesOfGroup:
     def updateFieldValuesForFeatureType(self):
         featureType = self.currentFeatureType
         updatedFieldValues = []
+
+        self.yleiskaavaDatabase.reconnectToDB()
 
         for index, shownFieldNamesAndType in enumerate(self.shownFieldNamesAndTypes):
             shouldUpdate = self.dialogChooseAndUpdateFieldValuesForFeatureType.tableWidgetFeatureAttributesAndValues.cellWidget(index, ChangeFieldValuesOfGroup.FIELD_SHOULD_UPDATE_CHOICE_INDEX).findChildren(QCheckBox)[0].isChecked()
@@ -237,6 +241,4 @@ class ChangeFieldValuesOfGroup:
 
 
     def widgetFieldValueChanged(self, rowIndex):
-        # value = self.yleiskaavaUtils.getValueOfWidgetForType(widget, fieldTypeName)
-        # compatibleValue = self.yleiskaavaUtils.getAttributeValueInCompatibleType(fieldName, fieldTypeName, fieldTypeName, value)
         shouldUpdate = self.dialogChooseAndUpdateFieldValuesForFeatureType.tableWidgetFeatureAttributesAndValues.cellWidget(rowIndex, ChangeFieldValuesOfGroup.FIELD_SHOULD_UPDATE_CHOICE_INDEX).findChildren(QCheckBox)[0].setChecked(True)

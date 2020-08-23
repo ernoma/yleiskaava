@@ -377,6 +377,7 @@ class YleiskaavaUtils:
 
 
     def refreshTargetLayersInProject(self):
+        self.yleiskaavaDatabase.reconnectToDB()
         layerNames = self.yleiskaavaDatabase.getUserFriendlyTargetSchemaTableNames()
         for name in layerNames:
             layers = QgsProject.instance().mapLayersByName(name)

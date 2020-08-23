@@ -195,6 +195,7 @@ class DataCopySourceToTarget:
             self.targetTableComboBoxes = []
             self.targetFieldNameComboBoxes = []
 
+            self.yleiskaavaDatabase.reconnectToDB()
 
             index = 0
             for field in sourceLayer.fields().toList():
@@ -231,6 +232,8 @@ class DataCopySourceToTarget:
 
     def handleTargetTableSelectChanged(self, rowIndex, sourceFieldTypeName, targetTableComboBox, targetFieldNameComboBox):
 
+        self.yleiskaavaDatabase.reconnectToDB()
+        
         text = targetTableComboBox.currentText()
         if text != "Valitse kohdekarttataso":
 
@@ -283,6 +286,7 @@ class DataCopySourceToTarget:
 
 
     def getTargetFieldComboBoxText(self, targetFieldName, targetFieldTypeName):
+        self.yleiskaavaDatabase.reconnectToDB()
         userFriendlyFieldName = self.yleiskaavaDatabase.getUserFriendlytargetFieldName(targetFieldName)
         return '' + userFriendlyFieldName + ' (' + targetFieldName + ', ' + targetFieldTypeName + ')'
 
@@ -479,6 +483,7 @@ class DataCopySourceToTarget:
     def initializeDialogCopySettingsPlanPart(self):
 
         # hae kaikki yleiskaavataulun yleiskaavojen nimet, täytä comboBoxSpatialPlanName ja valitse tyypillisin nimi
+        self.yleiskaavaDatabase.reconnectToDB()
         plans, planLevelList = self.yleiskaavaDatabase.getSpatialPlansAndPlanLevels()
 
         planNames = [plan["nimi"] for plan in plans]
@@ -556,6 +561,7 @@ class DataCopySourceToTarget:
 
     #def comboBoxLevelOfSpatialPlanCurrentTextChanged(self):
     def comboBoxSpatialPlanNameCurrentTextChanged(self):
+        self.yleiskaavaDatabase.reconnectToDB()
         self.dialogCopySettings.comboBoxLevelOfSpatialPlan.setCurrentText(self.yleiskaavaDatabase.getYleiskaavaPlanLevelCodeWithPlanName(self.dialogCopySettings.comboBoxSpatialPlanName.currentText()))
 
 
@@ -585,6 +591,7 @@ class DataCopySourceToTarget:
         targetFieldName = fieldInfo["name"]
         targetFieldTypeName = fieldInfo["type"]
 
+        self.yleiskaavaDatabase.reconnectToDB()
         userFriendlyTableName = self.yleiskaavaDatabase.getUserFriendlyschemaTableName(schemaTableName)
         userFriendlyFieldName = self.yleiskaavaDatabase.getUserFriendlytargetFieldName(targetFieldName)
 
@@ -615,6 +622,7 @@ class DataCopySourceToTarget:
 
         if reason == None:
             transformContext = QgsProject.instance().transformContext() # OK - QgsCoordinateTransformContext: "QgsCoordinateTransformContext objects are thread safe for read and write.", https://qgis.org/pyqgis/3.4/core/QgsCoordinateTransformContext.html
+            self.yleiskaavaDatabase.reconnectToDB()
             spatialPlanName = self.dialogCopySettings.comboBoxSpatialPlanName.currentText() # ok
             spatialPlanID, planNumber = self.yleiskaavaDatabase.getSpatialPlanIDAndNumberForPlanName(spatialPlanName) # ok
             shouldLinkToSpatialPlan = self.dialogCopySettings.checkBoxLinkToSpatialPlan.isChecked() # ok
@@ -736,6 +744,8 @@ class DataCopySourceToTarget:
     def getDefaultTargetFieldInfo(self):
         defaultFieldNameValueInfos = []
 
+        self.yleiskaavaDatabase.reconnectToDB()
+
         for i in range(self.getDefaultFieldValuesRowCount()):
             text = self.dialogCopySettings.tableWidgetDefaultFieldValues.cellWidget(i, DataCopySourceToTarget.DEFAULT_VALUES_LABEL_INDEX).text()
 
@@ -812,6 +822,9 @@ class DataCopySourceToTarget:
     def getDefaultFieldValuesRowCountAndFieldInfos(self):
         count = 0
         spatialTargetTableFieldInfos = []
+
+        self.yleiskaavaDatabase.reconnectToDB()
+
         if self.targetSchemaTableName is not None:
             spatialTargetTableFieldInfos = self.yleiskaavaDatabase.getSchemaTableFieldInfos(self.targetSchemaTableName)
             count = self.yleiskaavaUtils.getShownFieldNameCountForFieldInfos(spatialTargetTableFieldInfos)
@@ -882,6 +895,7 @@ class DataCopySourceToTarget:
         if self.dialogChooseRegulation.checkBoxShowOnlyUsedRegulations.isChecked():
             shouldShowOnlyUsedRegulations = True
 
+        self.yleiskaavaDatabase.reconnectToDB()
 
         self.regulations = sorted(self.yleiskaavaDatabase.getSpecificRegulations(shouldShowOnlyUsedRegulations, self.includeAreaRegulations,  self.includeSuplementaryAreaRegulations,  self.includeLineRegulations,  self.includePointRegulations), key=itemgetter('alpha_sort_key'))
         self.regulationTitles = []
