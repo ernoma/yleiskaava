@@ -132,6 +132,7 @@ class YleiskaavaSettings:
             databaseConnectionParams = self.readDatabaseParamsFromSettings(usedDatabaseConnectionName)
 
             success = self.yleiskaavaDatabase.setDatabaseConnection(databaseConnectionParams)
+            self.yleiskaavaDatabase.monitorCachedLayerChanges()
 
         return success
 

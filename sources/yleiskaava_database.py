@@ -46,6 +46,10 @@ class YleiskaavaDatabase:
         self.planLevelList = None
         self.themes = None
 
+        self.layerPlans = None
+        self.layerPlanLevelList = None
+        self.layerThemes = None
+
         self.yleiskaava_target_tables = [
             {"name": "yk_yleiskaava.yleiskaava", "userFriendlyTableName": 'Yleiskaavan ulkorajaus (yleiskaava)', "geomFieldName": "kaavan_ulkorajaus", "geometryType": QgsWkbTypes.PolygonGeometry, "showInCopySourceToTargetUI": False},
             {"name": "yk_yleiskaava.kaavaobjekti_alue", "userFriendlyTableName": YleiskaavaDatabase.KAAVAOBJEKTI_ALUE, "featureType": "alue", "geomFieldName": "geom", "geometryType": QgsWkbTypes.PolygonGeometry, "showInCopySourceToTargetUI": True},
@@ -628,6 +632,10 @@ class YleiskaavaDatabase:
     def getTargetSchemaTableByName(self, name):
         table_item = next((item for item in self.yleiskaava_target_tables if item["name"] == name), None)
         return table_item
+
+
+    def getTargetLayerByUserFriendlyName(self, name):
+        return QgsProject.instance().mapLayersByName(name)[0]
 
 
     def getLayerByTargetSchemaTableName(self, name):
@@ -1789,3 +1797,59 @@ class YleiskaavaDatabase:
             return False
 
         return True
+
+    
+    def monitorCachedLayerChanges(self):
+        self.plans = None
+        self.planLevelList = None
+        self.themes = None
+
+        layersPlans = QgsProject.instance().mapLayersByName("Yleiskaavan ulkorajaus (yleiskaava)")
+        layersPlanLevelList = QgsProject.instance().mapLayersByName("kaavan_taso")
+        layersThemes = QgsProject.instance().mapLayersByName("teemat")
+
+        if len(layersPlans) == 1:
+            if self.layerPlans is not None:
+                try:
+                    self.layerPlans.editingStopped.disconnect(self.handleLayerPlansChanges)
+                except TypeError:
+                    pass
+                except RuntimeError:
+                    pass
+            self.layerPlans = layersPlans[0]
+            self.layerPlans.editingStopped.connect(self.handleLayerPlansChanges)
+
+        if len(layersPlanLevelList) == 1:
+            if self.layerPlanLevelList is not None:
+                try:
+                    self.layerPlanLevelList.editingStopped.disconnect(self.handleLayerPlanLevelListChanges)
+                except TypeError:
+                    pass
+                except RuntimeError:
+                    pass
+            self.layerPlanLevelList = layersPlanLevelList[0]
+            self.layerPlanLevelList.editingStopped.connect(self.handleLayerPlanLevelListChanges)
+
+        if len(layersThemes) == 1:
+            if self.layerThemes is not None:
+                try:
+                    self.layerThemes.editingStopped.disconnect(self.handleLayerThemesChanges)
+                except TypeError:
+                    pass
+                except RuntimeError:
+                    pass
+            self.layerThemes = layersThemes[0]
+            self.layerThemes.editingStopped.connect(self.handleLayerThemesChanges)
+
+
+    def handleLayerPlansChanges(self):
+        QgsMessageLog.logMessage("handleLayerPlansChanges", 'Yleiskaava-työkalu', Qgis.Info)
+        self.getSpatialPlans()
+
+    def handleLayerPlanLevelListChanges(self):
+        QgsMessageLog.logMessage("handleLayerPlanLevelListChanges", 'Yleiskaava-työkalu', Qgis.Info)
+        self.getYleiskaavaPlanLevelList()
+
+    def handleLayerThemesChanges(self):
+        QgsMessageLog.logMessage("handleLayerThemesChanges", 'Yleiskaava-työkalu', Qgis.Info)
+        self.getThemes()
