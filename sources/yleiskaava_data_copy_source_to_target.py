@@ -680,7 +680,10 @@ class DataCopySourceToTarget:
         self.hideAllDialogs()
         copyMessageBarItem = self.iface.messageBar().currentItem()
         if copyMessageBarItem is not None and copyMessageBarItem.text() == DataCopySourceToTarget.MESSAGE_BAR_TEXT_COPYING:
-            self.iface.messageBar().popWidget()
+            try:
+                self.iface.messageBar().popWidget()
+            except RuntimeError:
+                pass
         self.yleiskaavaUtils.refreshTargetLayersInProject() # Päivitä lopuksi työtilan karttatasot, jotka liittyvät T1:n ajoon
         if not self.hasUserCanceledCopy:
             self.iface.messageBar().pushMessage('Lähdeaineisto {} kopioitu tietokantaan'.format(self.sourceLayer.name()), Qgis.Info, duration=60)
@@ -692,7 +695,10 @@ class DataCopySourceToTarget:
         self.hideAllDialogs()
         copyMessageBarItem = self.iface.messageBar().currentItem()
         if copyMessageBarItem is not None and copyMessageBarItem.text() == DataCopySourceToTarget.MESSAGE_BAR_TEXT_COPYING:
-            self.iface.messageBar().popWidget()
+            try:
+                self.iface.messageBar().popWidget()
+            except RuntimeError:
+                pass
         self.yleiskaavaUtils.refreshTargetLayersInProject() # Päivitä lopuksi työtilan karttatasot, jotka liittyvät T1:n ajoon
         if not self.hasUserCanceledCopy:
             self.iface.messageBar().pushMessage('Lähdeaineiston kopiointi tietokantaan epäonnistui', Qgis.Critical, duration=0)

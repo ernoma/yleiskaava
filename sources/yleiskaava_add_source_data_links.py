@@ -192,8 +192,11 @@ class AddSourceDataLinks:
 
 
     def postFeatureRequestTaskRun(self):
+        try:
+            self.iface.messageBar().popWidget()
+        except RuntimeError:
+            pass
         
-        self.iface.messageBar().popWidget()
         self.iface.messageBar().pushMessage('Lähdeaineiston kohteet haettu', Qgis.Info, 5)
 
         self.shownSourceLayer = self.yleiskaavaSourceDataAPIs.createMemoryLayer(self.originalSourceLayer, self.originalSourceLayerInfo, self.featureRequestTask.features)

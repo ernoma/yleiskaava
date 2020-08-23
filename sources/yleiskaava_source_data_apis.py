@@ -9,6 +9,7 @@ from urllib.request import urlopen
 from xml.dom.minidom import parse
 import xml.dom.minidom
 import json
+import socket
 
 
 class YleiskaavaSourceDataAPIs:
@@ -178,7 +179,6 @@ class YleiskaavaSourceDataAPIs:
             # memoryLayer.commitChanges()
 
         return memoryLayer
-
 
 
 class FeatureRequestTask(QgsTask):

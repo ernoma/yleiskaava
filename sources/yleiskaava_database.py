@@ -11,6 +11,8 @@ import uuid
 import psycopg2
 import psycopg2.extras
 
+import socket
+
 
 class YleiskaavaDatabase:
 
@@ -1715,13 +1717,62 @@ class YleiskaavaDatabase:
         self.databaseConnectionParams = databaseConnectionParams
 
         if  self.databaseConnectionParams is not None:
-            for key in self.databaseConnectionParams:
-                QgsMessageLog.logMessage('setDatabaseConnection - databaseConnectionParams[' + key + ']: ' + str(databaseConnectionParams[key]), 'Yleiskaava-työkalu', Qgis.Info)
-
+            # for key in self.databaseConnectionParams:
+            # QgsMessageLog.logMessage('setDatabaseConnection - databaseConnectionParams[' + key + ']: ' + str(databaseConnectionParams[key]), 'Yleiskaava-työkalu', Qgis.Info)
             try:
                 self.dbConnection = psycopg2.connect(**self.databaseConnectionParams)
-                self.iface.messageBar().pushMessage('Tietokantaan yhdistäminen onnistui', Qgis.Info, duration=20)
+                # self.iface.messageBar().pushMessage('Tietokantaan yhdistäminen onnistui', Qgis.Info, duration=20)
             except psycopg2.OperationalError:
-                self.iface.messageBar().pushMessage('Tietokantaan yhdistäminen ei onnistunut', Qgis.Critical)
+                return False
 
+        return True
             
+
+    def getDatabaseConnectionParams(self):
+        return self.databaseConnectionParams
+
+    
+    def databaseMatchesDataSourceUri(self, dataSourceUri):
+        parts = dataSourceUri.split(' ')
+        for part in parts:
+            # QgsMessageLog.logMessage('databaseMatchesDataSourceUri - part: {}'.format(part) , 'Yleiskaava-työkalu', Qgis.Info)
+            if part == '(geom)':
+                continue
+            key, value = part.split('=')
+            value = value.replace("'", "")
+            if key == 'dbname' and value != self.databaseConnectionParams['dbname']:
+                # QgsMessageLog.logMessage('databaseMatchesDataSourceUri - uri, dbname: {}; db, dbname: {}'.format(value, self.databaseConnectionParams['dbname']) , 'Yleiskaava-työkalu', Qgis.Info)
+                return False
+            elif key == 'host':
+                if value != self.databaseConnectionParams['host']:
+                    valueParts = value.split('.')
+                    dbValueParts = self.databaseConnectionParams['host'].split('.')
+                    valuePartsAllNumbers = True
+                    dbValuePartsAllNumbers = True
+                    for valuePart in valueParts:
+                        if not valuePart.isdigit():
+                            valuePartsAllNumbers = False
+                            break
+                    for valuePart in dbValueParts:
+                        if not valuePart.isdigit():
+                            dbValuePartsAllNumbers = False
+                            break
+                    
+                    if valuePartsAllNumbers and dbValuePartsAllNumbers:
+                        # QgsMessageLog.logMessage('databaseMatchesDataSourceUri - uri, host: {}; db, host: {}'.format(value, self.databaseConnectionParams['host']) , 'Yleiskaava-työkalu', Qgis.Info)
+                        return False
+
+                    ipAddrForURI = value
+                    ipAddrForDB = self.databaseConnectionParams['host']
+
+                    if not valuePartsAllNumbers:
+                        ipAddrForURI = socket.gethostbyname(value)
+                    
+                    if not dbValuePartsAllNumbers:
+                        ipAddrForDB = socket.gethostbyname(value)
+
+                    if ipAddrForURI != ipAddrForDB:
+                        # QgsMessageLog.logMessage('databaseMatchesDataSourceUri - uri, ipAddrForURI: {}; db, ipAddrForURI: {}'.format(ipAddrForURI, ipAddrForDB) , 'Yleiskaava-työkalu', Qgis.Info)
+                        return False
+        
+        return True

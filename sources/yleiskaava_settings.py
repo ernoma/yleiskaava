@@ -3,10 +3,11 @@ from qgis.PyQt import uic
 from qgis.PyQt.QtCore import Qt, QSettings
 
 from qgis.core import (
-    Qgis, QgsMessageLog,
+    Qgis, QgsProject, QgsMessageLog,
     QgsAuthMethodConfig, QgsAuthManager,
     QgsApplication
 )
+from qgis.gui import QgsMessageBarItem
 
 import os.path
 
@@ -21,10 +22,18 @@ class YleiskaavaSettings:
 
     def __init__(self, iface, plugin_dir, yleiskaavaDatabase):
         self.iface = iface
+        self.dockWidget = None
         self.plugin_dir = plugin_dir
         self.yleiskaavaDatabase = yleiskaavaDatabase
 
         self.dialogSettings = uic.loadUi(os.path.join(self.plugin_dir, 'ui', 'yleiskaava_dialog_settings.ui'))
+
+        self.openProjectMessageBarItem = None
+        self.openDatabaseProjectMismatchMessageBarItem = None
+
+
+    def setDockWidget(self, dockWidget):
+        self.dockWidget = dockWidget
 
 
     def setupDialog(self):
@@ -73,7 +82,7 @@ class YleiskaavaSettings:
         connections = sorted({key.split('/')[0] for key in keys if '/' in key})
         
         for conn in connections:
-            # QgsMessageLog.logMessage('readSettings - connection: ' + conn, 'Yleiskaava-työkalu', Qgis.Info)
+            # QgsMessageLog.logMessage('setupDatabaseConnectionSettings - connection: ' + conn, 'Yleiskaava-työkalu', Qgis.Info)
             self.dialogSettings.comboBoxUsedDBConnection.addItem(conn)
 
         self.readDatabaseConnectionSettings()
@@ -84,7 +93,7 @@ class YleiskaavaSettings:
 
         usedDatabaseConnectionName = settings.value("/yleiskaava_tyokalu/usedDatabaseConnection", "")
 
-        QgsMessageLog.logMessage('setupDatabaseConnectionSettings - usedDatabaseConnection: ' + usedDatabaseConnectionName, 'Yleiskaava-työkalu', Qgis.Info)
+        QgsMessageLog.logMessage('readDatabaseConnectionSettings - usedDatabaseConnection: ' + usedDatabaseConnectionName, 'Yleiskaava-työkalu', Qgis.Info)
         self.dialogSettings.comboBoxUsedDBConnection.setCurrentText(usedDatabaseConnectionName)
 
         self.updateDatabaseConnection(usedDatabaseConnectionName)
@@ -104,16 +113,27 @@ class YleiskaavaSettings:
 
     def handleComboBoxUsedDBConnectionCurrentTextChanged(self, usedDatabaseConnectionName):
         QSettings().setValue("/yleiskaava_tyokalu/usedDatabaseConnection", usedDatabaseConnectionName)
-        self.updateDatabaseConnection(usedDatabaseConnectionName)
+        success = self.updateDatabaseConnection(usedDatabaseConnectionName)
+        if success:
+            if self.canUseBecauseDatabase():
+                self.hideErrorDatabaseProjectMismatch()
+                self.iface.messageBar().pushMessage('Tietokantaan yhdistäminen onnistui ja se vastaa QGIS-työtilaa', Qgis.Info, duration=20)
+            else:
+                self.showErrorDatabaseProjectMismatch()
+        else:
+            self.iface.messageBar().pushMessage('Tietokantaan yhdistäminen ei onnistunut', Qgis.Critical, duration=0)
 
 
     def updateDatabaseConnection(self, usedDatabaseConnectionName):
         databaseConnectionParams = None
+        success = False
 
         if usedDatabaseConnectionName != "":
             databaseConnectionParams = self.readDatabaseParamsFromSettings(usedDatabaseConnectionName)
 
-        self.yleiskaavaDatabase.setDatabaseConnection(databaseConnectionParams)
+            success = self.yleiskaavaDatabase.setDatabaseConnection(databaseConnectionParams)
+
+        return success
 
 
     def readDatabaseParamsFromSettings(self, usedDatabaseConnectionName):
@@ -154,3 +174,56 @@ class YleiskaavaSettings:
 
         return params
 
+
+    def canUseBecauseProject(self):
+        if len(QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE)) != 1 or len(QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE_TAYDENTAVA)) != 1 or len(QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA)) != 1 or len(QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_PISTE)) != 1:
+            return False
+        
+        return True
+
+
+    def showErrorBecauseProjectNotRead(self):
+        self.openProjectMessageBarItem = QgsMessageBarItem('Yleiskaavan QGIS-työtila pitää käynnistää ennen työkalujen käyttöä', Qgis.Warning, duration=10)
+        self.iface.messageBar().pushItem(self.openProjectMessageBarItem)
+
+
+    def hideErrorBecauseProjectNotRead(self):
+        self.iface.projectRead.connect(self.handleProjectRead)
+        try:
+            self.iface.messageBar().popWidget(self.openProjectMessageBarItem)
+            self.openProjectMessageBarItem = None
+        except RuntimeError:
+            self.openProjectMessageBarItem = None
+
+
+    def canUseBecauseDatabase(self):
+        self.readDatabaseConnectionSettings()
+        layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE)[0]
+        dataSourceUri = layer.dataProvider().dataSourceUri()
+        # QgsMessageLog.logMessage('canUseBecauseDatabase - dataSourceUri: ' + dataSourceUri, 'Yleiskaava-työkalu', Qgis.Info)
+        return self.yleiskaavaDatabase.databaseMatchesDataSourceUri(dataSourceUri)
+
+
+    def showErrorDatabaseProjectMismatch(self):
+        self.openDatabaseProjectMismatchMessageBarItem = QgsMessageBarItem('Valittu tietokanta ei vastaa työtilaa', Qgis.Warning, duration=0)
+        self.iface.messageBar().pushItem(self.openDatabaseProjectMismatchMessageBarItem)
+        self.dockWidget.pushButtonSettings.setStyleSheet('QPushButton {background-color: red; color: #white;}')
+
+
+    def hideErrorDatabaseProjectMismatch(self):
+        try:
+            self.iface.messageBar().popWidget(self.openDatabaseProjectMismatchMessageBarItem)
+            self.openDatabaseProjectMismatchMessageBarItem = None
+        except RuntimeError:
+            self.openDatabaseProjectMismatchMessageBarItem = None
+
+        self.dockWidget.pushButtonSettings.setStyleSheet('QPushButton {background-color: #EAF7E8; color: black;}')
+
+
+    def handleProjectRead(self):
+        if self.canUseBecauseProject():
+            self.hideErrorBecauseProjectNotRead()
+            self.iface.projectRead.disconnect(self.handleProjectRead)
+            
+        if not self.canUseBecauseDatabase():
+            self.showErrorDatabaseProjectMismatch()

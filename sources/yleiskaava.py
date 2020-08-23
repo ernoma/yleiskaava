@@ -27,7 +27,7 @@ from qgis.PyQt.QtGui import QIcon, QDesktopServices
 from qgis.PyQt.QtWidgets import QAction, QWidget, QGridLayout, QLabel, QComboBox
 
 from qgis.core import (
-    Qgis, QgsProject)
+    Qgis, QgsProject, QgsMessageLog)
 from qgis.gui import QgsMessageBarItem
 
 # Initialize Qt resources from file resources.py
@@ -87,15 +87,13 @@ class Yleiskaava:
         #print "** INITIALIZING Yleiskaava"
 
         self.pluginIsActive = False
-        self.dockwidget = None
-        self.openProjectMessageBarItem = None
+        self.dockWidget = None
 
         self.yleiskaavaDatabase = YleiskaavaDatabase(self.iface, self.plugin_dir)
         self.yleiskaavaUtils = YleiskaavaUtils(self.plugin_dir, self.yleiskaavaDatabase)
         self.yleiskaavaDatabase.setYleiskaavaUtils(self.yleiskaavaUtils)
 
         self.yleiskaavaSettings = YleiskaavaSettings(self.iface, self.plugin_dir, self.yleiskaavaDatabase)
-        self.yleiskaavaSettings.readDatabaseConnectionSettings()
 
         self.dataCopySourceToTarget = DataCopySourceToTarget(self.iface, self.plugin_dir, self.yleiskaavaSettings, self.yleiskaavaDatabase, self.yleiskaavaUtils)
         self.updateRegulationOfGroup = UpdateRegulationOfGroup(self.iface, self.plugin_dir, self.yleiskaavaSettings, self.yleiskaavaDatabase, self.yleiskaavaUtils)
@@ -208,18 +206,18 @@ class Yleiskaava:
     #--------------------------------------------------------------------------
 
     def onClosePlugin(self):
-        """Cleanup necessary items here when plugin dockwidget is closed"""
+        """Cleanup necessary items here when plugin dockWidget is closed"""
 
         #print "** CLOSING Yleiskaava"
 
         # disconnects
-        self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
+        self.dockWidget.closingPlugin.disconnect(self.onClosePlugin)
 
-        # remove this statement if dockwidget is to remain
+        # remove this statement if dockWidget is to remain
         # for reuse if plugin is reopened
         # Commented next statement since it causes QGIS crashe
         # when closing the docked window:
-        # self.dockwidget = None
+        # self.dockWidget = None
 
         self.geometryEditSettings.onClosePlugin()
 
@@ -249,29 +247,30 @@ class Yleiskaava:
 
             #print "** STARTING Yleiskaava"
 
-            # dockwidget may not exist if:
+            # dockWidget may not exist if:
             #    first run of plugin
             #    removed on close (see self.onClosePlugin method)
-            if self.dockwidget == None:
-                # Create the dockwidget (after translation) and keep reference
-                self.dockwidget = YleiskaavaDockWidget()
+            if self.dockWidget == None:
+                # Create the dockWidget (after translation) and keep reference
+                self.dockWidget = YleiskaavaDockWidget()
+                self.yleiskaavaSettings.setDockWidget(self.dockWidget)
 
                 self.setupYleiskaavaDockWidget()
 
-            # connect to provide cleanup on closing of dockwidget
-            self.dockwidget.closingPlugin.connect(self.onClosePlugin)
+            # connect to provide cleanup on closing of dockWidget
+            self.dockWidget.closingPlugin.connect(self.onClosePlugin)
 
-            # show the dockwidget
+            # show the dockWidget
             # TODO: fix to allow choice of dock location
-            self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.dockwidget)
-            self.dockwidget.show()
+            self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.dockWidget)
+            self.dockWidget.show()
 
     def setupYleiskaavaDockWidget(self):
 
-        if not self.canUse():
-            self.iface.projectRead.connect(self.handleProjectRead)
-            self.openProjectMessageBarItem = QgsMessageBarItem('Yleiskaavan QGIS-työtila pitää käynnistää ennen työkalujen käyttöä', Qgis.Warning, duration=10)
-            self.iface.messageBar().pushItem(self.openProjectMessageBarItem)
+        if not self.yleiskaavaSettings.canUseBecauseProject():
+            self.yleiskaavaSettings.showErrorBecauseProjectNotRead()
+        elif not self.yleiskaavaSettings.canUseBecauseDatabase():
+            self.yleiskaavaSettings.showErrorDatabaseProjectMismatch()
 
         self.yleiskaavaSettings.setupDialog()
         self.dataCopySourceToTarget.setup()
@@ -282,31 +281,17 @@ class Yleiskaava:
         self.updateIndexingOfFeatures.setup()
         self.addSourceDataLinks.setup()
 
-        self.dockwidget.pushButtonCopySourceDataToDatabase.clicked.connect(self.dataCopySourceToTarget.openDialogCopySourceDataToDatabase)
-        self.dockwidget.pushButtonUpdateRegulationForGroup.clicked.connect(self.updateRegulationOfGroup.openDialogUpdateRegulationOfGroup)
-        self.dockwidget.pushButtonOpenGeometryEditSettings.clicked.connect(self.geometryEditSettings.openDockWidgetGeometryEditSettings)
-        self.dockwidget.pushButtonChangeFieldValuesForGroup.clicked.connect(self.changeFieldValuesOfGroup.openDialogChangeFieldValuesForGroup)
-        self.dockwidget.pushButtonUpdateThemeForGroup.clicked.connect(self.updateThemesOfGroup.openDialogUpdateThemeForGroup)
-        self.dockwidget.pushButtonUpdateIndexingForLayer.clicked.connect(self.updateIndexingOfFeatures.openDialogUpdateIndexingOfFeatures)
-        self.dockwidget.pushButtonAddSourceDataLinks.clicked.connect(self.addSourceDataLinks.openDialogAddSourceDataLinks)
+        self.dockWidget.pushButtonCopySourceDataToDatabase.clicked.connect(self.dataCopySourceToTarget.openDialogCopySourceDataToDatabase)
+        self.dockWidget.pushButtonUpdateRegulationForGroup.clicked.connect(self.updateRegulationOfGroup.openDialogUpdateRegulationOfGroup)
+        self.dockWidget.pushButtonOpenGeometryEditSettings.clicked.connect(self.geometryEditSettings.openDockWidgetGeometryEditSettings)
+        self.dockWidget.pushButtonChangeFieldValuesForGroup.clicked.connect(self.changeFieldValuesOfGroup.openDialogChangeFieldValuesForGroup)
+        self.dockWidget.pushButtonUpdateThemeForGroup.clicked.connect(self.updateThemesOfGroup.openDialogUpdateThemeForGroup)
+        self.dockWidget.pushButtonUpdateIndexingForLayer.clicked.connect(self.updateIndexingOfFeatures.openDialogUpdateIndexingOfFeatures)
+        self.dockWidget.pushButtonAddSourceDataLinks.clicked.connect(self.addSourceDataLinks.openDialogAddSourceDataLinks)
 
-        self.dockwidget.pushButtonSettings.clicked.connect(self.yleiskaavaSettings.openDialogSettings)
+        self.dockWidget.pushButtonSettings.clicked.connect(self.yleiskaavaSettings.openDialogSettings)
 
-        self.dockwidget.pushButtonHelp.clicked.connect(self.showHelp)
-
-
-    def handleProjectRead(self):
-        if self.canUse():
-            self.iface.projectRead.disconnect(self.handleProjectRead)
-            self.iface.messageBar().popWidget(self.openProjectMessageBarItem)
-            self.openProjectMessageBarItem = None
-            
-
-    def canUse(self):
-        if len(QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE)) != 1 or len(QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE_TAYDENTAVA)) != 1 or len(QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA)) != 1 or len(QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_PISTE)) != 1:
-            return False
-        
-        return True
+        self.dockWidget.pushButtonHelp.clicked.connect(self.showHelp)
 
 
     def showHelp(self):
@@ -316,3 +301,4 @@ class Yleiskaava:
         #QMessageBox.information(None, 'Help File', help_file)
         # noinspection PyCallByClass,PyTypeChecker
         QDesktopServices.openUrl(QUrl(help_file))
+        
