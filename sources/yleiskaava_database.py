@@ -39,6 +39,7 @@ class YleiskaavaDatabase:
         self.plugin_dir = plugin_dir
 
         self.dbConnection = None
+        self.databaseConnectionParams = None
 
         self.codeTableCodes = {} # {'id': , row['id'], 'koodi': row['koodi'] }
 
@@ -1741,6 +1742,9 @@ class YleiskaavaDatabase:
 
     
     def databaseMatchesDataSourceUri(self, dataSourceUri):
+        if self.databaseConnectionParams is None:
+            return False
+            
         parts = dataSourceUri.split(' ')
         for part in parts:
             # QgsMessageLog.logMessage('databaseMatchesDataSourceUri - part: {}'.format(part) , 'Yleiskaava-työkalu', Qgis.Info)
