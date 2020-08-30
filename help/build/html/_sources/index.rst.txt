@@ -42,9 +42,19 @@ Kopiointi lähdekarttatasosta yleiskaavan tietokantaan onnistuu seuraavin vaihei
 
    .. figure:: images/kopiointi_d2.png
 
-#. Valitse tarvittaessa oletusarvot pakollisille kohdetaulujen kentille ja mahdollisesti muita kopiointiasetuksia, kuten tehdäänkö kaavamääräysotsikkoa vastaava kaavamääräys, jos sitä ei jo ole. Klikkaa Aja-painiketta aloittaaksesi lähdekarttatason kohteiden kopioinnin yleiskaavan tietokantaan.
-  
+#. Valitse tarvittaessa oletusarvot pakollisille kohdetaulujen kentille ja mahdollisesti muita kopiointiasetuksia.
+
    .. figure:: images/kopiointi_d3.png
+
+   Asetuksia:
+
+   * Jos "Luo tarvittaessa uudet kaavamääräykset"-kohta on valittuna, niin lähdeaineiston kaavamääräysotsikkoa vastaava kaavamääräys tehdään, jos sitä ei jo ole.
+   * Jos "Muuta lähdeaineiston kaavamääräysotsikot kopioinnissa suuriin kirjaimiin"-kohta on valittuna, niin lähdeaineistosta mahdollisesti tuotava kaavamääräysotsikko muutetaan isoihin kirjaimiin ennen kohdekarttatason kaavamaaraysotsikko- ja kayttotarkoitus_lyhenne-kenttiin lisäämistä. Myös mahdollisen uuden kaavamääräyksen luomisessa huomioidaan, että kaavamääräyksen otsikko tulee isoilla kirjaimilla.
+   * Jos "Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan tai päinvastoin (koittaa huomioida mahd. lyhenteen)"-kohta on valittuna, niin lähdeaineistosta kaavamääräystä tai käyttötarkoituslyhennettä tuotaessa kohdeaineiston kaavamaaraysotsikko- ja kayttotarkoitus_lyhenne-kenttiin lisätään molempiin arvo. Jos kayttotarkoitus_lyhenne-kenttään osataan lisätä kaavamääräysotsikon perusteella lyhenne, niin se lisätään. Jos tuotavan lähdeaineiston kohteella ei ole kaavamääräysotsikkoa tai käyttötarkoitusta / lyhennettä, niin silloin myös oletusarvon asetuksessa kohdeaineistolle täytetään kaavamaaraysotsikko- ja kayttotarkoitus_lyhenne-kenttiin arvot sen mukaan mitä ko. oletusarvoiksi on asetettu. "Valitse olemassa oleva kaavamääräys oletusarvoksi"-painikkeella voidaan helposti hakea kohdeaineiston kaavamääräyksille oletusarvo
+   * Jos "Lisää kohdekenttään myös lähdekenttien nimet, kun useita lähdekenttien arvoja yhdistetään yhteen kohdekenttään"-kohta on valittuna, niin mahdollisesti useasta lähdeaineiston kentästä yhteen kohdeaineiston kenttään tuotavien arvojen kanssa lisätään arvoksi myös lähdeaineiston kentän nimi
+   * Jos "Yhdistä kaavakohteet yleiskaavaan"-kohta on valittuna, niin lähdeaineistosta yleiskaavan tietokantaan lisättävät kohteet yhdistetään valittuun yleiskaavaan 
+
+   Klikkaa Aja-painiketta aloittaaksesi lähdekarttatason kohteiden kopioinnin yleiskaavan tietokantaan.
 
 #. Jos aineistoa on paljon, niin näet avautuvasta dialogista kopioinnin edistymisen. Kun kopiointi on valmis, niin tästä annetaan ilmoitus.
 
@@ -141,7 +151,7 @@ Asetukset
 Asetukset-dialogissa on tällä hetkellä vain kaksi asetusta:
 
 * Asetus, jolla voi valita pidetäänkö toimintoihin liittyvät dialogit päälimmäisinä vai ei
-* Asetus, jolla valitaan QGIS-työtilaan liittyvä tietokantayhteys
+* Asetus, jolla valitaan QGIS-työtilaan liittyvä tietokantayhteys. Jos tietokantaa ei ole valittu tai valittu tietokanta ei vastaa QGIS-työtilaa, niin asetus-painikkeen pohjaväri on punainen.
 
 Ohje
 ....
