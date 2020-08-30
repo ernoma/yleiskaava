@@ -558,7 +558,7 @@ class GeometryEditSettings:
 
     def addRegulationAndThemeRelationsToFeatureFromCopy(self, matchedSourceFeature, addedFeature, featureType):
 
-        self.yleiskaavaDatabase.reconnectToDB()
+        # self.yleiskaavaDatabase.reconnectToDB()
         
         self.yleiskaavaDatabase.addRegulationRelationsToLayer(matchedSourceFeature["id"], addedFeature["id"], featureType)
         self.yleiskaavaDatabase.addThemeRelationsToLayer(matchedSourceFeature["id"], addedFeature["id"], featureType)

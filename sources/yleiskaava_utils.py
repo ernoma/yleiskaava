@@ -377,7 +377,7 @@ class YleiskaavaUtils:
 
 
     def refreshTargetLayersInProject(self):
-        self.yleiskaavaDatabase.reconnectToDB()
+        # self.yleiskaavaDatabase.reconnectToDB()
         
         layerNames = self.yleiskaavaDatabase.getUserFriendlyTargetSchemaTableNames()
         for name in layerNames:

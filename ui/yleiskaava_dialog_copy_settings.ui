@@ -66,6 +66,16 @@
        </layout>
       </item>
       <item>
+       <widget class="QCheckBox" name="checkBoxCapitalize">
+        <property name="text">
+         <string>Muuta lähdeaineiston kaavamääräysotsikot kopioinnissa suuriin kirjaimiin</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QCheckBox" name="checkBoxFillLandUseClassificationWithRegulation">
         <property name="text">
          <string>Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan tai päinvastoin (koittaa huomioida mahd. lyhenteen)</string>
@@ -196,13 +206,12 @@
       </item>
      </layout>
      <zorder>groupBox_2</zorder>
-     <zorder>checkBoxCreateRegulations</zorder>
      <zorder>groupBox_3</zorder>
      <zorder>checkBoxFillLandUseClassificationWithRegulation</zorder>
      <zorder>checkBoxLinkToSpatialPlan</zorder>
-     <zorder>pushButtonChooseExistingRegulationForDefault</zorder>
      <zorder></zorder>
      <zorder>checkBoxIncludeFieldNamesForMultiValues</zorder>
+     <zorder>checkBoxCapitalize</zorder>
     </widget>
    </item>
    <item>

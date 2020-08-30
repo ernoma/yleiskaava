@@ -195,44 +195,44 @@ class DataCopySourceToTarget:
             self.targetTableComboBoxes = []
             self.targetFieldNameComboBoxes = []
 
-            self.yleiskaavaDatabase.reconnectToDB()
+            # self.yleiskaavaDatabase.reconnectToDB()
 
             index = 0
             for field in sourceLayer.fields().toList():
-                if True: #field.name() == 'id' or self.yleiskaavaUtils.getStringTypeForFeatureField(field) != 'uuid':
-                    QgsMessageLog.logMessage('updateUIBasedOnSourceLayer - field.name(): ' + field.name(), 'Yleiskaava-työkalu', Qgis.Info)
-                    sourceFieldnameLabel = QLabel(field.name())
-                    QgsMessageLog.logMessage('updateUIBasedOnSourceLayer - sourceFieldnameLabel != None? ' + str(sourceFieldnameLabel is not None), 'Yleiskaava-työkalu', Qgis.Info)
-                    sourceFieldTypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
-                    sourceFieldtypeLabel = QLabel(sourceFieldTypeName)
-                    
-                    targetTableComboBox = QComboBox()
+                # if True: #field.name() == 'id' or self.yleiskaavaUtils.getStringTypeForFeatureField(field) != 'uuid':
+                # QgsMessageLog.logMessage('updateUIBasedOnSourceLayer - field.name(): ' + field.name(), 'Yleiskaava-työkalu', Qgis.Info)
+                sourceFieldnameLabel = QLabel(field.name())
+                # QgsMessageLog.logMessage('updateUIBasedOnSourceLayer - sourceFieldnameLabel != None? ' + str(sourceFieldnameLabel is not None), 'Yleiskaava-työkalu', Qgis.Info)
+                sourceFieldTypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
+                sourceFieldtypeLabel = QLabel(sourceFieldTypeName)
+                
+                targetTableComboBox = QComboBox()
 
-                    # anna valita vain geometrialtaan lähdetason kanssa yhteensopiva kohdetaso
-                    targetTableNames = sorted(self.yleiskaavaDatabase.getTargetSchemaTableNamesShownInCopySourceToTargetUI(geometry_type = sourceLayer.geometryType()))
-                    targetTableNames.insert(0, "Valitse kohdekarttataso")
+                # anna valita vain geometrialtaan lähdetason kanssa yhteensopiva kohdetaso
+                targetTableNames = sorted(self.yleiskaavaDatabase.getTargetSchemaTableNamesShownInCopySourceToTargetUI(geometry_type = sourceLayer.geometryType()))
+                targetTableNames.insert(0, "Valitse kohdekarttataso")
 
-                    targetTableComboBox.addItems(targetTableNames)
-                    self.targetTableComboBoxes.append(targetTableComboBox)
-                    
-                    targetFieldNameComboBox = QComboBox()
-                    self.targetFieldNameComboBoxes.append(targetFieldNameComboBox)
-                    
-                    self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setCellWidget(index, DataCopySourceToTarget.SOURCE_FIELD_NAME_INDEX, sourceFieldnameLabel)
-                    self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setCellWidget(index, DataCopySourceToTarget.SOURCE_FIELD_TYPE_NAME_INDEX, sourceFieldtypeLabel)
-                    self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setCellWidget(index, DataCopySourceToTarget.TARGET_TABLE_NAME_INDEX, targetTableComboBox)
-                    self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setCellWidget(index, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX, targetFieldNameComboBox)
+                targetTableComboBox.addItems(targetTableNames)
+                self.targetTableComboBoxes.append(targetTableComboBox)
+                
+                targetFieldNameComboBox = QComboBox()
+                self.targetFieldNameComboBoxes.append(targetFieldNameComboBox)
+                
+                self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setCellWidget(index, DataCopySourceToTarget.SOURCE_FIELD_NAME_INDEX, sourceFieldnameLabel)
+                self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setCellWidget(index, DataCopySourceToTarget.SOURCE_FIELD_TYPE_NAME_INDEX, sourceFieldtypeLabel)
+                self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setCellWidget(index, DataCopySourceToTarget.TARGET_TABLE_NAME_INDEX, targetTableComboBox)
+                self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.setCellWidget(index, DataCopySourceToTarget.TARGET_TABLE_FIELD_NAME_INDEX, targetFieldNameComboBox)
 
-                    targetTableComboBox.currentTextChanged.connect(partial(self.handleTargetTableSelectChanged, index, sourceFieldTypeName, targetTableComboBox, targetFieldNameComboBox))
-                    QgsMessageLog.logMessage('updateUIBasedOnSourceLayer - lisätty rivi tableWidgetSourceTargetMatch', 'Yleiskaava-työkalu', Qgis.Info)
-                    index += 1
+                targetTableComboBox.currentTextChanged.connect(partial(self.handleTargetTableSelectChanged, index, sourceFieldTypeName, targetTableComboBox, targetFieldNameComboBox))
+                # QgsMessageLog.logMessage('updateUIBasedOnSourceLayer - lisätty rivi tableWidgetSourceTargetMatch', 'Yleiskaava-työkalu', Qgis.Info)
+                index += 1
 
             self.dialogCopySourceDataToDatabase.tableWidgetSourceTargetMatch.resizeColumnsToContents()
 
 
     def handleTargetTableSelectChanged(self, rowIndex, sourceFieldTypeName, targetTableComboBox, targetFieldNameComboBox):
 
-        self.yleiskaavaDatabase.reconnectToDB()
+        # self.yleiskaavaDatabase.reconnectToDB()
         
         text = targetTableComboBox.currentText()
         if text != "Valitse kohdekarttataso":
@@ -286,7 +286,7 @@ class DataCopySourceToTarget:
 
 
     def getTargetFieldComboBoxText(self, targetFieldName, targetFieldTypeName):
-        self.yleiskaavaDatabase.reconnectToDB()
+        # self.yleiskaavaDatabase.reconnectToDB()
         userFriendlyFieldName = self.yleiskaavaDatabase.getUserFriendlytargetFieldName(targetFieldName)
         return '' + userFriendlyFieldName + ' (' + targetFieldName + ', ' + targetFieldTypeName + ')'
 
@@ -483,7 +483,7 @@ class DataCopySourceToTarget:
     def initializeDialogCopySettingsPlanPart(self):
 
         # hae kaikki yleiskaavataulun yleiskaavojen nimet, täytä comboBoxSpatialPlanName ja valitse tyypillisin nimi
-        self.yleiskaavaDatabase.reconnectToDB()
+        # self.yleiskaavaDatabase.reconnectToDB()
         plans, planLevelList = self.yleiskaavaDatabase.getSpatialPlansAndPlanLevels()
 
         planNames = [plan["nimi"] for plan in plans]
@@ -561,7 +561,7 @@ class DataCopySourceToTarget:
 
     #def comboBoxLevelOfSpatialPlanCurrentTextChanged(self):
     def comboBoxSpatialPlanNameCurrentTextChanged(self):
-        self.yleiskaavaDatabase.reconnectToDB()
+        # self.yleiskaavaDatabase.reconnectToDB()
         self.dialogCopySettings.comboBoxLevelOfSpatialPlan.setCurrentText(self.yleiskaavaDatabase.getYleiskaavaPlanLevelCodeWithPlanName(self.dialogCopySettings.comboBoxSpatialPlanName.currentText()))
 
 
@@ -591,7 +591,7 @@ class DataCopySourceToTarget:
         targetFieldName = fieldInfo["name"]
         targetFieldTypeName = fieldInfo["type"]
 
-        self.yleiskaavaDatabase.reconnectToDB()
+        # self.yleiskaavaDatabase.reconnectToDB()
         userFriendlyTableName = self.yleiskaavaDatabase.getUserFriendlyschemaTableName(schemaTableName)
         userFriendlyFieldName = self.yleiskaavaDatabase.getUserFriendlytargetFieldName(targetFieldName)
 
@@ -622,7 +622,7 @@ class DataCopySourceToTarget:
 
         if reason == None:
             transformContext = QgsProject.instance().transformContext() # OK - QgsCoordinateTransformContext: "QgsCoordinateTransformContext objects are thread safe for read and write.", https://qgis.org/pyqgis/3.4/core/QgsCoordinateTransformContext.html
-            self.yleiskaavaDatabase.reconnectToDB()
+            # self.yleiskaavaDatabase.reconnectToDB()
             spatialPlanName = self.dialogCopySettings.comboBoxSpatialPlanName.currentText() # ok
             spatialPlanID, planNumber = self.yleiskaavaDatabase.getSpatialPlanIDAndNumberForPlanName(spatialPlanName) # ok
             shouldLinkToSpatialPlan = self.dialogCopySettings.checkBoxLinkToSpatialPlan.isChecked() # ok
@@ -631,6 +631,7 @@ class DataCopySourceToTarget:
             targetFieldValueSeparator = self.dialogCopySettings.lineEditMultiValuesSeparator.text() # ok
             defaultFieldNameValueInfos = self.getDefaultTargetFieldInfo() # ok
             shouldCreateNewRegulation = self.dialogCopySettings.checkBoxCreateRegulations.isChecked() # ok
+            shouldCapitalize = self.dialogCopySettings.checkBoxCapitalize.isChecked() # ok
             shouldFillLandUseClassificationWithRegulation = self.dialogCopySettings.checkBoxFillLandUseClassificationWithRegulation.isChecked() # ok
             specificRegulations = self.yleiskaavaDatabase.getSpecificRegulations()
             regulationNames = []
@@ -639,7 +640,7 @@ class DataCopySourceToTarget:
                       if regulation["kaavamaarays_otsikko"].value() != None:
                         regulationNames.append(regulation["kaavamaarays_otsikko"].value()) # ok
 
-            self.copySourceDataToDatabaseTask = CopySourceDataToDatabaseTask(self.yleiskaavaUtils, self.yleiskaavaDatabase, transformContext, planNumber, self.targetSchemaTableName, shouldLinkToSpatialPlan, spatialPlanName, spatialPlanID, fieldMatches, includeFieldNamesForMultiValues, targetFieldValueSeparator, defaultFieldNameValueInfos, shouldCreateNewRegulation, shouldFillLandUseClassificationWithRegulation, regulationNames) # OK  - yllä olevat
+            self.copySourceDataToDatabaseTask = CopySourceDataToDatabaseTask(self.yleiskaavaUtils, self.yleiskaavaDatabase, transformContext, planNumber, self.targetSchemaTableName, shouldLinkToSpatialPlan, spatialPlanName, spatialPlanID, fieldMatches, includeFieldNamesForMultiValues, targetFieldValueSeparator, defaultFieldNameValueInfos, shouldCreateNewRegulation, shouldCapitalize, shouldFillLandUseClassificationWithRegulation, regulationNames) # OK  - yllä olevat
             regulationLayer = self.yleiskaavaDatabase.getProjectLayer("yk_yleiskaava.kaavamaarays")
             regulationRelationLayer = self.yleiskaavaDatabase.getProjectLayer("yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys")
             self.copySourceDataToDatabaseTask.setDependentLayers([self.sourceLayer, self.targetLayer, regulationLayer, regulationRelationLayer])
@@ -744,7 +745,7 @@ class DataCopySourceToTarget:
     def getDefaultTargetFieldInfo(self):
         defaultFieldNameValueInfos = []
 
-        self.yleiskaavaDatabase.reconnectToDB()
+        # self.yleiskaavaDatabase.reconnectToDB()
 
         for i in range(self.getDefaultFieldValuesRowCount()):
             text = self.dialogCopySettings.tableWidgetDefaultFieldValues.cellWidget(i, DataCopySourceToTarget.DEFAULT_VALUES_LABEL_INDEX).text()
@@ -823,7 +824,7 @@ class DataCopySourceToTarget:
         count = 0
         spatialTargetTableFieldInfos = []
 
-        self.yleiskaavaDatabase.reconnectToDB()
+        # self.yleiskaavaDatabase.reconnectToDB()
 
         if self.targetSchemaTableName is not None:
             spatialTargetTableFieldInfos = self.yleiskaavaDatabase.getSchemaTableFieldInfos(self.targetSchemaTableName)
@@ -895,7 +896,7 @@ class DataCopySourceToTarget:
         if self.dialogChooseRegulation.checkBoxShowOnlyUsedRegulations.isChecked():
             shouldShowOnlyUsedRegulations = True
 
-        self.yleiskaavaDatabase.reconnectToDB()
+        # self.yleiskaavaDatabase.reconnectToDB()
 
         self.regulations = sorted(self.yleiskaavaDatabase.getSpecificRegulations(shouldShowOnlyUsedRegulations, self.includeAreaRegulations,  self.includeSuplementaryAreaRegulations,  self.includeLineRegulations,  self.includePointRegulations), key=itemgetter('alpha_sort_key'))
         self.regulationTitles = []

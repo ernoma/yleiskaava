@@ -18,7 +18,7 @@ class CopySourceDataToDatabaseTask(QgsTask):
     # createFeatureRegulationRelation = pyqtSignal(str, str, str)
     # createSpecificRegulationAndFeatureRegulationRelation = pyqtSignal(str, str, str) 
 
-    def __init__(self, yleiskaavaUtils, yleiskaavaDatabase, transformContext, planNumber, targetSchemaTableName, shouldLinkToSpatialPlan, spatialPlanName, spatialPlanID, fieldMatches, includeFieldNamesForMultiValues, targetFieldValueSeparator, defaultFieldNameValueInfos, shouldCreateNewRegulation, shouldFillLandUseClassificationWithRegulation, regulationNames):
+    def __init__(self, yleiskaavaUtils, yleiskaavaDatabase, transformContext, planNumber, targetSchemaTableName, shouldLinkToSpatialPlan, spatialPlanName, spatialPlanID, fieldMatches, includeFieldNamesForMultiValues, targetFieldValueSeparator, defaultFieldNameValueInfos, shouldCreateNewRegulation, shouldCapitalize, shouldFillLandUseClassificationWithRegulation, regulationNames):
         super().__init__('Kopioidaan kohteita tietokantaan', QgsTask.CanCancel)
         self.exceptions = []
 
@@ -35,6 +35,7 @@ class CopySourceDataToDatabaseTask(QgsTask):
         self.targetFieldValueSeparator = targetFieldValueSeparator
         self.defaultFieldNameValueInfos = defaultFieldNameValueInfos
         self.shouldCreateNewRegulation = shouldCreateNewRegulation
+        self.shouldCapitalize = shouldCapitalize
         self.shouldFillLandUseClassificationWithRegulation = shouldFillLandUseClassificationWithRegulation
         self.regulationNames = regulationNames
 
@@ -175,6 +176,9 @@ class CopySourceDataToDatabaseTask(QgsTask):
 
                             attrValue = self.yleiskaavaUtils.getAttributeValueInCompatibleType(targetFieldDataItem["name"], targetFieldDataItem["type"], sourceAttrDataItem["type"], sourceAttrDataItem["value"])
                             if attrValue is not None:
+                                if self.shouldCapitalizeWithTargetField(targetFieldDataItem["name"]):
+                                    attrValue = QVariant(attrValue.value().upper())
+
                                 attrNames.append(sourceAttrDataItem["name"])
                                 attrValues.append(attrValue)
                             else:
@@ -204,6 +208,10 @@ class CopySourceDataToDatabaseTask(QgsTask):
             elif foundFieldMatchForTarget and sourceHadValue:
                 # QgsMessageLog.logMessage("setTargetFeatureValues - foundFieldMatch and sourceHadValue - targetFieldName: " + targetFieldDataItem["name"], 'Yleiskaava-työkalu', Qgis.Info)
                 if len(attrValues) == 1:
+                    attrValue = attrValues[0]
+                    if attrValue is not None:
+                        if self.shouldCapitalizeWithTargetField(targetFieldDataItem["name"]):
+                            attrValue = QVariant(attrValue.value().upper())
                     targetFeature.setAttribute(targetFieldDataItem["name"], attrValue)
                 else: # len(attrValues) > 1
                     combinedAttrValues = ""
@@ -213,6 +221,8 @@ class CopySourceDataToDatabaseTask(QgsTask):
                         combinedAttrValues += str(QVariant(attrValue).value()) + self.targetFieldValueSeparator
                     if combinedAttrValues != "" and len(self.targetFieldValueSeparator) > 0:
                         combinedAttrValues = combinedAttrValues[:-(len(self.targetFieldValueSeparator))]
+                    if self.shouldCapitalizeWithTargetField(targetFieldDataItem["name"]):
+                        combinedAttrValues = combinedAttrValues.upper()
                     targetFeature.setAttribute(targetFieldDataItem["name"], combinedAttrValues)
                     # QgsMessageLog.logMessage("setTargetFeatureValues - foundFieldMatch and sourceHadValue - targetFieldName: " + targetFieldDataItem["name"] + ", combinedAttrValues:" + combinedAttrValues, 'Yleiskaava-työkalu', Qgis.Info)
             elif not foundFieldMatchForTarget:
@@ -239,6 +249,15 @@ class CopySourceDataToDatabaseTask(QgsTask):
 
         return True
 
+    
+    def shouldCapitalizeWithTargetField(self, name):
+        if not self.shouldCapitalize:
+            return False
+        elif name == "kaavamaaraysotsikko" or name == "kayttotarkoitus_lyhenne":
+            return True
+
+        return False
+
 
     def handleRegulationAndLandUseClassificationInSourceToTargetCopy(self, sourceFeature, targetSchemaTableName, targetFeature, shouldCreateRelation):
         # Tee tarvittaessa linkki olemassa olevaan tai uuteen kaavamääräykseen. Huomioi asetukset "Luo tarvittaessa uudet kaavamääräykset" ja "Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan tai päinvastoin"
@@ -250,7 +269,11 @@ class CopySourceDataToDatabaseTask(QgsTask):
         fieldMatchTargetNames = [fieldMatch["target"] for fieldMatch in fieldMatches]
 
         sourceRegulationName = self.getSourceFeatureValueForSourceTargetFieldMatch(fieldMatches, sourceFeature, "kaavamaaraysotsikko")
+        if self.shouldCapitalize and not sourceRegulationName.isNull():
+            sourceRegulationName = QVariant(sourceRegulationName.value().upper())
         sourceLandUseClassificationName = self.getSourceFeatureValueForSourceTargetFieldMatch(fieldMatches, sourceFeature, "kayttotarkoitus_lyhenne")
+        if self.shouldCapitalize and not sourceLandUseClassificationName.isNull():
+            sourceLandUseClassificationName = QVariant(sourceLandUseClassificationName.value().upper())
 
         # QgsMessageLog.logMessage("sourceRegulationName: " + str(sourceRegulationName.value()), 'Yleiskaava-työkalu', Qgis.Info)
         # QgsMessageLog.logMessage("sourceLandUseClassificationName: " + str(sourceLandUseClassificationName.value()), 'Yleiskaava-työkalu', Qgis.Info)

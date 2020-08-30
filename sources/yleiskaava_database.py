@@ -647,30 +647,37 @@ class YleiskaavaDatabase:
         #    return None
 
 
-    def getSpatialPlans(self):
+    def getSpatialPlans(self, shouldRetry=True):
         if self.plans is None:
             self.plans = []
-            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-                query = "SELECT id, nimi, nro, id_kaavan_taso FROM yk_yleiskaava.yleiskaava"
-                cursor.execute(query)
-                rows = cursor.fetchall()
+            try:
+                with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                    query = "SELECT id, nimi, nro, id_kaavan_taso FROM yk_yleiskaava.yleiskaava"
+                    cursor.execute(query)
+                    rows = cursor.fetchall()
 
-                planLevels = self.getYleiskaavaPlanLevelList()
+                    planLevels = self.getYleiskaavaPlanLevelList()
 
-                for index, row in enumerate(rows):
-                    planLevelCode = None
-                    if row['id_kaavan_taso'] is not None:
-                        for planLevel in planLevels:
-                            if planLevel['id'] == row['id_kaavan_taso']:
-                                planLevelCode = planLevel['koodi']
-                                break
+                    for index, row in enumerate(rows):
+                        planLevelCode = None
+                        if row['id_kaavan_taso'] is not None:
+                            for planLevel in planLevels:
+                                if planLevel['id'] == row['id_kaavan_taso']:
+                                    planLevelCode = planLevel['koodi']
+                                    break
 
-                    self.plans.append({
-                        "id": row['id'],
-                        "nimi": row['nimi'],
-                        "nro": row['nro'],
-                        "kaavan_taso_koodi": planLevelCode
-                        })
+                        self.plans.append({
+                            "id": row['id'],
+                            "nimi": row['nimi'],
+                            "nro": row['nro'],
+                            "kaavan_taso_koodi": planLevelCode
+                            })
+            except psycopg2.OperationalError:
+                if shouldRetry:
+                    success = self.reconnectToDB()
+                    if success:
+                        return self.getSpatialPlans(shouldRetry=False)
+
 
         return self.plans
 
@@ -689,31 +696,37 @@ class YleiskaavaDatabase:
         return id, nro
 
 
-    def getSpatialPlansAndPlanLevels(self):
+    def getSpatialPlansAndPlanLevels(self, shouldRetry=True):
 
         planLevels = self.getYleiskaavaPlanLevelList()
 
         if self.plans is None:
             self.plans = []
-            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-                query = "SELECT id, nimi, nro, id_kaavan_taso FROM yk_yleiskaava.yleiskaava"
-                cursor.execute(query)
-                rows = cursor.fetchall()
+            try:
+                with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                    query = "SELECT id, nimi, nro, id_kaavan_taso FROM yk_yleiskaava.yleiskaava"
+                    cursor.execute(query)
+                    rows = cursor.fetchall()
 
-                for index, row in enumerate(rows):
-                    planLevelCode = None
-                    if row['id_kaavan_taso'] is not None:
-                        for planLevel in planLevels:
-                            if planLevel['id'] == row['id_kaavan_taso']:
-                                planLevelCode = planLevel['koodi']
-                                break
+                    for index, row in enumerate(rows):
+                        planLevelCode = None
+                        if row['id_kaavan_taso'] is not None:
+                            for planLevel in planLevels:
+                                if planLevel['id'] == row['id_kaavan_taso']:
+                                    planLevelCode = planLevel['koodi']
+                                    break
 
-                    self.plans.append({
-                        "id": row['id'],
-                        "nimi": row['nimi'],
-                        "nro": row['nro'],
-                        "kaavan_taso_koodi": planLevelCode
-                        })
+                        self.plans.append({
+                            "id": row['id'],
+                            "nimi": row['nimi'],
+                            "nro": row['nro'],
+                            "kaavan_taso_koodi": planLevelCode
+                            })
+            except psycopg2.OperationalError:
+                if shouldRetry:
+                    success = self.reconnectToDB()
+                    if success:
+                        return self.getSpatialPlansAndPlanLevels(shouldRetry=False)
 
         # for planLevel in planLevels:
         #     QgsMessageLog.logMessage('getSpatialPlansAndPlanLevels - row[id]: ' + row['id'], 'Yleiskaava-työkalu', Qgis.Info)
@@ -798,22 +811,28 @@ class YleiskaavaDatabase:
         return planLevelCode
 
 
-    def getYleiskaavaPlanLevelList(self):
+    def getYleiskaavaPlanLevelList(self, shouldRetry=True):
 
         if self.planLevelList == None:
             self.planLevelList = []
 
-            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-                query = "SELECT id, koodi, kuvaus FROM yk_koodiluettelot.kaavan_taso"
-                cursor.execute(query)
-                rows = cursor.fetchall()
+            try:
+                with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                    query = "SELECT id, koodi, kuvaus FROM yk_koodiluettelot.kaavan_taso"
+                    cursor.execute(query)
+                    rows = cursor.fetchall()
 
-            for row in rows:
-                # QgsMessageLog.logMessage('getYleiskaavaPlanLevelList - row[id]: ' + row['id'], 'Yleiskaava-työkalu', Qgis.Info)
-                self.planLevelList.append({
-                    "id": row['id'],
-                    "koodi": row['koodi'],
-                    "kuvaus": row['kuvaus']})
+                for row in rows:
+                    # QgsMessageLog.logMessage('getYleiskaavaPlanLevelList - row[id]: ' + row['id'], 'Yleiskaava-työkalu', Qgis.Info)
+                    self.planLevelList.append({
+                        "id": row['id'],
+                        "koodi": row['koodi'],
+                        "kuvaus": row['kuvaus']})
+            except psycopg2.OperationalError:
+                if shouldRetry:
+                    success = self.reconnectToDB()
+                    if success:
+                        return self.getYleiskaavaPlanLevelList(shouldRetry=False)
 
         return self.planLevelList
 
@@ -881,51 +900,69 @@ class YleiskaavaDatabase:
         return None
 
 
-    def getRegulationCountForSpatialFeature(self, featureID, featureType):
+    def getRegulationCountForSpatialFeature(self, featureID, featureType, shouldRetry=True):
         count = 0
 
-        with self.dbConnection.cursor() as cursor:
-            query = "SELECT COUNT(*) FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_{} = %s".format(featureType)
-            cursor.execute(query, (featureID, ))
-            row = cursor.fetchone()
-            count = row[0]
+        try:
+            with self.dbConnection.cursor() as cursor:
+                query = "SELECT COUNT(*) FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_{} = %s".format(featureType)
+                cursor.execute(query, (featureID, ))
+                row = cursor.fetchone()
+                count = row[0]
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    return self.getRegulationCountForSpatialFeature(featureID, featureType, shouldRetry=False)
 
         return count
 
 
-    def getDistinctLandUseClassificationsOfLayer(self, userFriendlyTableName):
+    def getDistinctLandUseClassificationsOfLayer(self, userFriendlyTableName, shouldRetry=True):
         classifications = []
         featureType = self.getFeatureTypeForUserFriendlyTargetSchemaTableName(userFriendlyTableName)
 
-        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-            query = "SELECT DISTINCT kayttotarkoitus_lyhenne FROM yk_yleiskaava.kaavaobjekti_{} WHERE kayttotarkoitus_lyhenne IS NOT NULL AND kayttotarkoitus_lyhenne != ''".format(featureType)
-            cursor.execute(query)
-            rows = cursor.fetchall()
-            for row in rows:
-                classifications.append(row['kayttotarkoitus_lyhenne'])
+        try:
+            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                query = "SELECT DISTINCT kayttotarkoitus_lyhenne FROM yk_yleiskaava.kaavaobjekti_{} WHERE kayttotarkoitus_lyhenne IS NOT NULL AND kayttotarkoitus_lyhenne != ''".format(featureType)
+                cursor.execute(query)
+                rows = cursor.fetchall()
+                for row in rows:
+                    classifications.append(row['kayttotarkoitus_lyhenne'])
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    return self.getDistinctLandUseClassificationsOfLayer(userFriendlyTableName, shouldRetry=False)
 
         return classifications
 
 
-    def getLayerFeatureIDsAndFieldValuesForFeaturesHavingLanduseClassification(self, userFriendlyTableName, landUseClassification, fieldName):
+    def getLayerFeatureIDsAndFieldValuesForFeaturesHavingLanduseClassification(self, userFriendlyTableName, landUseClassification, fieldName, shouldRetry=True):
         featureIDsAndValues = []
 
         featureType = self.getFeatureTypeForUserFriendlyTargetSchemaTableName(userFriendlyTableName)
 
-        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-            query = "SELECT id, {} FROM yk_yleiskaava.kaavaobjekti_{} WHERE %(fieldName)s IS NOT NULL AND %(fieldName)s != '' AND kayttotarkoitus_lyhenne = %(landUseClassification)s".format(fieldName, featureType)
-            cursor.execute(query, {"fieldName" : fieldName, "landUseClassification": landUseClassification})
-            rows = cursor.fetchall()
-            for row in rows:
-                featureIDsAndValues.append({
-                    "id": row["id"],
-                    "value": row[fieldName]
-                })
+        try:
+            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                query = "SELECT id, {} FROM yk_yleiskaava.kaavaobjekti_{} WHERE %(fieldName)s IS NOT NULL AND %(fieldName)s != '' AND kayttotarkoitus_lyhenne = %(landUseClassification)s".format(fieldName, featureType)
+                cursor.execute(query, {"fieldName" : fieldName, "landUseClassification": landUseClassification})
+                rows = cursor.fetchall()
+                for row in rows:
+                    featureIDsAndValues.append({
+                        "id": row["id"],
+                        "value": row[fieldName]
+                    })
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    return self.getLayerFeatureIDsAndFieldValuesForFeaturesHavingLanduseClassification(userFriendlyTableName, landUseClassification, fieldName, shouldRetry=False)
 
         return featureIDsAndValues
 
 
-    def getRegulationsForSpatialFeature(self, featureID, featureType):
+    def getRegulationsForSpatialFeature(self, featureID, featureType, shouldRetry=True):
         regulationList = []
 
         regulations = None
@@ -938,19 +975,25 @@ class YleiskaavaDatabase:
         elif featureType == "piste":
             regulations = self.getSpecificRegulations(includeAreaRegulations=False, includeSuplementaryAreaRegulations=False, includeLineRegulations=False)
 
-        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-            query = "SELECT id_kaavamaarays FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_{} = %s".format(featureType)
-            cursor.execute(query, (featureID, ))
-            rows = cursor.fetchall()
+        try:
+            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                query = "SELECT id_kaavamaarays FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_{} = %s".format(featureType)
+                cursor.execute(query, (featureID, ))
+                rows = cursor.fetchall()
 
-            for row in rows:
-               for regulation in regulations:
-                   if regulation["id"] == row["id_kaavamaarays"]:
-                       # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, jos kaavamaarays_otsikko ei null, feature['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
-                        if regulation["kaavamaarays_otsikko"] is not None:
-                            # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, regulation['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
-                            regulationList.append(regulation)
-                        break
+                for row in rows:
+                    for regulation in regulations:
+                        if regulation["id"] == row["id_kaavamaarays"]:
+                            # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, jos kaavamaarays_otsikko ei null, feature['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
+                                if regulation["kaavamaarays_otsikko"] is not None:
+                                    # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, regulation['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
+                                    regulationList.append(regulation)
+                                break
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    return self.getRegulationsForSpatialFeature(featureID, featureType, shouldRetry = False)
 
         return regulationList
 
@@ -998,75 +1041,88 @@ class YleiskaavaDatabase:
         return regulationList
 
 
-    def getgetSpecificRegulationsForSubQuery(self, subQuery):
+    def getgetSpecificRegulationsForSubQuery(self, subQuery, shouldRetry=True):
         regulationList = []
-        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as regulationCursor:
-            query = "SELECT id, kaavamaarays_otsikko, maaraysteksti, kuvaus_teksti FROM yk_yleiskaava.kaavamaarays WHERE kaavamaarays_otsikko IS NOT NULL and id in ({})".format(subQuery)
-            regulationCursor.execute(query)
-            regulationRows = regulationCursor.fetchall()
-            for regulationRow in regulationRows:
-                regulationList.append({
-                    "id": regulationRow['id'],
-                    "alpha_sort_key": regulationRow['kaavamaarays_otsikko'],
-                    "kaavamaarays_otsikko": QVariant(regulationRow['kaavamaarays_otsikko']),
-                    "maaraysteksti": QVariant(regulationRow['maaraysteksti']),
-                    "kuvaus_teksti": QVariant(regulationRow['kuvaus_teksti'])
-                    })
+        try:
+            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as regulationCursor:
+                query = "SELECT id, kaavamaarays_otsikko, maaraysteksti, kuvaus_teksti FROM yk_yleiskaava.kaavamaarays WHERE kaavamaarays_otsikko IS NOT NULL and id in ({})".format(subQuery)
+                regulationCursor.execute(query)
+                regulationRows = regulationCursor.fetchall()
+                for regulationRow in regulationRows:
+                    regulationList.append({
+                        "id": regulationRow['id'],
+                        "alpha_sort_key": regulationRow['kaavamaarays_otsikko'],
+                        "kaavamaarays_otsikko": QVariant(regulationRow['kaavamaarays_otsikko']),
+                        "maaraysteksti": QVariant(regulationRow['maaraysteksti']),
+                        "kuvaus_teksti": QVariant(regulationRow['kuvaus_teksti'])
+                        })
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    return self.getgetSpecificRegulationsForSubQuery(subQuery, shouldRetry = False)
+
 
         return regulationList
 
 
-    def shouldAddRegulation(self, regulationID, onlyUsedRegulations=False, includeAreaRegulations=True, includeSuplementaryAreaRegulations=True, includeLineRegulations=True, includePointRegulations=True):
+    def shouldAddRegulation(self, regulationID, onlyUsedRegulations=False, includeAreaRegulations=True, includeSuplementaryAreaRegulations=True, includeLineRegulations=True, includePointRegulations=True, shouldRetry=True):
 
         # Kaavamääräys on käytössä, jos liittyy johonkin kaavakohteeseen, jonka version_loppumispvm is None
-        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as relationCursor:
-            query = "SELECT id_kaavaobjekti_alue, id_kaavaobjekti_alue_taydentava, id_kaavaobjekti_viiva, id_kaavaobjekti_piste FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavamaarays = (%s)"
-            relationCursor.execute(query, (regulationID, ))
-            relationRows = relationCursor.fetchall()
-            for relationFeature in relationRows:
-                if includeAreaRegulations and not QVariant(relationFeature["id_kaavaobjekti_alue"]).isNull():
-                    if onlyUsedRegulations:
-                        
-                        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-                            query = "SELECT id, version_loppumispvm FROM yk_yleiskaava.kaavaobjekti_alue WHERE id = (%s) AND version_loppumispvm IS NULL"
-                            cursor.execute(query, (relationFeature["id_kaavaobjekti_alue"], ))
-                            rows = relationCursor.fetchall()
-                            if len(rows) > 0:
-                                return True
-                    else:
-                        return True
-                # else:
-                #     QgsMessageLog.logMessage('isRegulationInUse - relationFeature["id_kaavaobjekti_alue"]: ' + str(relationFeature["id_kaavaobjekti_alue"]) + ', QVariant(relationFeature["id_kaavaobjekti_alue"]).isNull(): ' + str(QVariant(relationFeature["id_kaavaobjekti_alue"]).isNull()), 'Yleiskaava-työkalu', Qgis.Info)
-                elif includeSuplementaryAreaRegulations and not QVariant(relationFeature["id_kaavaobjekti_alue_taydentava"]).isNull():
-                    if onlyUsedRegulations:
-                        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-                            query = "SELECT id, version_loppumispvm FROM yk_yleiskaava.kaavaobjekti_alue_taydentava WHERE id = (%s) AND version_loppumispvm IS NULL"
-                            cursor.execute(query, (relationFeature["id_kaavaobjekti_alue_taydentava"], ))
-                            rows = relationCursor.fetchall()
-                            if len(rows) > 0:
-                                return True
-                    else:
-                        return True
-                elif includeLineRegulations and not QVariant(relationFeature["id_kaavaobjekti_viiva"]).isNull():
-                    if onlyUsedRegulations:
-                        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-                            query = "SELECT id, version_loppumispvm FROM yk_yleiskaava.kaavaobjekti_viiva WHERE id = (%s) AND version_loppumispvm IS NULL"
-                            cursor.execute(query, (relationFeature["id_kaavaobjekti_viiva"], ))
-                            rows = relationCursor.fetchall()
-                            if len(rows) > 0:
-                                return True
-                    else:
-                        return True
-                elif includePointRegulations and not QVariant(relationFeature["id_kaavaobjekti_piste"]).isNull():
-                    if onlyUsedRegulations:
-                        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-                            query = "SELECT id, version_loppumispvm FROM yk_yleiskaava.kaavaobjekti_piste WHERE id = (%s) AND version_loppumispvm IS NULL"
-                            cursor.execute(query, (relationFeature["id_kaavaobjekti_piste"], ))
-                            rows = relationCursor.fetchall()
-                            if len(rows) > 0:
-                                return True
-                    else:
-                        return True
+        try:
+            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as relationCursor:
+                query = "SELECT id_kaavaobjekti_alue, id_kaavaobjekti_alue_taydentava, id_kaavaobjekti_viiva, id_kaavaobjekti_piste FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavamaarays = (%s)"
+                relationCursor.execute(query, (regulationID, ))
+                relationRows = relationCursor.fetchall()
+                for relationFeature in relationRows:
+                    if includeAreaRegulations and not QVariant(relationFeature["id_kaavaobjekti_alue"]).isNull():
+                        if onlyUsedRegulations:
+                            
+                            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                                query = "SELECT id, version_loppumispvm FROM yk_yleiskaava.kaavaobjekti_alue WHERE id = (%s) AND version_loppumispvm IS NULL"
+                                cursor.execute(query, (relationFeature["id_kaavaobjekti_alue"], ))
+                                rows = relationCursor.fetchall()
+                                if len(rows) > 0:
+                                    return True
+                        else:
+                            return True
+                    # else:
+                    #     QgsMessageLog.logMessage('isRegulationInUse - relationFeature["id_kaavaobjekti_alue"]: ' + str(relationFeature["id_kaavaobjekti_alue"]) + ', QVariant(relationFeature["id_kaavaobjekti_alue"]).isNull(): ' + str(QVariant(relationFeature["id_kaavaobjekti_alue"]).isNull()), 'Yleiskaava-työkalu', Qgis.Info)
+                    elif includeSuplementaryAreaRegulations and not QVariant(relationFeature["id_kaavaobjekti_alue_taydentava"]).isNull():
+                        if onlyUsedRegulations:
+                            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                                query = "SELECT id, version_loppumispvm FROM yk_yleiskaava.kaavaobjekti_alue_taydentava WHERE id = (%s) AND version_loppumispvm IS NULL"
+                                cursor.execute(query, (relationFeature["id_kaavaobjekti_alue_taydentava"], ))
+                                rows = relationCursor.fetchall()
+                                if len(rows) > 0:
+                                    return True
+                        else:
+                            return True
+                    elif includeLineRegulations and not QVariant(relationFeature["id_kaavaobjekti_viiva"]).isNull():
+                        if onlyUsedRegulations:
+                            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                                query = "SELECT id, version_loppumispvm FROM yk_yleiskaava.kaavaobjekti_viiva WHERE id = (%s) AND version_loppumispvm IS NULL"
+                                cursor.execute(query, (relationFeature["id_kaavaobjekti_viiva"], ))
+                                rows = relationCursor.fetchall()
+                                if len(rows) > 0:
+                                    return True
+                        else:
+                            return True
+                    elif includePointRegulations and not QVariant(relationFeature["id_kaavaobjekti_piste"]).isNull():
+                        if onlyUsedRegulations:
+                            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                                query = "SELECT id, version_loppumispvm FROM yk_yleiskaava.kaavaobjekti_piste WHERE id = (%s) AND version_loppumispvm IS NULL"
+                                cursor.execute(query, (relationFeature["id_kaavaobjekti_piste"], ))
+                                rows = relationCursor.fetchall()
+                                if len(rows) > 0:
+                                    return True
+                        else:
+                            return True
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    return self.shouldAddRegulation(regulationID, onlyUsedRegulations, includeAreaRegulations, includeSuplementaryAreaRegulations, includeLineRegulations, includePointRegulations, shouldRetry = False)
 
         return False
 
@@ -1116,64 +1172,88 @@ class YleiskaavaDatabase:
         return True
         
 
-    def updateSpatialFeatureRegulationAndLandUseClassification(self, featureID, featureType, regulationID, regulationTitle, shouldRemoveOldRegulationRelations, shouldUpdateOnlyRelation):
+    def updateSpatialFeatureRegulationAndLandUseClassification(self, featureID, featureType, regulationID, regulationTitle, shouldRemoveOldRegulationRelations, shouldUpdateOnlyRelation, shouldRetry=True):
         # remove old regulation relations if shouldRemoveOldRegulationRelations
         # lisää yhteys kaavaobjekti_kaavamaarays_yhteys-tauluun, jos yhteyttä ei vielä ole
 
-        if shouldRemoveOldRegulationRelations:
-            self.removeRegulationRelationsFromSpatialFeature(featureID, featureType)
+        try:
+            if shouldRemoveOldRegulationRelations:
+                self.removeRegulationRelationsFromSpatialFeature(featureID, featureType)
 
-        if not self.existsFeatureRegulationRelation(featureID, featureType, regulationID):
-            self.createFeatureRegulationRelationWithRegulationID("yk_yleiskaava.kaavaobjekti_" + featureType, featureID, regulationID)
+            if not self.existsFeatureRegulationRelation(featureID, featureType, regulationID):
+                self.createFeatureRegulationRelationWithRegulationID("yk_yleiskaava.kaavaobjekti_" + featureType, featureID, regulationID)
 
-        # return True
+            # return True
 
-        if not shouldUpdateOnlyRelation:
-            landUseClassificationName = regulationTitle
+            if not shouldUpdateOnlyRelation:
+                landUseClassificationName = regulationTitle
 
-            with self.dbConnection.cursor() as cursor:
-                query = "SELECT nro FROM yk_yleiskaava.yleiskaava WHERE id = (SELECT id_yleiskaava FROM yk_yleiskaava.kaavaobjekti_{} ko WHERE id = %s)".format(featureType)
+                with self.dbConnection.cursor() as cursor:
+                    query = "SELECT nro FROM yk_yleiskaava.yleiskaava WHERE id = (SELECT id_yleiskaava FROM yk_yleiskaava.kaavaobjekti_{} ko WHERE id = %s)".format(featureType)
 
-                # QgsMessageLog.logMessage("updateSpatialFeatureRegulationAndLandUseClassification - query: " + query, 'Yleiskaava-työkalu', Qgis.Info)
+                    # QgsMessageLog.logMessage("updateSpatialFeatureRegulationAndLandUseClassification - query: " + query, 'Yleiskaava-työkalu', Qgis.Info)
 
-                cursor.execute(query, (featureID, ))
-                row = cursor.fetchone()
-                if row is not None and row[0] is not None:
-                    planNumber = row[0]
-                    landUseClassificationName = self.yleiskaavaUtils.getLandUseClassificationNameForRegulation(planNumber, "yk_yleiskaava.kaavaobjekti_" + featureType, regulationTitle)
+                    cursor.execute(query, (featureID, ))
+                    row = cursor.fetchone()
+                    if row is not None and row[0] is not None:
+                        planNumber = row[0]
+                        landUseClassificationName = self.yleiskaavaUtils.getLandUseClassificationNameForRegulation(planNumber, "yk_yleiskaava.kaavaobjekti_" + featureType, regulationTitle)
 
-                query = "UPDATE yk_yleiskaava.kaavaobjekti_{} SET kaavamaaraysotsikko = %s, kayttotarkoitus_lyhenne = %s WHERE id = %s".format(featureType)
-                cursor.execute(query, (regulationTitle, landUseClassificationName, featureID))
-                self.dbConnection.commit()
+                    query = "UPDATE yk_yleiskaava.kaavaobjekti_{} SET kaavamaaraysotsikko = %s, kayttotarkoitus_lyhenne = %s WHERE id = %s".format(featureType)
+                    cursor.execute(query, (regulationTitle, landUseClassificationName, featureID))
+                    self.dbConnection.commit()
 
-            # if not success:
-            #     self.iface.messageBar().pushMessage('updateSpatialFeatureRegulationAndLandUseClassificationTexts - commitChanges() failed', Qgis.Critical)
+                # if not success:
+                #     self.iface.messageBar().pushMessage('updateSpatialFeatureRegulationAndLandUseClassificationTexts - commitChanges() failed', Qgis.Critical)
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    return self.updateSpatialFeatureRegulationAndLandUseClassification(featureID, featureType, regulationID, regulationTitle, shouldRemoveOldRegulationRelations, shouldUpdateOnlyRelation, shouldRetry = False)
 
         return True
 
 
-    def existsFeatureRegulationRelation(self, featureID, featureType, regulationID):
-        with self.dbConnection.cursor() as cursor:
-            query = "SELECT id FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_{} = %s AND id_kaavamaarays = %s".format(featureType)
-            cursor.execute(query, (featureID, regulationID))
-            if len(cursor.fetchall()) > 0:
-                return True
+    def existsFeatureRegulationRelation(self, featureID, featureType, regulationID, shouldRetry=True):
+        try:
+            with self.dbConnection.cursor() as cursor:
+                query = "SELECT id FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_{} = %s AND id_kaavamaarays = %s".format(featureType)
+                cursor.execute(query, (featureID, regulationID))
+                if len(cursor.fetchall()) > 0:
+                    return True
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    return self.existsFeatureRegulationRelation(featureID, featureType, regulationID, shouldRetry = False)
 
         return False
 
 
-    def removeRegulationRelationsFromSpatialFeature(self, featureID, featureType):
-        with self.dbConnection.cursor() as cursor:
-            query = "DELETE FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_{} = %s".format(featureType)
-            cursor.execute(query, (featureID, ))
-            self.dbConnection.commit()
+    def removeRegulationRelationsFromSpatialFeature(self, featureID, featureType, shouldRetry=True):
+        try:
+            with self.dbConnection.cursor() as cursor:
+                query = "DELETE FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_{} = %s".format(featureType)
+                cursor.execute(query, (featureID, ))
+                self.dbConnection.commit()
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    self.removeRegulationRelationsFromSpatialFeature(featureID, featureType, shouldRetry = False)
 
 
-    def deleteSpatialFeature(self, featureID, featureType):
-        with self.dbConnection.cursor() as cursor:
-            query = "DELETE FROM yk_yleiskaava.kaavaobjekti_{} WHERE id = %s".format(featureType)
-            cursor.execute(query, (featureID, ))
-            self.dbConnection.commit()
+    def deleteSpatialFeature(self, featureID, featureType, shouldRetry=True):
+        try:
+            with self.dbConnection.cursor() as cursor:
+                query = "DELETE FROM yk_yleiskaava.kaavaobjekti_{} WHERE id = %s".format(featureType)
+                cursor.execute(query, (featureID, ))
+                self.dbConnection.commit()
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    self.deleteSpatialFeature(featureID, featureType, shouldRetry = False)
 
 
     def createFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationTitle):
@@ -1182,15 +1262,21 @@ class YleiskaavaDatabase:
         self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulationID)
 
 
-    def createFeatureRegulationRelationWithRegulationID(self, targetSchemaTableName, targetFeatureID, regulationID):
+    def createFeatureRegulationRelationWithRegulationID(self, targetSchemaTableName, targetFeatureID, regulationID, shouldRetry=True):
         # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - targetSchemaTableName: " + targetSchemaTableName + ", targetFeatureID: " + str(targetFeatureID) + ", regulationID: " + str(regulationID), 'Yleiskaava-työkalu', Qgis.Info)
 
-        schema, table_name = targetSchemaTableName.split('.')
+        try:
+            schema, table_name = targetSchemaTableName.split('.')
 
-        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-            query = "INSERT INTO yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys (id, id_{}, id_kaavamaarays) VALUES (%s, %s, %s)".format(table_name)
-            cursor.execute(query, (str(uuid.uuid4()), targetFeatureID, regulationID))
-            self.dbConnection.commit()
+            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                query = "INSERT INTO yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys (id, id_{}, id_kaavamaarays) VALUES (%s, %s, %s)".format(table_name)
+                cursor.execute(query, (str(uuid.uuid4()), targetFeatureID, regulationID))
+                self.dbConnection.commit()
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulationID, shouldRetry = False)
 
 
     def addRegulationRelationsToLayer(self, sourceFeatureID, targetFeatureID, featureType):
@@ -1208,50 +1294,62 @@ class YleiskaavaDatabase:
         return self.themes
 
 
-    def readThemes(self):
-        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-            query = "SELECT id, nimi, kuvaus, id_yleiskaava FROM yk_kuvaustekniikka.teema"
-            cursor.execute(query)
-            rows = cursor.fetchall()
+    def readThemes(self, shouldRetry=True):
+        try:
+            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                query = "SELECT id, nimi, kuvaus, id_yleiskaava FROM yk_kuvaustekniikka.teema"
+                cursor.execute(query)
+                rows = cursor.fetchall()
 
-            self.themes = []
+                self.themes = []
 
-            for row in rows:
-                if row["nimi"] is not None:
-                    nimi = row["nimi"]
-                    kuvaus = row['kuvaus']
-                    id_yleiskaava = row['id_yleiskaava']
+                for row in rows:
+                    if row["nimi"] is not None:
+                        nimi = row["nimi"]
+                        kuvaus = row['kuvaus']
+                        id_yleiskaava = row['id_yleiskaava']
 
-                    self.themes.append({
-                        "id": row['id'],
-                        "alpha_sort_key": nimi,
-                        "nimi": nimi,
-                        "kuvaus": kuvaus,
-                        "id_yleiskaava": id_yleiskaava,
-                        "yleiskaava_nimi": self.getPlanNameForPlanID(id_yleiskaava)
-                        })
+                        self.themes.append({
+                            "id": row['id'],
+                            "alpha_sort_key": nimi,
+                            "nimi": nimi,
+                            "kuvaus": kuvaus,
+                            "id_yleiskaava": id_yleiskaava,
+                            "yleiskaava_nimi": self.getPlanNameForPlanID(id_yleiskaava)
+                            })
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    self.readThemes(shouldRetry = False)
 
 
-    def getThemesForSpatialFeature(self, featureID, featureType):
+    def getThemesForSpatialFeature(self, featureID, featureType, shouldRetry=True):
         themeList = []
 
-        themes = self.getThemes()
+        try:
+            themes = self.getThemes()
 
-        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-            query = "SELECT id_teema, id_kaavaobjekti_{} FROM yk_kuvaustekniikka.kaavaobjekti_teema_yhteys".format(featureType)
-            cursor.execute(query)
-            rows = cursor.fetchall()
-            
-            for row in rows:
-                if row["id_kaavaobjekti_" + featureType] == featureID:
-                    # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavakohde löytyi yhteyksistä, id_kaavaobjekti_*: " + str(feature["id_kaavaobjekti_" + featureType]), 'Yleiskaava-työkalu', Qgis.Info)
-                    for theme in themes:
-                        if theme["id"] == row["id_teema"]:
-                            # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, jos kaavamaarays_otsikko ei null, feature['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
-                            if theme["nimi"] is not None:
-                                # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, regulation['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
-                                themeList.append(theme)
-                            break
+            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                query = "SELECT id_teema, id_kaavaobjekti_{} FROM yk_kuvaustekniikka.kaavaobjekti_teema_yhteys".format(featureType)
+                cursor.execute(query)
+                rows = cursor.fetchall()
+                
+                for row in rows:
+                    if row["id_kaavaobjekti_" + featureType] == featureID:
+                        # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavakohde löytyi yhteyksistä, id_kaavaobjekti_*: " + str(feature["id_kaavaobjekti_" + featureType]), 'Yleiskaava-työkalu', Qgis.Info)
+                        for theme in themes:
+                            if theme["id"] == row["id_teema"]:
+                                # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, jos kaavamaarays_otsikko ei null, feature['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
+                                if theme["nimi"] is not None:
+                                    # QgsMessageLog.logMessage("getRegulationsForSpatialFeature - kaavamääräys lisätään palautettavaan listaan, regulation['kaavamaarays_otsikko']: " + str(regulation['kaavamaarays_otsikko'].value()), 'Yleiskaava-työkalu', Qgis.Info)
+                                    themeList.append(theme)
+                                break
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    return self.getThemesForSpatialFeature(featureID, featureType, shouldRetry = False)
 
         return themeList
 
@@ -1331,14 +1429,20 @@ class YleiskaavaDatabase:
         return uuid
 
 
-    def readCodeTableCodesFromDatabase(self, name):
-        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-            query = "SELECT id, koodi FROM {}".format(name)
-            cursor.execute(query)
-            rows = cursor.fetchall()
-            self.codeTableCodes[name] = []
-            for row in rows:
-                self.codeTableCodes[name].append({'id': row['id'], 'koodi': row['koodi']})
+    def readCodeTableCodesFromDatabase(self, name, shouldRetry=True):
+        try:
+            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                query = "SELECT id, koodi FROM {}".format(name)
+                cursor.execute(query)
+                rows = cursor.fetchall()
+                self.codeTableCodes[name] = []
+                for row in rows:
+                    self.codeTableCodes[name].append({'id': row['id'], 'koodi': row['koodi']})
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    self.readCodeTableCodesFromDatabase(name, shouldRetry = False)
 
 
     def getSchemaTableFieldInfos(self, name):
@@ -1472,57 +1576,76 @@ class YleiskaavaDatabase:
         return layer
 
     
-    def updateSpatialFeaturesWithFieldValues(self, layer, featureIDsAndValues, fieldName):
-        with self.dbConnection.cursor() as cursor:
-            schemaTableName = self.getTargetSchemaTableNameForUserFriendlyTableName(layer.name())
+    def updateSpatialFeaturesWithFieldValues(self, layer, featureIDsAndValues, fieldName, shouldRetry=True):
+        try:
+            with self.dbConnection.cursor() as cursor:
+                schemaTableName = self.getTargetSchemaTableNameForUserFriendlyTableName(layer.name())
 
-            for featureIDAndValue in featureIDsAndValues:
-                query = "UPDATE {} SET {} = %s WHERE id = %s".format(schemaTableName, fieldName)
-                cursor.execute(query, (featureIDAndValue["value"], featureIDAndValue["id"]))
+                for featureIDAndValue in featureIDsAndValues:
+                    query = "UPDATE {} SET {} = %s WHERE id = %s".format(schemaTableName, fieldName)
+                    cursor.execute(query, (featureIDAndValue["value"], featureIDAndValue["id"]))
 
-            self.dbConnection.commit()
+                self.dbConnection.commit()
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    return self.updateSpatialFeaturesWithFieldValues(layer, featureIDsAndValues, fieldName, shouldRetry = False)
+
 
         return True
 
 
-    def updateSelectedSpatialFeaturesWithFieldValues(self, featureType, updatedFieldData):
-        with self.dbConnection.cursor() as cursor:
-            layer = self.getTargetLayer(featureType)
-            fieldNames = [updatedFieldDataItem["fieldName"] for updatedFieldDataItem in updatedFieldData]
-            fieldNames.append("id")
-            featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(fieldNames, layer.fields())
-            features = layer.getSelectedFeatures(featureRequest)
+    def updateSelectedSpatialFeaturesWithFieldValues(self, featureType, updatedFieldData, shouldRetry=True):
+        try:
+            with self.dbConnection.cursor() as cursor:
+                layer = self.getTargetLayer(featureType)
+                fieldNames = [updatedFieldDataItem["fieldName"] for updatedFieldDataItem in updatedFieldData]
+                fieldNames.append("id")
+                featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(fieldNames, layer.fields())
+                features = layer.getSelectedFeatures(featureRequest)
 
-            for feature in features:
-                attrTuple = tuple()
+                for feature in features:
+                    attrTuple = tuple()
 
-                query = "UPDATE yk_yleiskaava.kaavaobjekti_{} SET ".format(featureType)
+                    query = "UPDATE yk_yleiskaava.kaavaobjekti_{} SET ".format(featureType)
 
-                for updatedFieldDataItem in updatedFieldData:
-                    query += updatedFieldDataItem["fieldName"] + " = %s, "
-                    attrTuple += (updatedFieldDataItem["value"], )
+                    for updatedFieldDataItem in updatedFieldData:
+                        query += updatedFieldDataItem["fieldName"] + " = %s, "
+                        attrTuple += (updatedFieldDataItem["value"], )
 
-                if len(updatedFieldData) > 0:
-                    query = query[:-2]
-                attrTuple += (feature["id"], )
-                query += " WHERE id = %s"
+                    if len(updatedFieldData) > 0:
+                        query = query[:-2]
+                    attrTuple += (feature["id"], )
+                    query += " WHERE id = %s"
 
-                # QgsMessageLog.logMessage("updateSelectedSpatialFeaturesWithFieldValues - query: " + query, 'Yleiskaava-työkalu', Qgis.Info)
-                # QgsMessageLog.logMessage("updateSelectedSpatialFeaturesWithFieldValues - attrTuple: " + ', '.join(str(item) for item in attrTuple), 'Yleiskaava-työkalu', Qgis.Info)
+                    # QgsMessageLog.logMessage("updateSelectedSpatialFeaturesWithFieldValues - query: " + query, 'Yleiskaava-työkalu', Qgis.Info)
+                    # QgsMessageLog.logMessage("updateSelectedSpatialFeaturesWithFieldValues - attrTuple: " + ', '.join(str(item) for item in attrTuple), 'Yleiskaava-työkalu', Qgis.Info)
 
-                cursor.execute(query, attrTuple)
+                    cursor.execute(query, attrTuple)
+                    self.dbConnection.commit()
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    return self.updateSelectedSpatialFeaturesWithFieldValues(featureType, updatedFieldData, shouldRetry = False)
+
+        return True
+
+
+    def updateTheme(self, themeID, themeName, themeDescription, shouldRetry=True):
+        try:
+            with self.dbConnection.cursor() as cursor:
+                query = "UPDATE yk_kuvaustekniikka.teema SET nimi = %s, kuvaus = %s WHERE id = %s"
+                cursor.execute(query, (themeName, themeDescription, themeID))
                 self.dbConnection.commit()
 
-        return True
-
-
-    def updateTheme(self, themeID, themeName, themeDescription):
-        with self.dbConnection.cursor() as cursor:
-            query = "UPDATE yk_kuvaustekniikka.teema SET nimi = %s, kuvaus = %s WHERE id = %s"
-            cursor.execute(query, (themeName, themeDescription, themeID))
-            self.dbConnection.commit()
-
-        self.readThemes()
+            self.readThemes()
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    return self.updateTheme(themeID, themeName, themeDescription, shouldRetry = False)
         
         return True
 
@@ -1552,14 +1675,21 @@ class YleiskaavaDatabase:
         return True
 
 
-    def createFeatureThemeRelationWithThemeID(self, targetSchemaTableName, targetFeatureID, themeID):
+    def createFeatureThemeRelationWithThemeID(self, targetSchemaTableName, targetFeatureID, themeID, shouldRetry=True):
         # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - targetSchemaTableName: " + targetSchemaTableName + ", targetFeatureID: " + str(targetFeatureID) + ", regulationID: " + str(regulationID), 'Yleiskaava-työkalu', Qgis.Info)
-        schema, table_name = targetSchemaTableName.split('.')
 
-        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-            query = "INSERT INTO yk_kuvaustekniikka.kaavaobjekti_teema_yhteys (id, id_{}, id_teema) VALUES (%s, %s, %s)".format(table_name)
-            cursor.execute(query, (str(uuid.uuid4()), targetFeatureID, themeID))
-            self.dbConnection.commit()
+        try:
+            schema, table_name = targetSchemaTableName.split('.')
+
+            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                query = "INSERT INTO yk_kuvaustekniikka.kaavaobjekti_teema_yhteys (id, id_{}, id_teema) VALUES (%s, %s, %s)".format(table_name)
+                cursor.execute(query, (str(uuid.uuid4()), targetFeatureID, themeID))
+                self.dbConnection.commit()
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    self.createFeatureThemeRelationWithThemeID(targetSchemaTableName, targetFeatureID, themeID, shouldRetry = False)
 
     # def createFeatureThemeRelationWithThemeID(self, targetSchemaTableName, targetFeatureID, themeID):
     #     # QgsMessageLog.logMessage("createFeatureRegulationRelationWithRegulationID - targetSchemaTableName: " + targetSchemaTableName + ", targetFeatureID: " + str(targetFeatureID) + ", regulationID: " + str(regulationID), 'Yleiskaava-työkalu', Qgis.Info)
@@ -1580,39 +1710,57 @@ class YleiskaavaDatabase:
     #     if not success:
     #         self.iface.messageBar().pushMessage('Bugi koodissa: createFeatureThemeRelationWithThemeID - addFeatures() failed"', Qgis.Critical)   
 
-    def existsFeatureThemeRelation(self, featureID, featureType, themeID):
-        with self.dbConnection.cursor() as cursor:
-            query = "SELECT id FROM yk_kuvaustekniikka.kaavaobjekti_teema_yhteys WHERE id_kaavaobjekti_{} = %s AND id_teema = %s".format(featureType)
-            cursor.execute(query, (featureID, themeID))
-            if len(cursor.fetchall()) > 0:
-                return True
+    def existsFeatureThemeRelation(self, featureID, featureType, themeID, shouldRetry=True):
+        try:
+            with self.dbConnection.cursor() as cursor:
+                query = "SELECT id FROM yk_kuvaustekniikka.kaavaobjekti_teema_yhteys WHERE id_kaavaobjekti_{} = %s AND id_teema = %s".format(featureType)
+                cursor.execute(query, (featureID, themeID))
+                if len(cursor.fetchall()) > 0:
+                    return True
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    return self.existsFeatureThemeRelation(featureID, featureType, themeID, shouldRetry = False)
 
         return False
 
 
-    def removeThemeRelationsFromSpatialFeature(self, featureID, featureType):
-        with self.dbConnection.cursor() as cursor:
-            query = "DELETE FROM yk_kuvaustekniikka.kaavaobjekti_teema_yhteys WHERE id_kaavaobjekti_{} = %s".format(featureType)
-            cursor.execute(query, (featureID, ))
-            self.dbConnection.commit()
+    def removeThemeRelationsFromSpatialFeature(self, featureID, featureType, shouldRetry=True):
+        try:
+            with self.dbConnection.cursor() as cursor:
+                query = "DELETE FROM yk_kuvaustekniikka.kaavaobjekti_teema_yhteys WHERE id_kaavaobjekti_{} = %s".format(featureType)
+                cursor.execute(query, (featureID, ))
+                self.dbConnection.commit()
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    self.removeThemeRelationsFromSpatialFeature(featureID, featureType, shouldRetry = False)
 
 
-    def getSourceDataFeatures(self, linkType):
+    def getSourceDataFeatures(self, linkType, shouldRetry=True):
         features = []
 
-        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-            query = "SELECT id, nimi, lahde, kuvaus, linkitys_tyyppi, linkki_data FROM yk_prosessi.lahtoaineisto WHERE linkitys_tyyppi = %s"
-            cursor.execute(query, (linkType, ))
-            rows = cursor.fetchall()
-            for row in rows:
-                features.append({
-                    "id": row["id"],
-                    "nimi": row["nimi"],
-                    "lahde": row["lahde"],
-                    "kuvaus": row["kuvaus"],
-                    "linkitys_tyyppi": row["linkitys_tyyppi"],
-                    "linkki_data": row["linkki_data"]
-                })
+        try:
+            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                query = "SELECT id, nimi, lahde, kuvaus, linkitys_tyyppi, linkki_data FROM yk_prosessi.lahtoaineisto WHERE linkitys_tyyppi = %s"
+                cursor.execute(query, (linkType, ))
+                rows = cursor.fetchall()
+                for row in rows:
+                    features.append({
+                        "id": row["id"],
+                        "nimi": row["nimi"],
+                        "lahde": row["lahde"],
+                        "kuvaus": row["kuvaus"],
+                        "linkitys_tyyppi": row["linkitys_tyyppi"],
+                        "linkki_data": row["linkki_data"]
+                    })
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    return self.getSourceDataFeatures(linkType, shouldRetry = False)
 
         return features
 
@@ -1643,44 +1791,56 @@ class YleiskaavaDatabase:
         return linkedSourceDataFeature
 
 
-    def getLinkedFeatureIDsForSourceDataFeature(self, spatialFeatureLayer, linkedSourceDataFeature):
+    def getLinkedFeatureIDsForSourceDataFeature(self, spatialFeatureLayer, linkedSourceDataFeature, shouldRetry=True):
         linkedFeatureIDs = []
 
-        targetSchemaTableName = self.getTargetSchemaTableNameForUserFriendlyTableName(spatialFeatureLayer.name())
-        schema, table_name = targetSchemaTableName.split('.')
+        try:
+            targetSchemaTableName = self.getTargetSchemaTableNameForUserFriendlyTableName(spatialFeatureLayer.name())
+            schema, table_name = targetSchemaTableName.split('.')
 
-        with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-            query = "SELECT id_{} FROM yk_prosessi.lahtoaineisto_yleiskaava_yhteys WHERE id_lahtoaineisto = %s AND id_{} IS NOT NULL".format(table_name, table_name)
-            cursor.execute(query, (linkedSourceDataFeature["id"], ))
-            rows = cursor.fetchall()
-            for row in rows:
-                linkedFeatureIDs.append(row["id_" + table_name])
+            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                query = "SELECT id_{} FROM yk_prosessi.lahtoaineisto_yleiskaava_yhteys WHERE id_lahtoaineisto = %s AND id_{} IS NOT NULL".format(table_name, table_name)
+                cursor.execute(query, (linkedSourceDataFeature["id"], ))
+                rows = cursor.fetchall()
+                for row in rows:
+                    linkedFeatureIDs.append(row["id_" + table_name])
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    return self.getLinkedFeatureIDsForSourceDataFeature(spatialFeatureLayer, linkedSourceDataFeature, shouldRetry = False)
 
         return linkedFeatureIDs
 
 
-    def createSourceDataFeature(self, sourceData):
-        sourceDataLayer = QgsProject.instance().mapLayersByName("lahtoaineisto")[0]
+    def createSourceDataFeature(self, sourceData, shouldRetry=True):
+        try:
+            sourceDataLayer = QgsProject.instance().mapLayersByName("lahtoaineisto")[0]
 
-        sourceDataFeatureID = str(uuid.uuid4())
+            sourceDataFeatureID = str(uuid.uuid4())
 
-        with self.dbConnection.cursor() as cursor:
-            query = "INSERT INTO yk_prosessi.lahtoaineisto (id"
-            
-            attrTuple = (sourceDataFeatureID, )
+            with self.dbConnection.cursor() as cursor:
+                query = "INSERT INTO yk_prosessi.lahtoaineisto (id"
+                
+                attrTuple = (sourceDataFeatureID, )
 
-            for key in sourceData.keys():
-                attrTuple += (sourceData[key], )
+                for key in sourceData.keys():
+                    attrTuple += (sourceData[key], )
 
-                query += ", {}".format(key)
+                    query += ", {}".format(key)
 
-            query += ") VALUES (%s"
-            for key in sourceData.keys():
-                 query += ", %s"
-            query += ")"
+                query += ") VALUES (%s"
+                for key in sourceData.keys():
+                    query += ", %s"
+                query += ")"
 
-            cursor.execute(query, attrTuple)
-            self.dbConnection.commit()
+                cursor.execute(query, attrTuple)
+                self.dbConnection.commit()
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    return self.createSourceDataFeature(sourceData, shouldRetry = False)
 
         return sourceDataFeatureID
 
@@ -1707,17 +1867,22 @@ class YleiskaavaDatabase:
         return success
 
 
-    def createSourceDataRelationToSpatialFeature(self, linkedSourceDataFeatureID, spatialFeatureLayer, targetFeatureID):
+    def createSourceDataRelationToSpatialFeature(self, linkedSourceDataFeatureID, spatialFeatureLayer, targetFeatureID, shouldRetry=True):
+        try:
+            targetSchemaTableName = self.getTargetSchemaTableNameForUserFriendlyTableName(spatialFeatureLayer.name())
+            schema, table_name = targetSchemaTableName.split('.')
 
-        targetSchemaTableName = self.getTargetSchemaTableNameForUserFriendlyTableName(spatialFeatureLayer.name())
-        schema, table_name = targetSchemaTableName.split('.')
+            relationFeatureID = str(uuid.uuid4())
 
-        relationFeatureID = str(uuid.uuid4())
-
-        with self.dbConnection.cursor() as cursor:
-            query = "INSERT INTO yk_prosessi.lahtoaineisto_yleiskaava_yhteys (id, id_lahtoaineisto, id_{}) VALUES (%s, %s, %s)".format(table_name)
-            cursor.execute(query, (relationFeatureID, linkedSourceDataFeatureID, targetFeatureID))
-            self.dbConnection.commit()
+            with self.dbConnection.cursor() as cursor:
+                query = "INSERT INTO yk_prosessi.lahtoaineisto_yleiskaava_yhteys (id, id_lahtoaineisto, id_{}) VALUES (%s, %s, %s)".format(table_name)
+                cursor.execute(query, (relationFeatureID, linkedSourceDataFeatureID, targetFeatureID))
+                self.dbConnection.commit()
+        except psycopg2.OperationalError:
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    return self.createSourceDataRelationToSpatialFeature(linkedSourceDataFeatureID, spatialFeatureLayer, targetFeatureID, shouldRetry = False)
 
         return relationFeatureID
 
@@ -1725,16 +1890,12 @@ class YleiskaavaDatabase:
     def setDatabaseConnection(self, databaseConnectionParams):
         self.databaseConnectionParams = databaseConnectionParams
 
-        if  self.databaseConnectionParams is not None:
-            # for key in self.databaseConnectionParams:
-            # QgsMessageLog.logMessage('setDatabaseConnection - databaseConnectionParams[' + key + ']: ' + str(databaseConnectionParams[key]), 'Yleiskaava-työkalu', Qgis.Info)
-            try:
-                self.dbConnection = psycopg2.connect(**self.databaseConnectionParams)
-                # self.iface.messageBar().pushMessage('Tietokantaan yhdistäminen onnistui', Qgis.Info, duration=20)
-            except psycopg2.OperationalError:
-                return False
+        # for key in self.databaseConnectionParams.keys():
+        #     QgsMessageLog.logMessage('{}: {}'.format(key, self.databaseConnectionParams[key]), 'Yleiskaava-työkalu', Qgis.Info)
 
-        return True
+        sucess = self.reconnectToDB()
+
+        return sucess
             
 
     def getDatabaseConnectionParams(self):

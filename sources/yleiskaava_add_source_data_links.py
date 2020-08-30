@@ -51,7 +51,7 @@ class AddSourceDataLinks:
 
     def setup(self):
         # lisää kohdekarttatasot comboboksiin
-        self.yleiskaavaDatabase.reconnectToDB()
+        # self.yleiskaavaDatabase.reconnectToDB()
         
         targetTableNames = sorted(self.yleiskaavaDatabase.getAllTargetSchemaTableNamesShownInCopySourceToTargetUI())
         targetTableNames.insert(0, "Valitse kohdekarttataso")
@@ -201,7 +201,7 @@ class AddSourceDataLinks:
         
         self.iface.messageBar().pushMessage('Lähdeaineiston kohteet haettu', Qgis.Info, 5)
 
-        self.yleiskaavaDatabase.reconnectToDB()
+        # self.yleiskaavaDatabase.reconnectToDB()
 
         self.shownSourceLayer = self.yleiskaavaSourceDataAPIs.createMemoryLayer(self.originalSourceLayer, self.originalSourceLayerInfo, self.featureRequestTask.features)
         

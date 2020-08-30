@@ -39,7 +39,7 @@ class UpdateIndexingOfFeatures:
         self.featureIDsAndNewIndexValues = None
 
     def setup(self):
-        self.yleiskaavaDatabase.reconnectToDB()
+        # self.yleiskaavaDatabase.reconnectToDB()
 
         targetTableNames = self.yleiskaavaDatabase.getAllTargetSchemaTableNamesShownInCopySourceToTargetUI()
         targetTableNames.insert(0, "Valitse kohdekarttataso")
@@ -112,7 +112,7 @@ class UpdateIndexingOfFeatures:
 
 
     def fillComboBoxChooseRegulation(self):
-        self.yleiskaavaDatabase.reconnectToDB()
+        # self.yleiskaavaDatabase.reconnectToDB()
 
         userFriendlyTableName = self.dialogUpdateIndexingOfFeatures.comboBoxChooseTargetLayer.currentText()
         landUseClassificationNames = sorted(self.yleiskaavaDatabase.getDistinctLandUseClassificationsOfLayer(userFriendlyTableName))
@@ -122,7 +122,7 @@ class UpdateIndexingOfFeatures:
         
         
     def addFieldInfoToComboBoxChooseIndexFieldToUpdate(self):
-        self.yleiskaavaDatabase.reconnectToDB()
+        # self.yleiskaavaDatabase.reconnectToDB()
 
         userFriendlyTableName = self.dialogUpdateIndexingOfFeatures.comboBoxChooseTargetLayer.currentText()
         featureType = self.yleiskaavaDatabase.getFeatureTypeForUserFriendlyTargetSchemaTableName(userFriendlyTableName)
@@ -163,7 +163,7 @@ class UpdateIndexingOfFeatures:
 
     def fillComboBoxTargetLayerFeatureIndexValuesCurrent(self):
         if self.dialogUpdateIndexingOfFeatures.comboBoxChooseLandUseClassification.currentIndex() > 0 and self.dialogUpdateIndexingOfFeatures.comboBoxChooseLandUseClassification.currentIndex() > 0 and self.dialogUpdateIndexingOfFeatures.comboBoxChooseIndexFieldToUpdate.currentIndex() > 0:
-            self.yleiskaavaDatabase.reconnectToDB()
+            # self.yleiskaavaDatabase.reconnectToDB()
 
             userFriendlyTableName = self.dialogUpdateIndexingOfFeatures.comboBoxChooseTargetLayer.currentText()
             landUseClassification = self.dialogUpdateIndexingOfFeatures.comboBoxChooseLandUseClassification.currentText()
@@ -218,7 +218,7 @@ class UpdateIndexingOfFeatures:
         self.clearTableWidgetTargetFeatureInfo()
         userFriendlyTableName = self.dialogUpdateIndexingOfFeatures.comboBoxChooseTargetLayer.currentText()
         
-        self.yleiskaavaDatabase.reconnectToDB()
+        # self.yleiskaavaDatabase.reconnectToDB()
 
         featureType = self.yleiskaavaDatabase.getFeatureTypeForUserFriendlyTargetSchemaTableName(userFriendlyTableName)
         fieldNamesAndTypes = self.yleiskaavaDatabase.getFieldNamesAndTypes(featureType)
@@ -559,7 +559,7 @@ class UpdateIndexingOfFeatures:
 
     
     def updateFeatureValues(self):
-        self.yleiskaavaDatabase.reconnectToDB()
+        # self.yleiskaavaDatabase.reconnectToDB()
         
         success = self.yleiskaavaDatabase.updateSpatialFeaturesWithFieldValues(self.selectedLayer, self.featureIDsAndNewIndexValues, self.selectedFieldName)
         if success:
