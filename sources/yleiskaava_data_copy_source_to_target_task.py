@@ -49,7 +49,7 @@ class CopySourceDataToDatabaseTask(QgsTask):
 
 
     def run(self):
-        success, reason = self.copySourceFeaturesToTargetLayer()
+        success = self.copySourceFeaturesToTargetLayer()
         # QgsMessageLog.logMessage('run - success: ' + str(success), 'Yleiskaava-työkalu', Qgis.Info)
         return success
 
@@ -85,12 +85,19 @@ class CopySourceDataToDatabaseTask(QgsTask):
                 self.targetLayer = layer
                 self.targetCRS = layer.sourceCrs()
         
+        # QgsMessageLog.logMessage("copySourceFeaturesToTargetLayer - targetLayer.name(): " + str(self.targetLayer.name()), 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage("copySourceFeaturesToTargetLayer - targetCRS: " + self.targetCRS.authid(), 'Yleiskaava-työkalu', Qgis.Info)
+
         transform = None
         if self.sourceCRS != self.targetCRS:
             transform = QgsCoordinateTransform(self.sourceCRS, self.targetCRS, self.transformContext)
 
         for index, sourceFeature in enumerate(self.sourceFeatures):
 
+            targetLayerFeature = QgsFeature()
+            targetLayerFeature.setFields(self.targetLayer.fields())
+            featureID = str(uuid.uuid4())
+            targetLayerFeature.setAttribute("id", featureID)
             sourceGeom = sourceFeature.geometry()
 
             if not sourceGeom.isNull() and transform is not None:
@@ -99,9 +106,6 @@ class CopySourceDataToDatabaseTask(QgsTask):
             else:
                 transformedSourceGeom = QgsGeometry(sourceGeom)
 
-            targetLayerFeature = QgsFeature()
-            targetLayerFeature.setFields(self.targetLayer.fields())
-            targetLayerFeature.setAttribute("id", str(uuid.uuid4()))
             targetLayerFeature.setGeometry(transformedSourceGeom)
 
             success = self.setTargetFeatureValues(sourceFeature, targetLayerFeature)
@@ -113,10 +117,10 @@ class CopySourceDataToDatabaseTask(QgsTask):
             self.handleRegulationAndLandUseClassificationInSourceToTargetCopy(sourceFeature, self.targetSchemaTableName, targetLayerFeature, False)
             self.handleSpatialPlanRelationInSourceToTargetCopy(targetLayerFeature)
 
-            provider = self.targetLayer.dataProvider()
-            success = provider.addFeatures([targetLayerFeature])
+            success = self.yleiskaavaDatabase.createTargetFeature(self.targetSchemaTableName, targetLayerFeature, self.targetCRS)
+
             if not success:
-                exception = "provider.addFeatures([targetLayerFeature]) epäonnistui, sourceFeature-attribuutit: "
+                exception = "yleiskaavaDatabase.createTargetFeature epäonnistui, sourceFeature-attribuutit: "
                 for field in self.targetLayer.fields().toList():
                     if sourceFeature[field.name()]:
                         exception += str(sourceFeature[field.name()]) + ", "
@@ -140,7 +144,7 @@ class CopySourceDataToDatabaseTask(QgsTask):
         # tarvittaessa tehdään muunnos esim. int -> string kopioinnissa
 
         sourceAttrData = self.getSourceFeatureAttributesWithInfo(sourceFeature)
-        targetFieldData = self.getTargetFeatureFieldInfo(targetFeature)
+        targetFieldData = self.getTargetFeatureFieldInfo()
 
         fieldMatches = self.getSourceTargetFieldMatches()
 
@@ -311,7 +315,7 @@ class CopySourceDataToDatabaseTask(QgsTask):
         return data
 
     
-    def getTargetFeatureFieldInfo(self, targetFeature):
+    def getTargetFeatureFieldInfo(self):
         data = []
         for index, field in enumerate(self.targetLayer.fields().toList()):
             data.append({
