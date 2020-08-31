@@ -1,5 +1,5 @@
 from qgis.PyQt import uic
-from qgis.PyQt.QtCore import QSettings, QVariant
+from qgis.PyQt.QtCore import QSettings, QVariant, QDateTime
 from qgis.core import (Qgis, QgsProject,
     QgsFeature, QgsWkbTypes,
     QgsMessageLog, QgsFeatureRequest)
@@ -1583,6 +1583,9 @@ class YleiskaavaDatabase:
 
                 for featureIDAndValue in featureIDsAndValues:
                     query = "UPDATE {} SET {} = %s WHERE id = %s".format(schemaTableName, fieldName)
+
+                    QgsMessageLog.logMessage("updateSpatialFeaturesWithFieldValues - query: " + query, 'Yleiskaava-työkalu', Qgis.Info)
+
                     cursor.execute(query, (featureIDAndValue["value"], featureIDAndValue["id"]))
 
                 self.dbConnection.commit()
@@ -1619,7 +1622,7 @@ class YleiskaavaDatabase:
                     attrTuple += (feature["id"], )
                     query += " WHERE id = %s"
 
-                    # QgsMessageLog.logMessage("updateSelectedSpatialFeaturesWithFieldValues - query: " + query, 'Yleiskaava-työkalu', Qgis.Info)
+                    QgsMessageLog.logMessage("updateSelectedSpatialFeaturesWithFieldValues - query: " + query, 'Yleiskaava-työkalu', Qgis.Info)
                     # QgsMessageLog.logMessage("updateSelectedSpatialFeaturesWithFieldValues - attrTuple: " + ', '.join(str(item) for item in attrTuple), 'Yleiskaava-työkalu', Qgis.Info)
 
                     cursor.execute(query, attrTuple)
@@ -2025,7 +2028,14 @@ class YleiskaavaDatabase:
 
                 for field in targetLayerFeature.fields().toList():
                     if field.name() != "id":
-                        attrTuple += (targetLayerFeature[field.name()], )
+                        value = targetLayerFeature[field.name()]
+
+                        fieldTypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
+                        if value is not None:
+                            if (fieldTypeName == "Date" or fieldTypeName == "DateTime") and not QVariant(value).isNull():
+                                value = QDateTime(QVariant(value).value()).toString("yyyy-MM-dd")
+
+                        attrTuple += (value, )
 
                         query += ", {}".format(field.name())
 
