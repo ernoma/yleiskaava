@@ -70,7 +70,7 @@ class UpdateThemesOfGroup:
     def selectPolygonFeatures(self):
         layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE)[0]
         if layer.selectedFeatureCount() > 0:
-             self.iface.messageBar().pushMessage('Aluevaraukset karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
+             self.iface.messageBar().pushMessage('Aluevaraukset karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, duration=20)
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedPolygonFeaturesForUpdate = True
 
@@ -80,7 +80,7 @@ class UpdateThemesOfGroup:
     def selectSupplementaryPolygonFeatures(self):
         layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE_TAYDENTAVA)[0]
         if layer.selectedFeatureCount() > 0:
-             self.iface.messageBar().pushMessage('Täydentävät aluekohteet  karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
+             self.iface.messageBar().pushMessage('Täydentävät aluekohteet  karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, duration=20)
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate = True
 
@@ -90,7 +90,7 @@ class UpdateThemesOfGroup:
     def selectLineFeatures(self):
         layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA)[0]
         if layer.selectedFeatureCount() > 0:
-             self.iface.messageBar().pushMessage('Viivamaiset kaavakohteet karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
+             self.iface.messageBar().pushMessage('Viivamaiset kaavakohteet karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, duration=20)
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedLineFeaturesForUpdate = True
 
@@ -100,7 +100,7 @@ class UpdateThemesOfGroup:
     def selectPointFeatures(self):
         layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_PISTE)[0]
         if layer.selectedFeatureCount() > 0:
-             self.iface.messageBar().pushMessage('Pistemäiset kaavakohteet karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
+             self.iface.messageBar().pushMessage('Pistemäiset kaavakohteet karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, duration=20)
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedPointFeaturesForUpdate = True
 
@@ -181,34 +181,34 @@ class UpdateThemesOfGroup:
                     self.currentTheme["kuvaus"] = QVariant(themeDescription)
                     # self.currentTheme["id_yleiskaava"] = QVariant(themeDescription)
 
-                    self.iface.messageBar().pushMessage('Teema päivitetty', Qgis.Info, 30)
+                    self.iface.messageBar().pushMessage('Teema päivitetty', Qgis.Info, duration=30)
             elif not self.dialogUpdateThemeOfGroup.checkBoxUpdatePolygonFeatures.isChecked() and not self.dialogUpdateThemeOfGroup.checkBoxUpdateSupplementaryPolygonFeatures.isChecked() and not self.dialogUpdateThemeOfGroup.checkBoxUpdateLineFeatures.isChecked() and not self.dialogUpdateThemeOfGroup.checkBoxUpdatePointFeatures.isChecked():
-                self.iface.messageBar().pushMessage('Teemaan ei ole tehty muutoksia eikä päivitettäviä kaavakohteita ole valittu. Ei tehdä päivityksiä', Qgis.Info, 30)
+                self.iface.messageBar().pushMessage('Teemaan ei ole tehty muutoksia eikä päivitettäviä kaavakohteita ole valittu. Ei tehdä päivityksiä', Qgis.Info, duration=30)
 
             if self.dialogUpdateThemeOfGroup.checkBoxUpdatePolygonFeatures.isChecked():
                 if not self.hasUserSelectedPolygonFeaturesForUpdate:
-                    self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä aluevarauksia; aluevarauksia ei päivitetty', Qgis.Warning)
+                    self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä aluevarauksia; aluevarauksia ei päivitetty', Qgis.Warning, duration=0)
                 else:
                     self.progressDialog = QProgressDialog("Päivitetään aluevarausten teemoja...", "Keskeytä", 0, 100)
                     self.progressDialog.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowStaysOnTopHint)
                     self.updateSpatialFeatures("alue")
             if self.dialogUpdateThemeOfGroup.checkBoxUpdateSupplementaryPolygonFeatures.isChecked():
                 if not self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate:
-                    self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä täydentäviä aluekohteita; täydentäviä aluekohteita ei päivitetty', Qgis.Warning)
+                    self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä täydentäviä aluekohteita; täydentäviä aluekohteita ei päivitetty', Qgis.Warning, duration=0)
                 else:
                     self.progressDialog = QProgressDialog("Päivitetään täydentävien aluekohteiden teemoja...", "Keskeytä", 0, 100)
                     self.progressDialog.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowStaysOnTopHint)
                     self.updateSpatialFeatures("alue_taydentava")
             if self.dialogUpdateThemeOfGroup.checkBoxUpdateLineFeatures.isChecked():
                 if not self.hasUserSelectedLineFeaturesForUpdate:
-                    self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä viivamaisia kohteita; viivamaisia ei päivitetty', Qgis.Warning)
+                    self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä viivamaisia kohteita; viivamaisia ei päivitetty', Qgis.Warning, duration=0)
                 else:
                     self.progressDialog = QProgressDialog("Päivitetään viivamaisten kohteiden teemoja...", "Keskeytä", 0, 100)
                     self.progressDialog.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowStaysOnTopHint)
                     self.updateSpatialFeatures("viiva")
             if self.dialogUpdateThemeOfGroup.checkBoxUpdatePointFeatures.isChecked():
                 if not self.hasUserSelectedPointFeaturesForUpdate:
-                    self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä pistemäisiä kohteita; pistemäisiä kohteita ei päivitetty', Qgis.Warning)
+                    self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä pistemäisiä kohteita; pistemäisiä kohteita ei päivitetty', Qgis.Warning, duration=0)
                 else:
                     self.progressDialog = QProgressDialog("Päivitetään pistemäisten kohteiden teemoja...", "Keskeytä", 0, 100)
                     self.progressDialog.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowStaysOnTopHint)
@@ -225,38 +225,38 @@ class UpdateThemesOfGroup:
             # ainoastaan poistetaan vanha(t) teema(t) valituilta kohteilta
             if self.dialogUpdateThemeOfGroup.checkBoxUpdatePolygonFeatures.isChecked():
                 if not self.hasUserSelectedPolygonFeaturesForUpdate:
-                    self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä aluevarauksia; aluevarauksia ei päivitetty', Qgis.Warning)
+                    self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä aluevarauksia; aluevarauksia ei päivitetty', Qgis.Warning, duration=0)
                 else:
                     success = self.removeThemesFromSpatialFeatures("alue")
                     if success:
-                        self.iface.messageBar().pushMessage('Aluvarausten teemat poistettu', Qgis.Info, 30)
+                        self.iface.messageBar().pushMessage('Aluvarausten teemat poistettu', Qgis.Info, duration=30)
             if self.dialogUpdateThemeOfGroup.checkBoxUpdateSupplementaryPolygonFeatures.isChecked():
                 if not self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate:
-                    self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä täydentäviä aluekohteita; täydentäviä aluekohteita ei päivitetty', Qgis.Warning)
+                    self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä täydentäviä aluekohteita; täydentäviä aluekohteita ei päivitetty', Qgis.Warning, duration=0)
                 else:
                     success = self.removeThemesFromSpatialFeatures("alue_taydentava")
                     if success:
-                        self.iface.messageBar().pushMessage('Täydentävien aluekohteiden teemat poistettu', Qgis.Info, 30)
+                        self.iface.messageBar().pushMessage('Täydentävien aluekohteiden teemat poistettu', Qgis.Info, duration=30)
             if self.dialogUpdateThemeOfGroup.checkBoxUpdateLineFeatures.isChecked():
                 if not self.hasUserSelectedLineFeaturesForUpdate:
-                    self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä viivamaisia kohteita; viivamaisia ei päivitetty', Qgis.Warning)
+                    self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä viivamaisia kohteita; viivamaisia ei päivitetty', Qgis.Warning, duration=0)
                 else:
                     success = self.removeThemesFromSpatialFeatures("viiva")
                     if success:
-                        self.iface.messageBar().pushMessage('Viivamaisten kohteiden teemat poistettu', Qgis.Info, 30)
+                        self.iface.messageBar().pushMessage('Viivamaisten kohteiden teemat poistettu', Qgis.Info, duration=30)
             if self.dialogUpdateThemeOfGroup.checkBoxUpdatePointFeatures.isChecked():
                 if not self.hasUserSelectedPointFeaturesForUpdate:
-                    self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä pistemäisiä kohteita; pistemäisiä kohteita ei päivitetty', Qgis.Warning)
+                    self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä pistemäisiä kohteita; pistemäisiä kohteita ei päivitetty', Qgis.Warning, duration=0)
                 else:
                     success = self.removeThemesFromSpatialFeatures("piste")
                     if success:
-                        self.iface.messageBar().pushMessage('Pistemäisten kohteiden teemat poistettu', Qgis.Info, 30)
+                        self.iface.messageBar().pushMessage('Pistemäisten kohteiden teemat poistettu', Qgis.Info, duration=30)
 
             if self.shouldHide:
                 self.dialogUpdateThemeOfGroup.hide()
             self.finishUpdate()
         else:
-            self.iface.messageBar().pushMessage('Valitse teema', Qgis.Info, 30)
+            self.iface.messageBar().pushMessage('Valitse teema', Qgis.Info, duration=30)
 
 
     def equalsThemeAndFormTexts(self, formThemeName, formThemeDescription):
@@ -335,7 +335,7 @@ class UpdateThemesOfGroup:
 
     def handleUpdateThemesOfGroupTaskTerminated(self):
         if not self.hasUserCanceledCopy:
-           self.iface.messageBar().pushMessage("Teemojen päivityksessä tapahtui virhe", Qgis.Critical)
+           self.iface.messageBar().pushMessage("Teemojen päivityksessä tapahtui virhe", Qgis.Critical, duration=0)
         else:
             self.hasUserCanceledCopy = False
         self.progressDialog.hide()
@@ -353,7 +353,7 @@ class UpdateThemesOfGroup:
             success = self.yleiskaavaDatabase.removeSpatialFeatureThemes(feature["id"], featureType)
 
             if not success:
-                self.iface.messageBar().pushMessage("Kaavakohteelta, jonka tyyppi on " + self.yleiskaavaDatabase.getUserFriendlySpatialFeatureTypeName(featureType) + " ja id on " + str(feature["id"]) + " ei voitu poistaa teemoja", Qgis.Critical)
+                self.iface.messageBar().pushMessage("Kaavakohteelta, jonka tyyppi on " + self.yleiskaavaDatabase.getUserFriendlySpatialFeatureTypeName(featureType) + " ja id on " + str(feature["id"]) + " ei voitu poistaa teemoja", Qgis.Critical, duration=0)
 
                 return False
 

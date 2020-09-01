@@ -524,7 +524,7 @@ class GeometryEditSettings:
                             QgsMessageLog.logMessage("handlePasteFeatures - bugi koodissa, matchedSourceFeature: " + str(matchedSourceFeature) + ", addedFeature: " + str(addedFeature), 'Yleiskaava-työkalu', Qgis.Critical)
 
                         if foundMatchMultiple:
-                            self.iface.messageBar().pushMessage('Liitetyllä kohteella ' + addedFeature['id'] + ' on useita täsmääviä kohteita, joten sen kaavamääräys- ja teema-relaatiot eivät ehkä kopioituneet oikein. Myös muilla liitetyillä kohteilla, joilla on samat täsmäykset on sama ongelma.', Qgis.Warning)
+                            self.iface.messageBar().pushMessage('Liitetyllä kohteella ' + addedFeature['id'] + ' on useita täsmääviä kohteita, joten sen kaavamääräys- ja teema-relaatiot eivät ehkä kopioituneet oikein. Myös muilla liitetyillä kohteilla, joilla on samat täsmäykset on sama ongelma.', Qgis.Warning, duration=0)
                             self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText('Liitetyllä kohteella ' + addedFeature['id'] + ' on useita täsmääviä kohteita, joten sen kaavamääräys- ja teema-relaatiot eivät ehkä kopioituneet oikein. Myös muilla liitetyillä kohteilla, joilla on samat täsmäykset on sama ongelma.')
                             self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
 
@@ -562,7 +562,7 @@ class GeometryEditSettings:
         
         self.yleiskaavaDatabase.addRegulationRelationsToLayer(matchedSourceFeature["id"], addedFeature["id"], featureType)
         self.yleiskaavaDatabase.addThemeRelationsToLayer(matchedSourceFeature["id"], addedFeature["id"], featureType)
-        self.iface.messageBar().pushMessage('Kaavamääräykset ja teemat lisätty liitetylle kohteelle', Qgis.Info, 5)
+        self.iface.messageBar().pushMessage('Kaavamääräykset ja teemat lisätty liitetylle kohteelle', Qgis.Info, duration=5)
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText("Kaavamääräykset ja teemat lisätty liitetylle kohteelle")
         self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
 
@@ -590,7 +590,7 @@ class GeometryEditSettings:
                     if self.dockWidgetGeometryEditSettings.checkBoxPreventNULLGeometries.isChecked():
                         # remove feature
                         self.yleiskaavaDatabase.deleteSpatialFeature(targetFeatureUUID, featureType)
-                        self.iface.messageBar().pushMessage('Kohde, jolla ei ollut geometriaa, poistettiin', Qgis.Warning)
+                        self.iface.messageBar().pushMessage('Kohde, jolla ei ollut geometriaa, poistettiin', Qgis.Warning, duration=5)
                         self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText("Kohde, jolla ei ollut geometriaa, poistettiin")
                         self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
                 else:
@@ -600,7 +600,7 @@ class GeometryEditSettings:
                     if self.dockWidgetGeometryEditSettings.checkBoxKeepFeatureRelationsOnSplit.isChecked():
                         self.yleiskaavaDatabase.addRegulationRelationsToLayer(sourceFeatureUUID, targetFeatureUUID, featureType)
                         self.yleiskaavaDatabase.addThemeRelationsToLayer(sourceFeatureUUID, targetFeatureUUID, featureType)
-                        self.iface.messageBar().pushMessage('Kaavamääräykset ja teemat lisätty jaetulle kohteelle', Qgis.Info, 5)
+                        self.iface.messageBar().pushMessage('Kaavamääräykset ja teemat lisätty jaetulle kohteelle', Qgis.Info, duration=5)
                         self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText("Kaavamääräykset ja teemat lisätty jaetulle kohteelle")
                         self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
 
@@ -610,14 +610,14 @@ class GeometryEditSettings:
                                 # remove feature
                                 self.yleiskaavaDatabase.deleteSpatialFeature(targetFeatureUUID, featureType)
                                 ratio = targetFeature.geometry().area() / (targetFeature.geometry().area() + sourceFeature.geometry().area()) * 100
-                                self.iface.messageBar().pushMessage('Kohteen pinta-ala verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin', Qgis.Warning)
+                                self.iface.messageBar().pushMessage('Kohteen pinta-ala verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin', Qgis.Warning, duration=5)
                                 self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText('Kohteen pinta-ala verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin')
                                 self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
                             elif (sourceFeature.geometry().area() / (targetFeature.geometry().area() + sourceFeature.geometry().area()) * 100) < self.dockWidgetGeometryEditSettings.doubleSpinBoxPreventFeaturesWithTinyGeometries.value():
                                 # remove feature
                                 self.yleiskaavaDatabase.deleteSpatialFeature(sourceFeatureUUID, featureType)
                                 ratio = sourceFeature.geometry().area() / (targetFeature.geometry().area() + sourceFeature.geometry().area()) * 100
-                                self.iface.messageBar().pushMessage('Kohteen pinta-ala verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin', Qgis.Warning)
+                                self.iface.messageBar().pushMessage('Kohteen pinta-ala verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin', Qgis.Warning, duration=5)
                                 self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText('Kohteen pinta-ala verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin')
                                 self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
                         elif featureType == 'viiva':
@@ -625,14 +625,14 @@ class GeometryEditSettings:
                                 # remove feature
                                 self.yleiskaavaDatabase.deleteSpatialFeature(targetFeatureUUID, featureType)
                                 ratio = targetFeature.geometry().length() / (targetFeature.geometry().length() + sourceFeature.geometry().length()) * 100
-                                self.iface.messageBar().pushMessage('Kohteen pituus verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin', Qgis.Warning)
+                                self.iface.messageBar().pushMessage('Kohteen pituus verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin', Qgis.Warning, duration=5)
                                 self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText('Kohteen pituus verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin')
                                 self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
                             elif (sourceFeature.geometry().length() / (targetFeature.geometry().length() + sourceFeature.geometry().length()) * 100) < self.dockWidgetGeometryEditSettings.doubleSpinBoxPreventFeaturesWithTinyGeometries.value():
                                 # remove feature
                                 self.yleiskaavaDatabase.deleteSpatialFeature(sourceFeatureUUID, featureType)
                                 ratio = sourceFeature.geometry().length() / (targetFeature.geometry().length() + sourceFeature.geometry().length()) * 100
-                                self.iface.messageBar().pushMessage('Kohteen pituus verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin', Qgis.Warning)
+                                self.iface.messageBar().pushMessage('Kohteen pituus verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin', Qgis.Warning, duration=5)
                                 self.dockWidgetGeometryEditSettings.plainTextEditMessages.appendPlainText('Kohteen pituus verrattuna alkuperäiseen oli ' + str(round(ratio, 3)) + '%, joten se poistettiin')
                                 self.dockWidgetGeometryEditSettings.plainTextEditMessages.moveCursor(QTextCursor.End)
 

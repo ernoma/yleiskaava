@@ -410,7 +410,7 @@ class DataCopySourceToTarget:
         fieldNames, fieldTypeNames = self.getTargetFieldSelectedMoreThanOneTime()
         for index, fieldName in enumerate(fieldNames):
             if fieldName != None and fieldTypeNames[index] != 'String':
-                self.iface.messageBar().pushMessage("Sama kohdekenttä " + fieldName + "valittu usealla lähdekentälle ja kohdekentän tyyppi (" + fieldTypeNames[index] + ") ei tue arvojen yhdistämistä", Qgis.Warning)
+                self.iface.messageBar().pushMessage("Sama kohdekenttä " + fieldName + "valittu usealla lähdekentälle ja kohdekentän tyyppi (" + fieldTypeNames[index] + ") ei tue arvojen yhdistämistä", Qgis.Warning, duration=20)
                 break
 
         self.dialogCopySourceDataToDatabase.hide()
@@ -609,7 +609,7 @@ class DataCopySourceToTarget:
                 if QgsExpressionContextUtils.globalScope().hasVariable('user_account_name'):
                     widget.setText(QgsExpressionContextUtils.globalScope().variable('user_account_name'))
         else:
-            self.iface.messageBar().pushMessage('Bugi koodissa: showFieldInSettingsDialogDefaults widget == None', Qgis.Warning)
+            self.iface.messageBar().pushMessage('Bugi koodissa: showFieldInSettingsDialogDefaults widget == None', Qgis.Warning, duration=0)
             #QgsMessageLog.logMessage('showFieldInSettingsDialogDefaults widget == None', 'Yleiskaava-työkalu', Qgis.Critical)
             return False
             
@@ -661,11 +661,11 @@ class DataCopySourceToTarget:
             QgsApplication.taskManager().addTask(self.copySourceDataToDatabaseTask)
 
         elif reason == COPY_ERROR_REASONS.SELECTED_FEATURE_COUNT_IS_ZERO:
-            self.iface.messageBar().pushMessage('Yhtään lähdekarttatason kohdetta ei ole valittuna', Qgis.Critical)
+            self.iface.messageBar().pushMessage('Yhtään lähdekarttatason kohdetta ei ole valittuna', Qgis.Critical, duration=0)
         elif reason == COPY_ERROR_REASONS.TARGET_TABLE_NOT_SELECTED:
-            self.iface.messageBar().pushMessage('Kopioinnin kohdekarttatasoa ei valittu', Qgis.Critical)
+            self.iface.messageBar().pushMessage('Kopioinnin kohdekarttatasoa ei valittu', Qgis.Critical, duration=0)
         elif reason == COPY_ERROR_REASONS.TARGET_FIELD_SELECTED_MULTIPLE_TIMES_NOT_SUPPORTED_FOR_TYPE:
-            self.iface.messageBar().pushMessage('Sama kohdekenttä valittu usealla lähdekentälle ja kohdekentän tyyppi ei tue arvojen yhdistämistä', Qgis.Critical)
+            self.iface.messageBar().pushMessage('Sama kohdekenttä valittu usealla lähdekentälle ja kohdekentän tyyppi ei tue arvojen yhdistämistä', Qgis.Critical, duration=0)
 
 
     # def handleCreateFeatureRegulationRelation(self, targetSchemaTableName, featureID, regulationName):
@@ -762,6 +762,9 @@ class DataCopySourceToTarget:
             widget = self.dialogCopySettings.tableWidgetDefaultFieldValues.cellWidget(i, DataCopySourceToTarget.DEFAULT_VALUES_INPUT_INDEX)
             # QgsMessageLog.logMessage("getDefaultTargetFieldInfo - targetFieldName: " + targetFieldName, 'Yleiskaava-työkalu', Qgis.Info)
             value = self.yleiskaavaUtils.getValueOfWidgetForType(widget, targetFieldType)
+
+            # QgsMessageLog.logMessage("getDefaultTargetFieldInfo - targetFieldName: " + targetFieldName + ", value: " + str(value), 'Yleiskaava-työkalu', Qgis.Info)
+
             tempValue = None
             if not QVariant(value).isNull():
                 tempValue = QVariant(value).value()
@@ -771,7 +774,7 @@ class DataCopySourceToTarget:
             targetFieldInfo = { "name": targetFieldName, "type": targetFieldType, "value": tempValue }
             defaultFieldNameValueInfos.append(targetFieldInfo)
 
-            # QgsMessageLog.logMessage("getDefaultTargetFieldInfo - targetFieldName: " + targetFieldName + ", value: " + str(variantValue.value()), 'Yleiskaava-työkalu', Qgis.Info)
+            # QgsMessageLog.logMessage("getDefaultTargetFieldInfo - targetFieldName: " + targetFieldName + ", tempValue: " + str(tempValue), 'Yleiskaava-työkalu', Qgis.Info)
 
         return defaultFieldNameValueInfos
 

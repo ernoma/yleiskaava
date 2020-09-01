@@ -175,7 +175,7 @@ class UpdateIndexingOfFeatures:
             self.dialogUpdateIndexingOfFeatures.comboBoxTargetLayerFeatureIndexValuesCurrent.clear()
             self.dialogUpdateIndexingOfFeatures.comboBoxTargetLayerFeatureIndexValuesCurrent.addItems([item["value"] for item in self.sortedFeatureIDsAndValues])
             if len(self.sortedFeatureIDsAndValues) == 0:
-                self.iface.messageBar().pushMessage("Valitulla kaavakohdekarttatasolla, käyttötarkoituksella ja indeksikentällä ei ole indeksiarvoja", Qgis.Info, 5)
+                self.iface.messageBar().pushMessage("Valitulla kaavakohdekarttatasolla, käyttötarkoituksella ja indeksikentällä ei ole indeksiarvoja", Qgis.Info, duration=5)
                 # self.iface.messageBar().pushMessage("Valitulla kaavakohdekarttatasolla, käyttötarkoituksella, indeksikentällä ja vakioalku- ja loppuosalla ei voi muodostaa automaattista indeksiä", Qgis.Warning)
         else:
             self.dialogUpdateIndexingOfFeatures.comboBoxTargetLayerFeatureIndexValuesCurrent.clear()
@@ -192,7 +192,7 @@ class UpdateIndexingOfFeatures:
                 pass
         self.selectedLayer = QgsProject.instance().mapLayersByName(userFriendlyTableName)[0]
         if self.selectedLayer.selectedFeatureCount() > 0:
-             self.iface.messageBar().pushMessage('' + userFriendlyTableName + ' karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
+             self.iface.messageBar().pushMessage('' + userFriendlyTableName + ' karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, duration=20)
         self.selectedLayer.selectionChanged.connect(self.handleFeatureSelectionChanged)
         self.iface.showAttributeTable(self.selectedLayer)
         if self.selectedLayer.selectedFeatureCount() == 1:
@@ -211,7 +211,7 @@ class UpdateIndexingOfFeatures:
             else:
                 self.clearTableWidgetTargetFeatureInfo()
                 userFriendlyTableName = self.dialogUpdateIndexingOfFeatures.comboBoxChooseTargetLayer.currentText()
-                self.iface.messageBar().pushMessage('' + userFriendlyTableName + ' karttatasolla on valittuna useita kohteita', Qgis.Info, 20)
+                self.iface.messageBar().pushMessage('' + userFriendlyTableName + ' karttatasolla on valittuna useita kohteita', Qgis.Info, duration=20)
 
 
     def fillTableWidgetTargetFeatureInfo(self, feature):
@@ -242,7 +242,7 @@ class UpdateIndexingOfFeatures:
                 widget.setEnabled(False)
                 self.dialogUpdateIndexingOfFeatures.tableWidgetTargetFeatureInfo.setCellWidget(0, index, widget)
             else:
-                self.iface.messageBar().pushMessage('Bugi koodissa: fillTableWidgetTargetFeatureInfo widget == None', Qgis.Warning)
+                self.iface.messageBar().pushMessage('Bugi koodissa: fillTableWidgetTargetFeatureInfo widget == None', Qgis.Critical, duration=0)
 
         self.dialogUpdateIndexingOfFeatures.tableWidgetTargetFeatureInfo.setHorizontalHeaderLabels(userFriendlyFieldNames)
         self.dialogUpdateIndexingOfFeatures.tableWidgetTargetFeatureInfo.resizeColumnsToContents()
@@ -394,7 +394,7 @@ class UpdateIndexingOfFeatures:
             # QgsMessageLog.logMessage("getValidAndSortedFeatureIDsAndValuesAndValueParts - hasInts", 'Yleiskaava-työkalu', Qgis.Info)
             sortedFeatureIDsAndValidValuesAndValueParts = sorted(validFeatureIDsAndValuesAndValueParts, key=lambda x: int(x['valuePart']), reverse = shouldReverse)
         else:
-            self.iface.messageBar().pushMessage('Bugi koodissa: getValidAndSortedFeatureIDsAndValuesAndValueParts', Qgis.Critical)
+            self.iface.messageBar().pushMessage('Bugi koodissa: getValidAndSortedFeatureIDsAndValuesAndValueParts', Qgis.Critical, duration=0)
 
         return sortedFeatureIDsAndValidValuesAndValueParts
 
@@ -563,10 +563,10 @@ class UpdateIndexingOfFeatures:
         
         success = self.yleiskaavaDatabase.updateSpatialFeaturesWithFieldValues(self.selectedLayer, self.featureIDsAndNewIndexValues, self.selectedFieldName)
         if success:
-            self.iface.messageBar().pushMessage('Kaavakohteiden indeksointi päivitetty', Qgis.Info, 30)
+            self.iface.messageBar().pushMessage('Kaavakohteiden indeksointi päivitetty', Qgis.Info, duration=30)
             self.clearForm()
             self.yleiskaavaUtils.refreshTargetLayersInProject()
         else:
-            self.iface.messageBar().pushMessage('Kaavakohteiden indeksointi ei onnistunut', Qgis.Critical)
+            self.iface.messageBar().pushMessage('Kaavakohteiden indeksointi ei onnistunut', Qgis.Critical, duration=0)
 
             

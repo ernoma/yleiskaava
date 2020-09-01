@@ -122,6 +122,7 @@ class YleiskaavaSettings:
                 self.showErrorDatabaseProjectMismatch()
         else:
             self.iface.messageBar().pushMessage('Tietokantaan yhdistäminen ei onnistunut', Qgis.Critical, duration=0)
+            self.dockWidget.pushButtonSettings.setStyleSheet('QPushButton {background-color: red; color: #white;}')
 
 
     def updateDatabaseConnection(self, usedDatabaseConnectionName):
@@ -186,10 +187,10 @@ class YleiskaavaSettings:
     def showErrorBecauseProjectNotRead(self):
         self.openProjectMessageBarItem = QgsMessageBarItem('Yleiskaavan QGIS-työtila pitää käynnistää ennen työkalujen käyttöä', Qgis.Warning, duration=10)
         self.iface.messageBar().pushItem(self.openProjectMessageBarItem)
+        self.iface.projectRead.connect(self.handleProjectRead)
 
 
     def hideErrorBecauseProjectNotRead(self):
-        self.iface.projectRead.connect(self.handleProjectRead)
         try:
             self.iface.messageBar().popWidget(self.openProjectMessageBarItem)
             self.openProjectMessageBarItem = None
@@ -224,7 +225,13 @@ class YleiskaavaSettings:
     def handleProjectRead(self):
         if self.canUseBecauseProject():
             self.hideErrorBecauseProjectNotRead()
-            self.iface.projectRead.disconnect(self.handleProjectRead)
-            
+            try:
+                self.iface.projectRead.disconnect(self.handleProjectRead)
+            except TypeError:
+                pass
+            except RuntimeError:
+                pass
+                        
+        
         if not self.canUseBecauseDatabase():
             self.showErrorDatabaseProjectMismatch()

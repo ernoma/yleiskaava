@@ -123,7 +123,7 @@ class YleiskaavaSourceDataAPIs:
         
         if layer is not None and not layer.isValid():
             layer = None
-            self.iface.messageBar().pushMessage('Lähdekarttason avaaminen ei onnistunut', Qgis.Critical)
+            self.iface.messageBar().pushMessage('Lähdekarttason avaaminen ei onnistunut', Qgis.Critical, duration=0)
         else:
             pass
 
@@ -144,7 +144,7 @@ class YleiskaavaSourceDataAPIs:
 
         if not os.path.exists(filePath):
             self.iface.messageBar().pushMessage('Virhe', 'Lähderajapintatiedostoa ei voitu lukea',\
-                Qgis.Warning)
+                Qgis.Critical, duration=0)
             return
 
         apis = None

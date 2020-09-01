@@ -110,7 +110,7 @@ class YleiskaavaUtils:
         if field.type() == QVariant.Bool:
             return 'Bool'
         else:
-            self.iface.messageBar().pushMessage('Bugi koodissa: getStringTypeForFeatureField tuntematon tyyppi', Qgis.Critical)
+            self.iface.messageBar().pushMessage('Bugi koodissa: getStringTypeForFeatureField tuntematon tyyppi', Qgis.Critical, duration=0)
             # QgsMessageLog.logMessage('getStringTypeForFeatureField tuntematon tyyppi', 'Yleiskaava-työkalu', Qgis.Critical)
             return str(field.type())
 
@@ -139,7 +139,7 @@ class YleiskaavaUtils:
             elif targetFieldTypeName == 'String':
                 return str(sourceAttribute.value())
             else:
-                self.iface.messageBar().pushMessage('Bugi koodissa: getAttributeValueInCompatibleType tuntematon tyyppimuunnos', Qgis.Critical)
+                self.iface.messageBar().pushMessage('Bugi koodissa: getAttributeValueInCompatibleType tuntematon tyyppimuunnos', Qgis.Critical, duration=0)
                 # QgsMessageLog.logMessage('getAttributeValueInCompatibleType tuntematon tyyppimuunnos', 'Yleiskaava-työkalu', Qgis.Critical)
                 return None
 
@@ -226,7 +226,7 @@ class YleiskaavaUtils:
             else:
                 return int(text)
         elif targetFieldType == "Date" or targetFieldType == "DateTime": # QgsDateTimeEdit
-            dateValue = widget.date()
+            dateValue = widget.dateTime()
             if dateValue.isNull():
                 return None
             else:

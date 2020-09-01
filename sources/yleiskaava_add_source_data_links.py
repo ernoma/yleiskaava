@@ -165,7 +165,7 @@ class AddSourceDataLinks:
             # listaa kohteen nimi ja painikkeet, tms. taulukossa
             # listaa myös jo tietokannassa olevat kohteet (lähtöaineistorajapinnan osalta)
             if layer is None:
-                self.iface.messageBar().pushMessage('Lähdekarttason kohteiden hakeminen ei onnistunut', Qgis.Critical)
+                self.iface.messageBar().pushMessage('Lähdekarttason kohteiden hakeminen ei onnistunut', Qgis.Critical, duration=0)
             else:
                 fields = layer.fields()
                 # for field in fields:
@@ -185,11 +185,11 @@ class AddSourceDataLinks:
                         self.featureRequestTask.taskCompleted.connect(self.postFeatureRequestTaskRun)
                         self.featureRequestTask.taskTerminated.connect(self.postFeatureRequestTaskError)
                         QgsApplication.taskManager().addTask(self.featureRequestTask)
-                        self.iface.messageBar().pushMessage('Haetaan lähdeaineiston kohteita', Qgis.Info, 5)
+                        self.iface.messageBar().pushMessage('Haetaan lähdeaineiston kohteita', Qgis.Info, duration=5)
 
 
     def postFeatureRequestTaskError(self):
-        self.iface.messageBar().pushMessage('Lähdeaineiston kohteiden hakeminen epäonnistui', Qgis.Critical)
+        self.iface.messageBar().pushMessage('Lähdeaineiston kohteiden hakeminen epäonnistui', Qgis.Critical, duration=0)
         self.reset()
 
 
@@ -199,7 +199,7 @@ class AddSourceDataLinks:
         except RuntimeError:
             pass
         
-        self.iface.messageBar().pushMessage('Lähdeaineiston kohteet haettu', Qgis.Info, 5)
+        self.iface.messageBar().pushMessage('Lähdeaineiston kohteet haettu', Qgis.Info, duration=5)
 
         # self.yleiskaavaDatabase.reconnectToDB()
 
@@ -226,7 +226,7 @@ class AddSourceDataLinks:
         # QgsMessageLog.logMessage('updateTableWidgetSourceTargetMatches - featureCount: ' + str(featureCount), 'Yleiskaava-työkalu', Qgis.Info)
 
         if featureCount == 0:
-            self.iface.messageBar().pushMessage('Lähdeaineistokarttatasolta ei löytynyt valituista kohteista määritetyn rajaussuorakulmion sisältä kohteita', Qgis.Info, 10)
+            self.iface.messageBar().pushMessage('Lähdeaineistokarttatasolta ei löytynyt valituista kohteista määritetyn rajaussuorakulmion sisältä kohteita', Qgis.Info, duration=10)
 
         for index, featureInfo in enumerate(sorted(featureInfos, key=itemgetter("distance"))):
             # lähdeaineiston mukaan nimi/tunniste UI:hin
@@ -346,7 +346,7 @@ class AddSourceDataLinks:
             userFriendlyTableName = self.dialogAddSourceDataLinks.comboBoxChooseTargetLayer.currentText()
             self.selectedTargetLayer = QgsProject.instance().mapLayersByName(userFriendlyTableName)[0]
             if self.selectedTargetLayer.selectedFeatureCount() > 0:
-                self.iface.messageBar().pushMessage('' + userFriendlyTableName + ' karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
+                self.iface.messageBar().pushMessage('' + userFriendlyTableName + ' karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, duration=20)
             # self.selectedTargetLayer.selectionChanged.connect(self.handleFeatureSelectionChanged)
 
             self.updateTableWidgetSourceTargetMatches()
@@ -363,7 +363,7 @@ class AddSourceDataLinks:
                 pass
         self.selectedTargetLayer = QgsProject.instance().mapLayersByName(userFriendlyTableName)[0]
         if self.selectedTargetLayer.selectedFeatureCount() > 0:
-             self.iface.messageBar().pushMessage('' + userFriendlyTableName + ' karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
+             self.iface.messageBar().pushMessage('' + userFriendlyTableName + ' karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, duration=20)
         self.selectedTargetLayer.selectionChanged.connect(self.handleFeatureSelectionChanged)
         
         if self.selectedTargetLayer.selectedFeatureCount() == 1:
@@ -465,9 +465,9 @@ class AddSourceDataLinks:
         selectedFeatures = self.selectedTargetLayer.selectedFeatures()
 
         if len(selectedFeatures) == 0:
-            self.iface.messageBar().pushMessage('' + userFriendlyTableName + ' karttatasolla ei ole valittua kaavakohdetta, joten linkkiä lähtöaineistoon ei voida listätä', Qgis.Info, 20)
+            self.iface.messageBar().pushMessage('' + userFriendlyTableName + ' karttatasolla ei ole valittua kaavakohdetta, joten linkkiä lähtöaineistoon ei voida listätä', Qgis.Info, duration=20)
         if len(selectedFeatures) > 1:
-            self.iface.messageBar().pushMessage('' + userFriendlyTableName + ' karttatasolla on useita valittuja kaavakohteita, joten linkkiä lähtöaineistoon ei voida listätä', Qgis.Info, 20)
+            self.iface.messageBar().pushMessage('' + userFriendlyTableName + ' karttatasolla on useita valittuja kaavakohteita, joten linkkiä lähtöaineistoon ei voida listätä', Qgis.Info, duration=20)
         else:
             # lisää tarvittaessa uusi lähdeaineistorivi tietokantaan,
             # lisää relaatio kaavakohteen ja lähdeaineistorivin välille ja
@@ -509,7 +509,7 @@ class AddSourceDataLinks:
             success = self.yleiskaavaDatabase.createSourceDataFeatureAndRelationToSpatialFeature(sourceData, self.selectedTargetLayer, selectedFeatureID)
 
             if success:
-                self.iface.messageBar().pushMessage('Lähdelinkki lisätty', Qgis.Info, 20)
+                self.iface.messageBar().pushMessage('Lähdelinkki lisätty', Qgis.Info, duration=20)
                 # päivitä käyttöliittymän tauluun "Näytä yhdistetty kohde"-infopainike
                 linkedFeatureWidget = QPushButton()
                 linkedFeatureWidget.setText("Näytä yhdistetty kohde")
@@ -517,7 +517,7 @@ class AddSourceDataLinks:
                 self.dialogAddSourceDataLinks.tableWidgetSourceTargetMatches.setCellWidget(tableWidgetSourceTargetMatchesRowIndex, AddSourceDataLinks.LINKED_FEATURE_INDEX, linkedFeatureWidget)
                 self.yleiskaavaUtils.refreshTargetLayersInProject()
             else:
-                self.iface.messageBar().pushMessage('Lähdelinkin lisääminen epäonnistui', Qgis.Critical)
+                self.iface.messageBar().pushMessage('Lähdelinkin lisääminen epäonnistui', Qgis.Critical, duration=0)
 
 
     def getDistance(self, layer1, feature1, layer2, feature2):

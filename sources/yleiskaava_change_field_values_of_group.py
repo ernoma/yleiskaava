@@ -110,28 +110,28 @@ class ChangeFieldValuesOfGroup:
 
     def handleChooseUpdatedAttributesAndValuesForSpatialFeatures(self): 
         if not self.hasUserSelectedPolygonFeaturesForUpdate:
-            self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä aluevarauksia', Qgis.Warning)
+            self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä aluevarauksia', Qgis.Warning, duration=5)
         else:
             self.currentFeatureType = "alue"
             self.chooseUpdatedAttributesAndValuesForSpatialFeatures("alue")
 
     def handleChooseUpdatedAttributesAndValuesForSuplementarySpatialFeatures(self):
         if not self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate:
-            self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä täydentäviä aluekohteita', Qgis.Warning)
+            self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä täydentäviä aluekohteita', Qgis.Warning, duration=5)
         else:
             self.currentFeatureType = "alue_taydentava"
             self.chooseUpdatedAttributesAndValuesForSpatialFeatures("alue_taydentava")
 
     def handleChooseUpdatedAttributesAndValuesForSpatialLineFeatures(self):
         if not self.hasUserSelectedLineFeaturesForUpdate:
-            self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä viivamaisia kohteita', Qgis.Warning)
+            self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä viivamaisia kohteita', Qgis.Warning, duration=5)
         else:
             self.currentFeatureType = "viiva"
             self.chooseUpdatedAttributesAndValuesForSpatialFeatures("viiva")
 
     def handleChooseUpdatedAttributesAndValuesForSpatialPointFeatures(self):
         if not self.hasUserSelectedPointFeaturesForUpdate:
-            self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä pistemäisiä kohteita', Qgis.Warning)
+            self.iface.messageBar().pushMessage('Et ole valinnut päivitettäviä pistemäisiä kohteita', Qgis.Warning, duration=5)
         else:
             self.currentFeatureType = "piste"
             self.chooseUpdatedAttributesAndValuesForSpatialFeatures("piste")
@@ -165,7 +165,7 @@ class ChangeFieldValuesOfGroup:
                 self.yleiskaavaUtils.connectWidgetValueChangeHandler(widget, partial(self.widgetFieldValueChanged, index), fieldTypeName)
                 self.dialogChooseAndUpdateFieldValuesForFeatureType.tableWidgetFeatureAttributesAndValues.setCellWidget(index, ChangeFieldValuesOfGroup.FIELD_VALUE_INDEX, widget)
             else:
-                self.iface.messageBar().pushMessage('Bugi koodissa: showFieldInSettingsDialogDefaults widget == None', Qgis.Warning)
+                self.iface.messageBar().pushMessage('Bugi koodissa: showFieldInSettingsDialogDefaults widget == None', Qgis.Warning, duration=0)
                 #QgsMessageLog.logMessage('showFieldInSettingsDialogDefaults widget == None', 'Yleiskaava-työkalu', Qgis.Critical)
                 
             updateChoiceQCheckBoxCellWidget = self.yleiskaavaUtils.createCenteredCheckBoxCellWidgetForTableWidget()
@@ -204,9 +204,9 @@ class ChangeFieldValuesOfGroup:
 
         if success:
             self.yleiskaavaUtils.refreshTargetLayersInProject()
-            self.iface.messageBar().pushMessage('Valitsemiesi kohteiden ominaisuustiedot päivitetty', Qgis.Info, 30)
+            self.iface.messageBar().pushMessage('Valitsemiesi kohteiden ominaisuustiedot päivitetty', Qgis.Info, duration=30)
         else:
-            self.iface.messageBar().pushMessage('Valitsemiesi kohteiden ominaisuustietojen päivitys epäonnistui', Qgis.Critical)
+            self.iface.messageBar().pushMessage('Valitsemiesi kohteiden ominaisuustietojen päivitys epäonnistui', Qgis.Critical, duration=0)
 
         self.dialogChooseAndUpdateFieldValuesForFeatureType.hide()
 
@@ -214,28 +214,28 @@ class ChangeFieldValuesOfGroup:
     def selectPolygonFeatures(self):
         layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE)[0]
         if layer.selectedFeatureCount() > 0:
-             self.iface.messageBar().pushMessage('Aluevaraukset karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
+             self.iface.messageBar().pushMessage('Aluevaraukset karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, duration=10)
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedPolygonFeaturesForUpdate = True
 
     def selectSupplementaryPolygonFeatures(self):
         layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE_TAYDENTAVA)[0]
         if layer.selectedFeatureCount() > 0:
-             self.iface.messageBar().pushMessage('Täydentävät aluekohteet karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
+             self.iface.messageBar().pushMessage('Täydentävät aluekohteet karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, duration=10)
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate = True
 
     def selectLineFeatures(self):
         layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA)[0]
         if layer.selectedFeatureCount() > 0:
-             self.iface.messageBar().pushMessage('Viivamaiset kaavakohteet karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
+             self.iface.messageBar().pushMessage('Viivamaiset kaavakohteet karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, duration=10)
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedLineFeaturesForUpdate = True
 
     def selectPointFeatures(self):
         layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_PISTE)[0]
         if layer.selectedFeatureCount() > 0:
-             self.iface.messageBar().pushMessage('Pistemäiset kaavakohteet karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, 20)
+             self.iface.messageBar().pushMessage('Pistemäiset kaavakohteet karttatasolla on jo valmiiksi valittuja kohteita', Qgis.Info, duration=10)
         self.iface.showAttributeTable(layer)
         self.hasUserSelectedPointFeaturesForUpdate = True
 

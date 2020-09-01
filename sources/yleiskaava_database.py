@@ -673,6 +673,7 @@ class YleiskaavaDatabase:
                             "kaavan_taso_koodi": planLevelCode
                             })
             except psycopg2.Error as e:
+                QgsMessageLog.logMessage('getSpatialPlans - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
                 if shouldRetry:
                     success = self.reconnectToDB()
                     if success:
@@ -723,6 +724,7 @@ class YleiskaavaDatabase:
                             "kaavan_taso_koodi": planLevelCode
                             })
             except psycopg2.Error as e:
+                QgsMessageLog.logMessage('getSpatialPlansAndPlanLevels - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
                 if shouldRetry:
                     success = self.reconnectToDB()
                     if success:
@@ -829,6 +831,7 @@ class YleiskaavaDatabase:
                         "koodi": row['koodi'],
                         "kuvaus": row['kuvaus']})
             except psycopg2.Error as e:
+                QgsMessageLog.logMessage('getYleiskaavaPlanLevelList - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
                 if shouldRetry:
                     success = self.reconnectToDB()
                     if success:
@@ -910,6 +913,7 @@ class YleiskaavaDatabase:
                 row = cursor.fetchone()
                 count = row[0]
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('getRegulationCountForSpatialFeature - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -930,6 +934,7 @@ class YleiskaavaDatabase:
                 for row in rows:
                     classifications.append(row['kayttotarkoitus_lyhenne'])
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('getDistinctLandUseClassificationsOfLayer - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -954,6 +959,7 @@ class YleiskaavaDatabase:
                         "value": row[fieldName]
                     })
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('getLayerFeatureIDsAndFieldValuesForFeaturesHavingLanduseClassification - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -990,6 +996,7 @@ class YleiskaavaDatabase:
                                     regulationList.append(regulation)
                                 break
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('getRegulationsForSpatialFeature - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1057,6 +1064,7 @@ class YleiskaavaDatabase:
                         "kuvaus_teksti": QVariant(regulationRow['kuvaus_teksti'])
                         })
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('getSpecificRegulationsForSubQuery - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1119,6 +1127,7 @@ class YleiskaavaDatabase:
                         else:
                             return True
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('shouldAddRegulation - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1127,22 +1136,19 @@ class YleiskaavaDatabase:
         return False
 
 
-    def updateRegulation(self, regulationID, regulationTitle, regulationText, regulationDescription):
-        layer = self.getProjectLayer("yk_yleiskaava.kaavamaarays")
+    def updateRegulation(self, regulationID, regulationTitle, regulationText, regulationDescription, shouldRetry=True):
+        try:
+            with self.dbConnection.cursor() as cursor:
+                query = "UPDATE yk_yleiskaava.kaavamaarays SET kaavamaarays_otsikko = %s, maaraysteksti = %s, kuvaus_teksti = %s WHERE id = %s"
+                cursor.execute(query, (regulationTitle, regulationText, regulationDescription, regulationID))
+                self.dbConnection.commit()
 
-        featureRequest = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes(["id", "kaavamaarays_otsikko", "maaraysteksti", "kuvaus_teksti"], layer.fields())
-        for feature in layer.getFeatures(featureRequest):
-            if feature["id"] == regulationID:
-                fid = feature.id()
-                indexTitle = layer.fields().indexFromName("kaavamaarays_otsikko")
-                indexText = layer.fields().indexFromName("maaraysteksti")
-                indexDescription = layer.fields().indexFromName("kuvaus_teksti")
-                attrs = { indexTitle: regulationTitle, indexText: regulationText, indexDescription: indexDescription }
-                success = layer.dataProvider().changeAttributeValues({ fid: attrs })
-                if not success:
-                    self.iface.messageBar().pushMessage('updateRegulation - commitChanges() failed', Qgis.Critical)
-                    return False
-                break
+        except psycopg2.Error as e:
+            QgsMessageLog.logMessage('updateRegulation - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    return self.updateRegulation(regulationID, regulationTitle, regulationText, regulationDescription, shouldRetry = False)
 
         return True
 
@@ -1154,14 +1160,24 @@ class YleiskaavaDatabase:
         feature = self.findSpatialFeatureFromFeatureLayerWithID(layer, featureID)
 
         if not shouldUpdateOnlyRelation:
-            fid = feature.id()
-            indexTitle = layer.fields().indexFromName("kaavamaaraysotsikko")
-            indexLandUseClass = layer.fields().indexFromName("kayttotarkoitus_lyhenne")
-            attrs = { indexTitle: None, indexLandUseClass: None }
-            success = layer.dataProvider().changeAttributeValues({ fid: attrs })
-            if not success:
-                self.iface.messageBar().pushMessage('removeSpatialFeatureRegulationAndLandUseClassification - commitChanges() failed', Qgis.Critical)
-                return False
+            return self.removeRegulationAndLandUseClassificationTextsFromSpatialFeature(featureID, featureType)
+
+        return True
+
+
+    def removeRegulationAndLandUseClassificationTextsFromSpatialFeature(self, featureID, featureType,shouldRetry=True):
+        try:
+            with self.dbConnection.cursor() as cursor:
+                query = "UPDATE yk_yleiskaava.kaavaobjekti_{} SET kaavamaaraysotsikko = NULL, kayttotarkoitus_lyhenne = NULL WHERE id = %s".format(featureType)
+                cursor.execute(query, (featureID, ))
+                self.dbConnection.commit()
+
+        except psycopg2.Error as e:
+            QgsMessageLog.logMessage('removeRegulationAndLandUseClassificationTextsFromSpatialFeature - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    return self.removeRegulationAndLandUseClassificationTextsFromSpatialFeature(featureID, featureType, shouldRetry = False)
 
         return True
 
@@ -1206,6 +1222,7 @@ class YleiskaavaDatabase:
                 # if not success:
                 #     self.iface.messageBar().pushMessage('updateSpatialFeatureRegulationAndLandUseClassificationTexts - commitChanges() failed', Qgis.Critical)
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('updateSpatialFeatureRegulationAndLandUseClassification - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1222,6 +1239,7 @@ class YleiskaavaDatabase:
                 if len(cursor.fetchall()) > 0:
                     return True
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('existsFeatureRegulationRelation - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1237,6 +1255,7 @@ class YleiskaavaDatabase:
                 cursor.execute(query, (featureID, ))
                 self.dbConnection.commit()
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('removeRegulationRelationsFromSpatialFeature - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1250,6 +1269,7 @@ class YleiskaavaDatabase:
                 cursor.execute(query, (featureID, ))
                 self.dbConnection.commit()
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('deleteSpatialFeature - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1273,6 +1293,7 @@ class YleiskaavaDatabase:
                 cursor.execute(query, (str(uuid.uuid4()), targetFeatureID, regulationID))
                 self.dbConnection.commit()
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('createFeatureRegulationRelationWithRegulationID - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1318,6 +1339,7 @@ class YleiskaavaDatabase:
                             "yleiskaava_nimi": self.getPlanNameForPlanID(id_yleiskaava)
                             })
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('readThemes - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1346,6 +1368,7 @@ class YleiskaavaDatabase:
                                     themeList.append(theme)
                                 break
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('getThemesForSpatialFeature - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1374,19 +1397,20 @@ class YleiskaavaDatabase:
         return regulationID
 
 
-    def createSpecificRegulationAndFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationName):
-        regulationLayer = self.getProjectLayer("yk_yleiskaava.kaavamaarays")
-
-        regulationID = str(uuid.uuid4())
-
-        regulationFeature = QgsFeature()
-        regulationFeature.setFields(regulationLayer.fields())
-        regulationFeature.setAttribute("id", regulationID)
-        regulationFeature.setAttribute("kaavamaarays_otsikko", regulationName)
-        provider = regulationLayer.dataProvider()
-        provider.addFeatures([regulationFeature])
-
-        self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulationID)
+    def createSpecificRegulationAndFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationName, shouldRetry=True):
+        try:
+            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                regulationID = str(uuid.uuid4())
+                query = "INSERT INTO yk_yleiskaava.kaavamaarays (id, kaavamaarays_otsikko) VALUES (%s, %s)"
+                cursor.execute(query, (regulationID, QVariant(regulationName).value()))
+                self.dbConnection.commit()
+            self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulationID)
+        except psycopg2.Error as e:
+            QgsMessageLog.logMessage('createSpecificRegulationAndFeatureRegulationRelation - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    self.createSpecificRegulationAndFeatureRegulationRelation(targetSchemaTableName, targetFeatureID, regulationName, shouldRetry = False)
 
 
     def getCodeListValuesForPlanObjectField(self, targetFieldName):
@@ -1439,6 +1463,7 @@ class YleiskaavaDatabase:
                 for row in rows:
                     self.codeTableCodes[name].append({'id': row['id'], 'koodi': row['koodi']})
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('readCodeTableCodesFromDatabase - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1584,12 +1609,13 @@ class YleiskaavaDatabase:
                 for featureIDAndValue in featureIDsAndValues:
                     query = "UPDATE {} SET {} = %s WHERE id = %s".format(schemaTableName, fieldName)
 
-                    QgsMessageLog.logMessage("updateSpatialFeaturesWithFieldValues - query: " + query, 'Yleiskaava-työkalu', Qgis.Info)
+                    # QgsMessageLog.logMessage("updateSpatialFeaturesWithFieldValues - query: " + query, 'Yleiskaava-työkalu', Qgis.Info)
 
                     cursor.execute(query, (featureIDAndValue["value"], featureIDAndValue["id"]))
 
                 self.dbConnection.commit()
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('updateSpatialFeaturesWithFieldValues - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1615,19 +1641,28 @@ class YleiskaavaDatabase:
 
                     for updatedFieldDataItem in updatedFieldData:
                         query += updatedFieldDataItem["fieldName"] + " = %s, "
-                        attrTuple += (updatedFieldDataItem["value"], )
+
+                        value = updatedFieldDataItem["value"]
+                        if value is not None and not QVariant(value).isNull():
+                            if (updatedFieldDataItem["fieldTypeName"] == "Date" or updatedFieldDataItem["fieldTypeName"] == "DateTime"):
+                                value = QDateTime(QVariant(value).value()).toString("yyyy-MM-dd")
+                        if QVariant(value).isNull():
+                            value = None
+
+                        attrTuple += (value, )
 
                     if len(updatedFieldData) > 0:
                         query = query[:-2]
                     attrTuple += (feature["id"], )
                     query += " WHERE id = %s"
 
-                    QgsMessageLog.logMessage("updateSelectedSpatialFeaturesWithFieldValues - query: " + query, 'Yleiskaava-työkalu', Qgis.Info)
+                    # QgsMessageLog.logMessage("updateSelectedSpatialFeaturesWithFieldValues - query: " + query, 'Yleiskaava-työkalu', Qgis.Info)
                     # QgsMessageLog.logMessage("updateSelectedSpatialFeaturesWithFieldValues - attrTuple: " + ', '.join(str(item) for item in attrTuple), 'Yleiskaava-työkalu', Qgis.Info)
 
                     cursor.execute(query, attrTuple)
                     self.dbConnection.commit()
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('updateSelectedSpatialFeaturesWithFieldValues - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1645,6 +1680,7 @@ class YleiskaavaDatabase:
 
             self.readThemes()
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('updateTheme - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1689,6 +1725,7 @@ class YleiskaavaDatabase:
                 cursor.execute(query, (str(uuid.uuid4()), targetFeatureID, themeID))
                 self.dbConnection.commit()
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('createFeatureThemeRelationWithThemeID - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1703,6 +1740,7 @@ class YleiskaavaDatabase:
                 if len(cursor.fetchall()) > 0:
                     return True
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('existsFeatureThemeRelation - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1718,6 +1756,7 @@ class YleiskaavaDatabase:
                 cursor.execute(query, (featureID, ))
                 self.dbConnection.commit()
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('removeThemeRelationsFromSpatialFeature - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1742,6 +1781,7 @@ class YleiskaavaDatabase:
                         "linkki_data": row["linkki_data"]
                     })
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('getSourceDataFeatures - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1757,7 +1797,7 @@ class YleiskaavaDatabase:
         if linkedSourceDataFeature is not None:
             featureIDs = self.getLinkedFeatureIDsForSourceDataFeature(spatialFeatureLayer, linkedSourceDataFeature)
             if len(featureIDs) > 1:
-                self.iface.messageBar().pushMessage('Löydettiin useita lähdeaineistokohteeseen "' + sourceLayerFeatureInfo["nimi"] + '" linkitettyjä kaavakohteita', Qgis.Warning)
+                self.iface.messageBar().pushMessage('Löydettiin useita lähdeaineistokohteeseen "' + sourceLayerFeatureInfo["nimi"] + '" linkitettyjä kaavakohteita', Qgis.Warning, duration=0)
             if len(featureIDs) >= 1:
                 linkedFeatureID = featureIDs[0]
 
@@ -1790,6 +1830,7 @@ class YleiskaavaDatabase:
                 for row in rows:
                     linkedFeatureIDs.append(row["id_" + table_name])
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('getLinkedFeatureIDsForSourceDataFeature - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1822,6 +1863,7 @@ class YleiskaavaDatabase:
                 cursor.execute(query, attrTuple)
                 self.dbConnection.commit()
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('createSourceDataFeature - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1864,6 +1906,7 @@ class YleiskaavaDatabase:
                 cursor.execute(query, (relationFeatureID, linkedSourceDataFeatureID, targetFeatureID))
                 self.dbConnection.commit()
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('createSourceDataRelationToSpatialFeature - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
@@ -1942,6 +1985,8 @@ class YleiskaavaDatabase:
                 self.dbConnection = psycopg2.connect(**self.databaseConnectionParams)
                 # self.iface.messageBar().pushMessage('Tietokantaan yhdistäminen onnistui', Qgis.Info, duration=20)
             except psycopg2.Error as e:
+                QgsMessageLog.logMessage('reconnectToDB - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Crictical)
+                self.iface.messageBar().pushMessage('Yleiskaavan tietokantaan yhdistäminen epäonnistui', Qgis.Crictical, duration=0)
                 return False
         else:
             return False
@@ -2031,9 +2076,11 @@ class YleiskaavaDatabase:
                         value = targetLayerFeature[field.name()]
 
                         fieldTypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
-                        if value is not None:
-                            if (fieldTypeName == "Date" or fieldTypeName == "DateTime") and not QVariant(value).isNull():
+                        if value is not None and not QVariant(value).isNull():
+                            if (fieldTypeName == "Date" or fieldTypeName == "DateTime"):
                                 value = QDateTime(QVariant(value).value()).toString("yyyy-MM-dd")
+                        if QVariant(value).isNull():
+                            value = None
 
                         attrTuple += (value, )
 
@@ -2053,10 +2100,17 @@ class YleiskaavaDatabase:
                 query += ")"
                 
                 # QgsMessageLog.logMessage("createTargetFeature - query: " + query, 'Yleiskaava-työkalu', Qgis.Info)
-
+                index = 0
+                for field in targetLayerFeature.fields().toList():
+                    if field.name() != "id":
+                        # QgsMessageLog.logMessage("{}: {}".format(field.name(), str(attrTuple[index])), 'Yleiskaava-työkalu', Qgis.Info)
+                        index += 1
+                        
+    
                 cursor.execute(query, attrTuple)
                 self.dbConnection.commit()
         except psycopg2.Error as e:
+            QgsMessageLog.logMessage('createTargetFeature - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:

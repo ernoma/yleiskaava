@@ -347,7 +347,7 @@ class CopySourceDataToDatabaseTask(QgsTask):
 
     def handleRegulationInSourceToTargetCopy(self, sourceFeature, targetFeature, sourceRegulationName, targetSchemaTableName, shouldCreateRelation):
         # QgsMessageLog.logMessage("handleRegulationInSourceToTargetCopy - sourceRegulationName: " + sourceRegulationName.value(), 'Yleiskaava-työkalu', Qgis.Info)
-        if sourceRegulationName.value() != "":
+        if not sourceRegulationName.isNull() and sourceRegulationName.value() != "":
 
             if shouldCreateRelation:
                 if sourceRegulationName.value() in self.regulationNames:
@@ -378,7 +378,7 @@ class CopySourceDataToDatabaseTask(QgsTask):
 
 
     def handleLandUseClassificationInSourceToTargetCopy(self, sourceFeature, targetFeature, sourceLandUseClassificationName, targetSchemaTableName, shouldCreateRelation):
-        if sourceLandUseClassificationName.value() != "":
+        if not sourceLandUseClassificationName.isNull() and sourceLandUseClassificationName.value() != "":
             regulationName = self.yleiskaavaUtils.getRegulationNameForLandUseClassification(self.planNumber, targetSchemaTableName, sourceLandUseClassificationName.value())
 
             if shouldCreateRelation:
