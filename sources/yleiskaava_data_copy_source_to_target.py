@@ -608,6 +608,14 @@ class DataCopySourceToTarget:
             if targetFieldName == 'muokkaaja':
                 if QgsExpressionContextUtils.globalScope().hasVariable('user_account_name'):
                     widget.setText(QgsExpressionContextUtils.globalScope().variable('user_account_name'))
+            elif targetFieldName == 'id_kansallinen_prosessin_vaihe':
+                widget.setCurrentText('3_1_ehdotus')
+            elif targetFieldName == 'id_laillinen_sitovuus':
+                widget.setCurrentText('maaritelty_lainsaadannossa')
+            elif targetFieldName == 'id_prosessin_vaihe':
+                widget.setCurrentText('ehdotus')
+            elif targetFieldName == 'id_kaavoitusprosessin_tila':
+                widget.setCurrentText('ehdotus_nahtavilla')
         else:
             self.iface.messageBar().pushMessage('Bugi koodissa: showFieldInSettingsDialogDefaults widget == None', Qgis.Warning, duration=0)
             #QgsMessageLog.logMessage('showFieldInSettingsDialogDefaults widget == None', 'Yleiskaava-työkalu', Qgis.Critical)
