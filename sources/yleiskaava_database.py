@@ -2057,6 +2057,8 @@ class YleiskaavaDatabase:
 
         geom = targetLayerFeature.geometry()
         
+        # QgsMessageLog.logMessage("createTargetFeature - geom.asWkt(): {}".format(geom.asWkt()), 'Yleiskaava-työkalu', Qgis.Info)
+
         try:
             schema, table_name = targetSchemaTableName.split('.')
 
@@ -2087,10 +2089,12 @@ class YleiskaavaDatabase:
                         query += ", {}".format(field.name())
 
                 if not geom.isNull():
+                    wkt = geom.asWkt().replace('nan', '0')
+
                     if geom.isMultipart():
-                        query += ") VALUES (%s, ST_SetSRID(ST_Force3D(ST_GeomFromText('{}')), {})".format(geom.asWkt(), targetCRS.authid().split(':')[1])
+                        query += ") VALUES (%s, ST_SetSRID(ST_Force3D(ST_GeomFromText('{}')), {})".format(wkt, targetCRS.authid().split(':')[1])
                     else:
-                        query += ") VALUES (%s, ST_Collect(ARRAY[ ST_SetSRID(ST_Force3D(ST_GeomFromText('{}')), {}) ])".format(geom.asWkt(), targetCRS.authid().split(':')[1])
+                        query += ") VALUES (%s, ST_Collect(ARRAY[ ST_SetSRID(ST_Force3D(ST_GeomFromText('{}')), {}) ])".format(wkt, targetCRS.authid().split(':')[1])
                 else:
                     query += ") VALUES (%s"
 
