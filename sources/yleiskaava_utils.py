@@ -13,8 +13,8 @@ from qgis.gui import QgsFilterLineEdit, QgsDateTimeEdit
 class YleiskaavaUtils:
 
     LAND_USE_CLASSIFICATION_ABBREVIATIONS = [
-        { "plan_numbers": ["yk049"], "name": "ASUMISEN ALUE", "abbreviation": "A" },
-        { "plan_numbers": ["yk049"], "name": "ASUMISEN JA VIRKISTYKSEN SEKOITTUNUT ALUE", "abbreviation": "A/V" },
+        { "plan_numbers": ["yk049", "yk050"], "name": "ASUMISEN ALUE", "abbreviation": "A" },
+        { "plan_numbers": ["yk049", "yk050"], "name": "ASUMISEN JA VIRKISTYKSEN SEKOITTUNUT ALUE", "abbreviation": "A/V" },
         { "plan_numbers": ["yk049"], "name": "KESKUSPUISTOVERKOSTO", "abbreviation": "V" },
         { "plan_numbers": ["yk050"], "name": "VIRKISTYSALUE", "abbreviation": "V" },
         { "plan_numbers": ["yk049"], "name": "KESKUSTATOIMINTOJEN ALUE", "abbreviation": "C" },
@@ -23,7 +23,7 @@ class YleiskaavaUtils:
         { "plan_numbers": ["yk049", "yk050"], "name": "LUONNONSUOJELUALUE TAI -KOHDE", "abbreviation": "SL" },
         { "plan_numbers": ["yk049"], "name": "PALVELUJEN JA TYÖPAIKKOJEN SEKOITTUNUT ALUE TAI KOHDE", "abbreviation": "P/T" },
         { "plan_numbers": ["yk049"], "name": "PUOLUSTUSVOIMIEN ALUE", "abbreviation": "EP" },
-        { "plan_numbers": ["yk049"], "name": "TEOLLISUUS- JA TUOTANTOTOIMINTOJEN ALUE", "abbreviation": "T" },
+        { "plan_numbers": ["yk049", "yk050"], "name": "TEOLLISUUS- JA TUOTANTOTOIMINTOJEN ALUE", "abbreviation": "T" },
         { "plan_numbers": ["yk049"], "name": "TEOLLISUUS- JA TUOTANTOTOIMINTOJEN ALUE, JOLLA YMPÄRISTÖ ASETTAA TOIMINNAN LAADULLE ERITYISIÄ VAATIMUKSIA", "abbreviation": "TY" },
         { "plan_numbers": ["yk049", "yk050"], "name": "VESIALUE", "abbreviation": "W" },
         { "plan_numbers": ["yk049"], "name": "YHTEISÖJEN LOMA-ASUNTOALUE", "abbreviation": "R" }
