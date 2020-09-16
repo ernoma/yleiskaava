@@ -182,6 +182,8 @@ class CopySourceDataToDatabaseTask(QgsTask):
                             if attrValue is not None:
                                 if self.shouldCapitalizeWithTargetField(targetFieldDataItem["name"]):
                                     attrValue = QVariant(attrValue.value().upper())
+                                if self.shouldRStripWithTargetField(targetFieldDataItem["name"]):
+                                    attrValue = QVariant(attrValue.value().rstrip())
 
                                 attrNames.append(sourceAttrDataItem["name"])
                                 attrValues.append(attrValue)
@@ -216,6 +218,8 @@ class CopySourceDataToDatabaseTask(QgsTask):
                     if attrValue is not None:
                         if self.shouldCapitalizeWithTargetField(targetFieldDataItem["name"]):
                             attrValue = QVariant(attrValue.value().upper())
+                        if self.shouldRStripWithTargetField(targetFieldDataItem["name"]):
+                            attrValue = QVariant(attrValue.value().rstrip())
                     targetFeature.setAttribute(targetFieldDataItem["name"], attrValue)
                 else: # len(attrValues) > 1
                     combinedAttrValues = ""
@@ -227,6 +231,8 @@ class CopySourceDataToDatabaseTask(QgsTask):
                         combinedAttrValues = combinedAttrValues[:-(len(self.targetFieldValueSeparator))]
                     if self.shouldCapitalizeWithTargetField(targetFieldDataItem["name"]):
                         combinedAttrValues = combinedAttrValues.upper()
+                    if self.shouldRStripWithTargetField(targetFieldDataItem["name"]):
+                        combinedAttrValues = combinedAttrValues.rstrip()
                     targetFeature.setAttribute(targetFieldDataItem["name"], combinedAttrValues)
                     # QgsMessageLog.logMessage("setTargetFeatureValues - foundFieldMatch and sourceHadValue - targetFieldName: " + targetFieldDataItem["name"] + ", combinedAttrValues:" + combinedAttrValues, 'Yleiskaava-työkalu', Qgis.Info)
             elif not foundFieldMatchForTarget:
@@ -263,6 +269,13 @@ class CopySourceDataToDatabaseTask(QgsTask):
         return False
 
 
+    def shouldRStripWithTargetField(self, name):
+        if name == "kaavamaaraysotsikko" or name == "kayttotarkoitus_lyhenne":
+            return True
+        
+        return False
+
+
     def handleRegulationAndLandUseClassificationInSourceToTargetCopy(self, sourceFeature, targetSchemaTableName, targetFeature, shouldCreateRelation):
         # Tee tarvittaessa linkki olemassa olevaan tai uuteen kaavamääräykseen. Huomioi asetukset "Luo tarvittaessa uudet kaavamääräykset" ja "Täytä kaavakohteiden käyttötarkoitus kaavamääräyksen mukaan tai päinvastoin"
         # Huomioi, että kaavamääräys voi tulla lähteen käyttötarkoituksen kautta (muokkaa myös asetus-dialogia, jotta ko. asia on mahdollista)
@@ -273,11 +286,16 @@ class CopySourceDataToDatabaseTask(QgsTask):
         fieldMatchTargetNames = [fieldMatch["target"] for fieldMatch in fieldMatches]
 
         sourceRegulationName = self.getSourceFeatureValueForSourceTargetFieldMatch(fieldMatches, sourceFeature, "kaavamaaraysotsikko")
-        if self.shouldCapitalize and not sourceRegulationName.isNull():
-            sourceRegulationName = QVariant(sourceRegulationName.value().upper())
+        if not sourceRegulationName.isNull():
+            if self.shouldCapitalize:
+                sourceRegulationName = QVariant(sourceRegulationName.value().upper())
+            sourceRegulationName = QVariant(sourceRegulationName.value().rstrip())
+
         sourceLandUseClassificationName = self.getSourceFeatureValueForSourceTargetFieldMatch(fieldMatches, sourceFeature, "kayttotarkoitus_lyhenne")
-        if self.shouldCapitalize and not sourceLandUseClassificationName.isNull():
-            sourceLandUseClassificationName = QVariant(sourceLandUseClassificationName.value().upper())
+        if not sourceLandUseClassificationName.isNull():
+            if self.shouldCapitalize:
+                sourceLandUseClassificationName = QVariant(sourceLandUseClassificationName.value().upper())
+            sourceLandUseClassificationName = QVariant(sourceLandUseClassificationName.value().rstrip())
 
         # QgsMessageLog.logMessage("sourceRegulationName: " + str(sourceRegulationName.value()), 'Yleiskaava-työkalu', Qgis.Info)
         # QgsMessageLog.logMessage("sourceLandUseClassificationName: " + str(sourceLandUseClassificationName.value()), 'Yleiskaava-työkalu', Qgis.Info)
