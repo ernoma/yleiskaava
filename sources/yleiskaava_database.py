@@ -1045,6 +1045,40 @@ class YleiskaavaDatabase:
 
             regulationList.extend(self.getSpecificRegulationsForSubQuery(query))
 
+        if not onlyUsedRegulations:
+            allRegulations = self.getAllSpecificRegulations()
+            titles = [item['kaavamaarays_otsikko'] for item in regulationList]
+
+            for regulation in allRegulations:
+                if not regulation['kaavamaarays_otsikko'] in titles:
+                    regulationList.append(regulation)
+
+        return regulationList
+
+
+    def getAllSpecificRegulations(self, shouldRetry=True):
+        regulationList = []
+        try:
+            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as regulationCursor:
+                query = "SELECT id, kaavamaarays_otsikko, maaraysteksti, kuvaus_teksti FROM yk_yleiskaava.kaavamaarays WHERE kaavamaarays_otsikko IS NOT NULL"
+                regulationCursor.execute(query)
+                regulationRows = regulationCursor.fetchall()
+                for regulationRow in regulationRows:
+                    regulationList.append({
+                        "id": regulationRow['id'],
+                        "alpha_sort_key": regulationRow['kaavamaarays_otsikko'],
+                        "kaavamaarays_otsikko": QVariant(regulationRow['kaavamaarays_otsikko']),
+                        "maaraysteksti": QVariant(regulationRow['maaraysteksti']),
+                        "kuvaus_teksti": QVariant(regulationRow['kuvaus_teksti'])
+                        })
+        except psycopg2.Error as e:
+            QgsMessageLog.logMessage('getAllSpecificRegulations - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
+            if shouldRetry:
+                success = self.reconnectToDB()
+                if success:
+                    return self.getSpecificRegulationsForSubQuery(subQuery, shouldRetry = False)
+
+
         return regulationList
 
 
@@ -1943,7 +1977,7 @@ class YleiskaavaDatabase:
                 key, value = part.split('=')
             except ValueError:
                 continue
-            
+
             value = value.replace("'", "")
             if key == 'dbname' and value != self.databaseConnectionParams['dbname']:
                 # QgsMessageLog.logMessage('databaseMatchesDataSourceUri - uri, dbname: {}; db, dbname: {}'.format(value, self.databaseConnectionParams['dbname']) , 'Yleiskaava-työkalu', Qgis.Info)
@@ -2041,15 +2075,15 @@ class YleiskaavaDatabase:
 
 
     def handleLayerPlansChanges(self):
-        QgsMessageLog.logMessage("handleLayerPlansChanges", 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage("handleLayerPlansChanges", 'Yleiskaava-työkalu', Qgis.Info)
         self.getSpatialPlans()
 
     def handleLayerPlanLevelListChanges(self):
-        QgsMessageLog.logMessage("handleLayerPlanLevelListChanges", 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage("handleLayerPlanLevelListChanges", 'Yleiskaava-työkalu', Qgis.Info)
         self.getYleiskaavaPlanLevelList()
 
     def handleLayerThemesChanges(self):
-        QgsMessageLog.logMessage("handleLayerThemesChanges", 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage("handleLayerThemesChanges", 'Yleiskaava-työkalu', Qgis.Info)
         self.getThemes()
 
 

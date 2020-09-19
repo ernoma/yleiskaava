@@ -93,7 +93,7 @@ class YleiskaavaSettings:
 
         usedDatabaseConnectionName = settings.value("/yleiskaava_tyokalu/usedDatabaseConnection", "")
 
-        QgsMessageLog.logMessage('readDatabaseConnectionSettings - usedDatabaseConnection: ' + usedDatabaseConnectionName, 'Yleiskaava-työkalu', Qgis.Info)
+        # QgsMessageLog.logMessage('readDatabaseConnectionSettings - usedDatabaseConnection: ' + usedDatabaseConnectionName, 'Yleiskaava-työkalu', Qgis.Info)
         self.dialogSettings.comboBoxUsedDBConnection.setCurrentText(usedDatabaseConnectionName)
 
         self.updateDatabaseConnection(usedDatabaseConnectionName)
