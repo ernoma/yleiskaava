@@ -130,10 +130,15 @@ class YleiskaavaSettings:
         success = False
 
         if usedDatabaseConnectionName != "":
-            databaseConnectionParams = self.readDatabaseParamsFromSettings(usedDatabaseConnectionName)
+            try:
+                databaseConnectionParams = self.readDatabaseParamsFromSettings(usedDatabaseConnectionName)
+                success = self.yleiskaavaDatabase.setDatabaseConnection(databaseConnectionParams)
+                self.yleiskaavaDatabase.monitorCachedLayerChanges()
 
-            success = self.yleiskaavaDatabase.setDatabaseConnection(databaseConnectionParams)
-            self.yleiskaavaDatabase.monitorCachedLayerChanges()
+            except QaavaAuthConfigException:
+                settings = QSettings()
+                usedDatabaseConnectionName = settings.value("/yleiskaava_tyokalu/usedDatabaseConnection", "")
+                self.iface.messageBar().pushMessage('Tietokantaan "{}" yhdistäminen ei onnistunut'.format(usedDatabaseConnectionName), Qgis.Critical, duration=0)
 
         return success
 
