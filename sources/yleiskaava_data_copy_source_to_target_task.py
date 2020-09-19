@@ -301,8 +301,10 @@ class CopySourceDataToDatabaseTask(QgsTask):
         # QgsMessageLog.logMessage("sourceLandUseClassificationName: " + str(sourceLandUseClassificationName.value()), 'Yleiskaava-työkalu', Qgis.Info)
 
         if "kaavamaaraysotsikko" in fieldMatchTargetNames and not sourceRegulationName.isNull():
+            QgsMessageLog.logMessage("handleRegulationAndLandUseClassificationInSourceToTargetCopy - not sourceRegulationName.isNull()", 'Yleiskaava-työkalu', Qgis.Info)
             self.handleRegulationInSourceToTargetCopy(sourceFeature, targetFeature, sourceRegulationName, targetSchemaTableName, shouldCreateRelation)
         elif "kayttotarkoitus_lyhenne" in fieldMatchTargetNames and not sourceLandUseClassificationName.isNull():
+            QgsMessageLog.logMessage("handleRegulationAndLandUseClassificationInSourceToTargetCopy - not sourceLandUseClassificationName.isNull()", 'Yleiskaava-työkalu', Qgis.Info)
             self.handleLandUseClassificationInSourceToTargetCopy(sourceFeature, targetFeature, sourceLandUseClassificationName, targetSchemaTableName, shouldCreateRelation)
         elif self.getDefaultValuesRegulationValue() is not None:
             self.handleRegulationInSourceToTargetCopy(sourceFeature, targetFeature, self.getDefaultValuesRegulationValue(), targetSchemaTableName, shouldCreateRelation)
@@ -401,8 +403,11 @@ class CopySourceDataToDatabaseTask(QgsTask):
 
             if shouldCreateRelation:
                 if regulationName in self.regulationNames:
+                    
                     self.yleiskaavaDatabase.createFeatureRegulationRelation(self.targetSchemaTableName, targetFeature["id"], regulationName)
                 elif self.shouldCreateNewRegulation: # uusi otsikko & kaavamääräys (tai muuten virhe otsikon oikeinkirjoituksessa, tms)
+                    QgsMessageLog.logMessage("handleLandUseClassificationInSourceToTargetCopy - regulationName '{}' not in self.regulationNames, len(self.regulationNames): {}".format(regulationName, len(self.regulationNames)), 'Yleiskaava-työkalu', Qgis.Info)
+                    QgsMessageLog.logMessage("handleLandUseClassificationInSourceToTargetCopy - self.shouldCreateNewRegulation", 'Yleiskaava-työkalu', Qgis.Info)
                     self.yleiskaavaDatabase.createSpecificRegulationAndFeatureRegulationRelation(self.targetSchemaTableName, targetFeature["id"], regulationName)
                     self.regulationNames.append(regulationName)
             else:

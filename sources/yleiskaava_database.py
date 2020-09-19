@@ -1939,7 +1939,11 @@ class YleiskaavaDatabase:
             # QgsMessageLog.logMessage('databaseMatchesDataSourceUri - part: {}'.format(part) , 'Yleiskaava-työkalu', Qgis.Info)
             if part == '(geom)':
                 continue
-            key, value = part.split('=')
+            try:
+                key, value = part.split('=')
+            except ValueError:
+                continue
+            
             value = value.replace("'", "")
             if key == 'dbname' and value != self.databaseConnectionParams['dbname']:
                 # QgsMessageLog.logMessage('databaseMatchesDataSourceUri - uri, dbname: {}; db, dbname: {}'.format(value, self.databaseConnectionParams['dbname']) , 'Yleiskaava-työkalu', Qgis.Info)
@@ -1975,7 +1979,6 @@ class YleiskaavaDatabase:
                     if ipAddrForURI != ipAddrForDB:
                         # QgsMessageLog.logMessage('databaseMatchesDataSourceUri - uri, ipAddrForURI: {}; db, ipAddrForURI: {}'.format(ipAddrForURI, ipAddrForDB) , 'Yleiskaava-työkalu', Qgis.Info)
                         return False
-        
         return True
 
 
