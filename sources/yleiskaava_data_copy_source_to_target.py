@@ -106,7 +106,7 @@ class DataCopySourceToTarget:
 
     def setupDialogChooseFeatures(self):
         self.dialogChooseFeatures.pushButtonCancel.clicked.connect(self.hideAllDialogs)
-        self.dialogChooseFeatures.pushButtonPrevious.clicked.connect(self.openDialogCopySourceDataToDatabase)
+        self.dialogChooseFeatures.pushButtonPrevious.clicked.connect(self.openPreviousDialogCopySourceDataToDatabase)
         self.dialogChooseFeatures.pushButtonNext.clicked.connect(self.chooseCopySettings)
 
 
@@ -156,6 +156,12 @@ class DataCopySourceToTarget:
             self.updateUIBasedOnSourceLayer(self.sourceLayer)
             self.selectTargetLayerBasedOnSourceLayerGeometryType()
 
+
+    def openPreviousDialogCopySourceDataToDatabase(self):
+        self.dialogChooseFeatures.hide()
+        self.dialogCopySettings.hide()
+        self.dialogCopySourceDataToDatabase.show()
+        
 
     def handleMapLayerComboBoxSourceChanged(self, layer):
         if layer is not None:
