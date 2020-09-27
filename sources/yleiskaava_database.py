@@ -678,7 +678,8 @@ class YleiskaavaDatabase:
                     success = self.reconnectToDB()
                     if success:
                         return self.getSpatialPlans(shouldRetry=False)
-
+                else:
+                    self.iface.messageBar().pushMessage('Virhe: getSpatialPlans - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
         return self.plans
 
@@ -729,6 +730,8 @@ class YleiskaavaDatabase:
                     success = self.reconnectToDB()
                     if success:
                         return self.getSpatialPlansAndPlanLevels(shouldRetry=False)
+                else:
+                    self.iface.messageBar().pushMessage('Virhe: getSpatialPlansAndPlanLevels - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
         # for planLevel in planLevels:
         #     QgsMessageLog.logMessage('getSpatialPlansAndPlanLevels - row[id]: ' + row['id'], 'Yleiskaava-työkalu', Qgis.Info)
@@ -836,6 +839,8 @@ class YleiskaavaDatabase:
                     success = self.reconnectToDB()
                     if success:
                         return self.getYleiskaavaPlanLevelList(shouldRetry=False)
+                else:
+                    self.iface.messageBar().pushMessage('Virhe: getYleiskaavaPlanLevelList - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
         return self.planLevelList
 
@@ -918,6 +923,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.getRegulationCountForSpatialFeature(featureID, featureType, shouldRetry=False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: getRegulationCountForSpatialFeature - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
         return count
 
@@ -939,6 +946,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.getDistinctLandUseClassificationsOfLayer(userFriendlyTableName, shouldRetry=False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: getDistinctLandUseClassificationsOfLayer - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
         return classifications
 
@@ -964,6 +973,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.getLayerFeatureIDsAndFieldValuesForFeaturesHavingLanduseClassification(userFriendlyTableName, landUseClassification, fieldName, shouldRetry=False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: getLayerFeatureIDsAndFieldValuesForFeaturesHavingLanduseClassification - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
         return featureIDsAndValues
 
@@ -1001,6 +1012,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.getRegulationsForSpatialFeature(featureID, featureType, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: getRegulationsForSpatialFeature - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
         return regulationList
 
@@ -1077,6 +1090,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.getSpecificRegulationsForSubQuery(subQuery, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: getAllSpecificRegulations - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
 
         return regulationList
@@ -1103,6 +1118,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.getSpecificRegulationsForSubQuery(subQuery, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: getSpecificRegulationsForSubQuery - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
 
         return regulationList
@@ -1166,6 +1183,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.shouldAddRegulation(regulationID, onlyUsedRegulations, includeAreaRegulations, includeSuplementaryAreaRegulations, includeLineRegulations, includePointRegulations, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: shouldAddRegulation - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
         return False
 
@@ -1183,6 +1202,9 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.updateRegulation(regulationID, regulationTitle, regulationText, regulationDescription, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: updateRegulation - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
+                return False
 
         return True
 
@@ -1212,6 +1234,9 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.removeRegulationAndLandUseClassificationTextsFromSpatialFeature(featureID, featureType, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: removeRegulationAndLandUseClassificationTextsFromSpatialFeature - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
+                return False
 
         return True
 
@@ -1261,6 +1286,9 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.updateSpatialFeatureRegulationAndLandUseClassification(featureID, featureType, regulationID, regulationTitle, shouldRemoveOldRegulationRelations, shouldUpdateOnlyRelation, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: updateSpatialFeatureRegulationAndLandUseClassification - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
+                return False
 
         return True
 
@@ -1278,6 +1306,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.existsFeatureRegulationRelation(featureID, featureType, regulationID, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: existsFeatureRegulationRelation - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
         return False
 
@@ -1294,6 +1324,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     self.removeRegulationRelationsFromSpatialFeature(featureID, featureType, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: removeRegulationRelationsFromSpatialFeature - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
 
     def deleteSpatialFeature(self, featureID, featureType, shouldRetry=True):
@@ -1308,6 +1340,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     self.deleteSpatialFeature(featureID, featureType, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: deleteSpatialFeature - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
 
     def createFeatureRegulationRelation(self, targetSchemaTableName, targetFeatureID, regulationTitle):
@@ -1332,6 +1366,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     self.createFeatureRegulationRelationWithRegulationID(targetSchemaTableName, targetFeatureID, regulationID, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: createFeatureRegulationRelationWithRegulationID - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
 
     def addRegulationRelationsToLayer(self, sourceFeatureID, targetFeatureID, featureType):
@@ -1378,6 +1414,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     self.readThemes(shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: readThemes - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
 
     def getThemesForSpatialFeature(self, featureID, featureType, shouldRetry=True):
@@ -1407,6 +1445,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.getThemesForSpatialFeature(featureID, featureType, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: getThemesForSpatialFeature - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
         return themeList
 
@@ -1445,6 +1485,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     self.createSpecificRegulationAndFeatureRegulationRelation(targetSchemaTableName, targetFeatureID, regulationName, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: createSpecificRegulationAndFeatureRegulationRelation - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
 
     def getCodeListValuesForPlanObjectField(self, targetFieldName):
@@ -1502,6 +1544,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     self.readCodeTableCodesFromDatabase(name, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: readCodeTableCodesFromDatabase - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
 
     def getSchemaTableFieldInfos(self, name):
@@ -1654,6 +1698,9 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.updateSpatialFeaturesWithFieldValues(layer, featureIDsAndValues, fieldName, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: updateSpatialFeaturesWithFieldValues - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
+                return False
 
 
         return True
@@ -1701,6 +1748,9 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.updateSelectedSpatialFeaturesWithFieldValues(featureType, updatedFieldData, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: updateSelectedSpatialFeaturesWithFieldValues - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
+                return False
 
         return True
 
@@ -1719,6 +1769,9 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.updateTheme(themeID, themeName, themeDescription, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: updateTheme - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
+                return False
         
         return True
 
@@ -1764,6 +1817,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     self.createFeatureThemeRelationWithThemeID(targetSchemaTableName, targetFeatureID, themeID, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: createFeatureThemeRelationWithThemeID - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
 
     def existsFeatureThemeRelation(self, featureID, featureType, themeID, shouldRetry=True):
@@ -1779,6 +1834,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.existsFeatureThemeRelation(featureID, featureType, themeID, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: existsFeatureThemeRelation - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
         return False
 
@@ -1795,6 +1852,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     self.removeThemeRelationsFromSpatialFeature(featureID, featureType, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: removeThemeRelationsFromSpatialFeature - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
 
     def getSourceDataFeatures(self, linkType, shouldRetry=True):
@@ -1820,6 +1879,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.getSourceDataFeatures(linkType, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: getSourceDataFeatures - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
         return features
 
@@ -1869,6 +1930,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.getLinkedFeatureIDsForSourceDataFeature(spatialFeatureLayer, linkedSourceDataFeature, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: getLinkedFeatureIDsForSourceDataFeature - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
         return linkedFeatureIDs
 
@@ -1902,6 +1965,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.createSourceDataFeature(sourceData, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: createSourceDataFeature - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
         return sourceDataFeatureID
 
@@ -1945,6 +2010,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.createSourceDataRelationToSpatialFeature(linkedSourceDataFeatureID, spatialFeatureLayer, targetFeatureID, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: createSourceDataRelationToSpatialFeature - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
         return relationFeatureID
 
@@ -2156,5 +2223,8 @@ class YleiskaavaDatabase:
                 success = self.reconnectToDB()
                 if success:
                     return self.createTargetFeature(targetSchemaTableName, targetLayerFeature, targetCRS, shouldRetry = False)
+            else:
+                self.iface.messageBar().pushMessage('Virhe: createTargetFeature - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
+                success = False
 
         return success

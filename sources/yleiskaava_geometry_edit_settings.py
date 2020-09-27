@@ -522,6 +522,7 @@ class GeometryEditSettings:
                             # self.featuresCopiedToClipboard = [feature for feature in self.featuresCopiedToClipboard if feature['id'] != matchedSourceFeature['id']]
                         else:
                             QgsMessageLog.logMessage("handlePasteFeatures - bugi koodissa, matchedSourceFeature: " + str(matchedSourceFeature) + ", addedFeature: " + str(addedFeature), 'Yleiskaava-työkalu', Qgis.Critical)
+                            self.iface.messageBar().pushMessage('Virhe: handlePasteFeatures - bugi koodissa, matchedSourceFeature: " + str(matchedSourceFeature) + ", addedFeature: " + str(addedFeature)', Qgis.Critical, duration=0)
 
                         if foundMatchMultiple:
                             self.iface.messageBar().pushMessage('Liitetyllä kohteella ' + addedFeature['id'] + ' on useita täsmääviä kohteita, joten sen kaavamääräys- ja teema-relaatiot eivät ehkä kopioituneet oikein. Myös muilla liitetyillä kohteilla, joilla on samat täsmäykset on sama ongelma.', Qgis.Warning, duration=0)

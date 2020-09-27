@@ -202,6 +202,7 @@ class FeatureRequestTask(QgsTask):
     def finished(self, success):
         if not success:
             QgsMessageLog.logMessage('FeatureRequestTask - poikkeus: ' + str(self.exception), 'Yleiskaava-työkalu', Qgis.Critical)
+            self.iface.messageBar().pushMessage('Virhe: FeatureRequestTask - poikkeus: ' + str(self.exception), Qgis.Critical, duration=0)
             # raise self.exception
             self.cancel()
 
