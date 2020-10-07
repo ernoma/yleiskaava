@@ -1030,9 +1030,9 @@ class YleiskaavaDatabase:
                 query = "SELECT DISTINCT id_kaavamaarays FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_alue IS NOT NULL"
 
             regulations = self.getSpecificRegulationsForSubQuery(query)
-            titles = [item['kaavamaarays_otsikko'] for item in regulationList]
+            ids = [item['id'] for item in regulationList]
             for regulation in regulations:
-                if not regulation['kaavamaarays_otsikko'] in titles:
+                if not regulation['id'] in ids:
                     regulationList.append(regulation)
 
         if includeSuplementaryAreaRegulations:
@@ -1043,9 +1043,9 @@ class YleiskaavaDatabase:
                 query = "SELECT DISTINCT id_kaavamaarays FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_alue_taydentava IS NOT NULL"
 
             regulations = self.getSpecificRegulationsForSubQuery(query)
-            titles = [item['kaavamaarays_otsikko'] for item in regulationList]
+            ids = [item['id'] for item in regulationList]
             for regulation in regulations:
-                if not regulation['kaavamaarays_otsikko'] in titles:
+                if not regulation['id'] in ids:
                     regulationList.append(regulation)
         
         if includeLineRegulations:
@@ -1056,9 +1056,9 @@ class YleiskaavaDatabase:
                 query = "SELECT DISTINCT id_kaavamaarays FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_viiva IS NOT NULL"
 
             regulations = self.getSpecificRegulationsForSubQuery(query)
-            titles = [item['kaavamaarays_otsikko'] for item in regulationList]
+            ids = [item['id'] for item in regulationList]
             for regulation in regulations:
-                if not regulation['kaavamaarays_otsikko'] in titles:
+                if not regulation['id'] in ids:
                     regulationList.append(regulation)
 
         if includePointRegulations:
@@ -1069,17 +1069,17 @@ class YleiskaavaDatabase:
                 query = "SELECT DISTINCT id_kaavamaarays FROM yk_yleiskaava.kaavaobjekti_kaavamaarays_yhteys WHERE id_kaavaobjekti_piste IS NOT NULL"
 
             regulations = self.getSpecificRegulationsForSubQuery(query)
-            titles = [item['kaavamaarays_otsikko'] for item in regulationList]
+            ids = [item['id'] for item in regulationList]
             for regulation in regulations:
-                if not regulation['kaavamaarays_otsikko'] in titles:
+                if not regulation['id'] in ids:
                     regulationList.append(regulation)
 
         if not onlyUsedRegulations:
             allRegulations = self.getAllSpecificRegulations()
-            titles = [item['kaavamaarays_otsikko'] for item in regulationList]
+            ids = [item['id'] for item in regulationList]
 
             for regulation in allRegulations:
-                if not regulation['kaavamaarays_otsikko'] in titles:
+                if not regulation['id'] in ids:
                     regulationList.append(regulation)
 
         return regulationList
