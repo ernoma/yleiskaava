@@ -2105,8 +2105,8 @@ class YleiskaavaDatabase:
                 self.dbConnection = psycopg2.connect(**self.databaseConnectionParams)
                 # self.iface.messageBar().pushMessage('Tietokantaan yhdistäminen onnistui', Qgis.Info, duration=20)
             except psycopg2.Error as e:
-                QgsMessageLog.logMessage('reconnectToDB - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Crictical)
-                self.iface.messageBar().pushMessage('Yleiskaavan tietokantaan yhdistäminen epäonnistui', Qgis.Crictical, duration=0)
+                QgsMessageLog.logMessage('reconnectToDB - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Critical)
+                self.iface.messageBar().pushMessage('Yleiskaavan tietokantaan yhdistäminen epäonnistui', Qgis.Critical, duration=0)
                 return False
         else:
             return False
