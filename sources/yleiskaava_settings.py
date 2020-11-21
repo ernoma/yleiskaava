@@ -50,9 +50,39 @@ class YleiskaavaSettings:
         except RuntimeError:
             pass
 
+        try:
+            self.dialogSettings.comboBoxKansallinenProsessinVaihe.currentTextChanged.disconnect(self.handleComboBoxKansallinenProsessinVaiheCurrentTextChanged)
+        except TypeError:
+            pass
+        except RuntimeError:
+            pass
+        try:
+            self.dialogSettings.comboBoxLaillinenSitovuus.currentTextChanged.disconnect(self.handleComboBoxLaillinenSitovuusCurrentTextChanged)
+        except TypeError:
+            pass
+        except RuntimeError:
+            pass
+        try:
+            self.dialogSettings.comboBoxProsessinVaihe.currentTextChanged.disconnect(self.handleComboBoxProsessinVaiheCurrentTextChanged)
+        except TypeError:
+            pass
+        except RuntimeError:
+            pass
+        try:
+            self.dialogSettings.comboBoxKaavoitusprosessinTila.currentTextChanged.disconnect(self.handleComboBoxKaavoitusprosessinTilaCurrentTextChanged)
+        except TypeError:
+            pass
+        except RuntimeError:
+            pass
+
         self.readSettings()
 
         self.dialogSettings.comboBoxUsedDBConnection.currentTextChanged.connect(self.handleComboBoxUsedDBConnectionCurrentTextChanged)
+
+        self.dialogSettings.comboBoxKansallinenProsessinVaihe.currentTextChanged.connect(self.handleComboBoxKansallinenProsessinVaiheCurrentTextChanged)
+        self.dialogSettings.comboBoxLaillinenSitovuus.currentTextChanged.connect(self.handleComboBoxLaillinenSitovuusCurrentTextChanged)
+        self.dialogSettings.comboBoxProsessinVaihe.currentTextChanged.connect(self.handleComboBoxProsessinVaiheCurrentTextChanged)
+        self.dialogSettings.comboBoxKaavoitusprosessinTila.currentTextChanged.connect(self.handleComboBoxKaavoitusprosessinTilaCurrentTextChanged)
 
         if self.shouldKeepDialogsOnTop():
             self.dialogSettings.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
@@ -69,6 +99,55 @@ class YleiskaavaSettings:
             self.dialogSettings.checkBoxKeepDialogsOnTop.setChecked(False)
 
         self.setupDatabaseConnectionSettings()
+
+        self.selectDefaultCodeValues()
+
+
+    def selectDefaultCodeValues(self):
+        values = [item["koodi"] for item in self.yleiskaavaDatabase.getCodeListValuesForPlanObjectField("id_kansallinen_prosessin_vaihe")]
+        widget = self.dialogSettings.comboBoxKansallinenProsessinVaihe
+        widget.clear()
+        widget.addItem("")
+        widget.addItems(values)
+        value = QSettings().value("/yleiskaava_tyokalu/kansallinen_prosessin_vaihe", "3_1_ehdotus", type=str)
+        widget.setCurrentText(value)
+
+        values = [item["koodi"] for item in self.yleiskaavaDatabase.getCodeListValuesForPlanObjectField("id_laillinen_sitovuus")]
+        widget = self.dialogSettings.comboBoxLaillinenSitovuus
+        widget.clear()
+        widget.addItem("")
+        widget.addItems(values)
+        value = QSettings().value("/yleiskaava_tyokalu/laillinen_sitovuus", "maaritelty_lainsaadannossa", type=str)
+        widget.setCurrentText(value)
+
+        values = [item["koodi"] for item in self.yleiskaavaDatabase.getCodeListValuesForPlanObjectField("id_prosessin_vaihe")]
+        widget = self.dialogSettings.comboBoxProsessinVaihe
+        widget.clear()
+        widget.addItem("")
+        widget.addItems(values)
+        value = QSettings().value("/yleiskaava_tyokalu/prosessin_vaihe", "ehdotus", type=str)
+        widget.setCurrentText(value)
+
+        values = [item["koodi"] for item in self.yleiskaavaDatabase.getCodeListValuesForPlanObjectField("id_kaavoitusprosessin_tila")]
+        widget = self.dialogSettings.comboBoxKaavoitusprosessinTila
+        widget.clear()
+        widget.addItem("")
+        widget.addItems(values)
+        value = QSettings().value("/yleiskaava_tyokalu/kaavoitusprosessin_tila", "ehdotus_nahtavilla", type=str)
+        widget.setCurrentText(value)
+
+
+    def getDefaultCodeValue(self, targetFieldName):
+        if targetFieldName == 'id_kansallinen_prosessin_vaihe':
+            return QSettings().value("/yleiskaava_tyokalu/kansallinen_prosessin_vaihe", "3_1_ehdotus", type=str)
+        elif targetFieldName == 'id_laillinen_sitovuus':
+            return QSettings().value("/yleiskaava_tyokalu/laillinen_sitovuus", "3_1_ehdotus", type=str)
+        elif targetFieldName == 'id_prosessin_vaihe':
+            return QSettings().value("/yleiskaava_tyokalu/prosessin_vaihe", "3_1_ehdotus", type=str)
+        elif targetFieldName == 'id_kaavoitusprosessin_tila':
+            return QSettings().value("/yleiskaava_tyokalu/kaavoitusprosessin_tila", "3_1_ehdotus", type=str)
+        else:
+            return ""
 
 
     def setupDatabaseConnectionSettings(self):
@@ -97,6 +176,22 @@ class YleiskaavaSettings:
         self.dialogSettings.comboBoxUsedDBConnection.setCurrentText(usedDatabaseConnectionName)
 
         self.updateDatabaseConnection(usedDatabaseConnectionName)
+
+
+    def handleComboBoxKansallinenProsessinVaiheCurrentTextChanged(self):
+        QSettings().setValue("/yleiskaava_tyokalu/kansallinen_prosessin_vaihe", self.dialogSettings.comboBoxKansallinenProsessinVaihe.currentText())
+
+
+    def handleComboBoxLaillinenSitovuusCurrentTextChanged(self):
+        QSettings().setValue("/yleiskaava_tyokalu/laillinen_sitovuus", self.dialogSettings.comboBoxLaillinenSitovuus.currentText())
+
+
+    def handleComboBoxProsessinVaiheCurrentTextChanged(self):
+        QSettings().setValue("/yleiskaava_tyokalu/prosessin_vaihe", self.dialogSettings.comboBoxProsessinVaihe.currentText())
+
+
+    def handleComboBoxKaavoitusprosessinTilaCurrentTextChanged(self):
+        QSettings().setValue("/yleiskaava_tyokalu/kaavoitusprosessin_tila", self.dialogSettings.comboBoxKaavoitusprosessinTila.currentText())
 
 
     def handleCheckBoxKeepDialogsOnTopStateChanged(self):
