@@ -870,11 +870,14 @@ class DataCopySourceToTarget:
         lineEdit = self.findDefaultValuesInputLineEditFromTableWidget('Kaavamääräysotsikko')
         lineEdit.setText(defaultRegulationTitle)
 
-        if self.targetLayer.name() == YleiskaavaDatabase.KAAVAOBJEKTI_ALUE and defaultRegulationTitle != "":
+        if defaultRegulationTitle != "":
             lineEdit = self.findDefaultValuesInputLineEditFromTableWidget("Käyttötarkoituksen lyhenne (esim. A, C)")
-            planNumber = self.yleiskaavaDatabase.getPlanNumberForName(self.dialogCopySettings.comboBoxSpatialPlanName.currentText())
-            landUseClassificationName = self.yleiskaavaUtils.getLandUseClassificationNameForRegulation(planNumber, self.targetSchemaTableName, defaultRegulationTitle)
-            lineEdit.setText(landUseClassificationName)
+            if self.targetLayer.name() == YleiskaavaDatabase.KAAVAOBJEKTI_ALUE:
+                    planNumber = self.yleiskaavaDatabase.getPlanNumberForName(self.dialogCopySettings.comboBoxSpatialPlanName.currentText())
+                    landUseClassificationName = self.yleiskaavaUtils.getLandUseClassificationNameForRegulation(planNumber, self.targetSchemaTableName, defaultRegulationTitle)
+                    lineEdit.setText(landUseClassificationName)
+            else:
+                lineEdit.setText(defaultRegulationTitle)
 
         self.dialogChooseRegulation.hide()
 
