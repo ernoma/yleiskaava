@@ -708,10 +708,27 @@ class DataCopySourceToTarget:
             except RuntimeError:
                 pass
         self.yleiskaavaUtils.refreshTargetLayersInProject() # Päivitä lopuksi työtilan karttatasot, jotka liittyvät T1:n ajoon
+
+        messages = self.copySourceDataToDatabaseTask.getMessages()
+        if len(messages) > 0:
+            messageLevel = Qgis.Info
+            for message in messages:
+                if message['messageLevel'] == Qgis.Warning and (messageLevel != Qgis.Warning and messageLevel != Qgis.Critical):
+                    messageLevel = message['messageLevel']
+                elif message['messageLevel'] == Qgis.Critical and messageLevel != Qgis.Critical:
+                    messageLevel = message['messageLevel']
+
+            for message in messages:
+                self.iface.messageBar().pushMessage(str(message['message']), message['messageLevel'], duration=0)
+
         if not self.hasUserCanceledCopy:
             self.iface.messageBar().pushMessage('Lähdeaineisto {} kopioitu tietokantaan'.format(self.sourceLayer.name()), Qgis.Info, duration=60)
         else:
             self.iface.messageBar().pushMessage('Lähdeaineistoa ei kopioitu kokonaisuudessaan tietokantaan', Qgis.Info, duration=0)
+            
+        if len(messages) > 0:
+            messageLevel = Qgis.Warning
+            self.iface.messageBar().pushMessage('Aineiston tuonnissa oli huomioitavia asioita', messageLevel, duration=0)
 
 
     def handleCopySourceDataToDatabaseTerminated(self):

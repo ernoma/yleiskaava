@@ -28,7 +28,7 @@
       </font>
      </property>
      <property name="text">
-      <string>Ainestoa kopioidaan tietokantaan</string>
+      <string>Aineistoa kopioidaan tietokantaan</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>

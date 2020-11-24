@@ -7,12 +7,13 @@ from qgis.core import (
     QgsTask)
 
 import uuid
+import json
 
 from .yleiskaava_database import YleiskaavaDatabase
 
-
-
 class CopySourceDataToDatabaseTask(QgsTask):
+
+    yleiskaava_exceptions = []
 
     # # SIGNALS
     # createFeatureRegulationRelation = pyqtSignal(str, str, str)
@@ -20,7 +21,6 @@ class CopySourceDataToDatabaseTask(QgsTask):
 
     def __init__(self, yleiskaavaUtils, yleiskaavaDatabase, transformContext, planNumber, targetSchemaTableName, shouldLinkToSpatialPlan, spatialPlanName, spatialPlanID, fieldMatches, includeFieldNamesForMultiValues, targetFieldValueSeparator, defaultFieldNameValueInfos, shouldCreateNewRegulation, shouldCapitalize, shouldFillLandUseClassificationWithRegulation, regulationNames):
         super().__init__('Kopioidaan kohteita tietokantaan', QgsTask.CanCancel)
-        self.exceptions = []
 
         self.yleiskaavaUtils = yleiskaavaUtils
         self.yleiskaavaDatabase = yleiskaavaDatabase
@@ -49,18 +49,16 @@ class CopySourceDataToDatabaseTask(QgsTask):
 
 
     def run(self):
+        CopySourceDataToDatabaseTask.yleiskaava_exceptions = []
+
         success = self.copySourceFeaturesToTargetLayer()
         # QgsMessageLog.logMessage('run - success: ' + str(success), 'Yleiskaava-työkalu', Qgis.Info)
         return success
 
 
     def finished(self, success):
-        if not success:
-            QgsMessageLog.logMessage('CopySourceDataToDatabaseTask - poikkeuksia: ', 'Yleiskaava-työkalu', Qgis.Critical)
-            for exception in self.exceptions:
-                QgsMessageLog.logMessage(str(self.exception), 'Yleiskaava-työkalu', Qgis.Critical)
-            # raise self.exception
-            # self.cancel()
+        QgsMessageLog.logMessage('finished, len(yleiskaava_exceptions): ' + str(len(CopySourceDataToDatabaseTask.yleiskaava_exceptions)), 'Yleiskaava-työkalu', Qgis.Info)
+        # self.showMessages()
 
 
     def cancel(self):
@@ -70,6 +68,10 @@ class CopySourceDataToDatabaseTask(QgsTask):
             'Yleiskaava-työkalu', Qgis.Info)
         super().cancel()
     
+
+    def getMessages(self):
+        return CopySourceDataToDatabaseTask.yleiskaava_exceptions
+
 
     def copySourceFeaturesToTargetLayer(self):
         success = True
@@ -117,15 +119,22 @@ class CopySourceDataToDatabaseTask(QgsTask):
             self.handleRegulationAndLandUseClassificationInSourceToTargetCopy(sourceFeature, self.targetSchemaTableName, targetLayerFeature, False)
             self.handleSpatialPlanRelationInSourceToTargetCopy(targetLayerFeature)
 
-            success = self.yleiskaavaDatabase.createTargetFeature(self.targetSchemaTableName, targetLayerFeature, self.targetCRS)
+            return_data = self.yleiskaavaDatabase.createTargetFeature(self.targetSchemaTableName, sourceFeature, targetLayerFeature, self.targetCRS)
 
-            if not success:
-                exception = "yleiskaavaDatabase.createTargetFeature epäonnistui, sourceFeature-attribuutit: "
-                for field in self.targetLayer.fields().toList():
-                    if sourceFeature[field.name()]:
-                        exception += str(sourceFeature[field.name()]) + ", "
-                exception = exception[:-2]
-                self.exceptions.append(exception)
+            # QgsMessageLog.logMessage('createTargetFeature valmis', 'Yleiskaava-työkalu', Qgis.Info)
+            # QgsMessageLog.logMessage(json.dumps(return_data), 'Yleiskaava-työkalu', Qgis.Info)
+
+            for item in return_data['messages']:
+                CopySourceDataToDatabaseTask.yleiskaava_exceptions.append(item)
+                QgsMessageLog.logMessage("lisätty poikkeuksiin: " + item['message'], 'Yleiskaava-työkalu', Qgis.Info)
+
+            if not return_data['success']:
+                # exception = "yleiskaavaDatabase.createTargetFeature epäonnistui, sourceFeature-attribuutit: "
+                # for field in self.targetLayer.fields().toList():
+                #     if sourceFeature[field.name()]:
+                #         exception += str(sourceFeature[field.name()]) + ", "
+                # exception = exception[:-2]
+                # CopySourceDataToDatabaseTask.yleiskaava_exceptions.append(exception)
                 break
             else:
                 # Kaavakohteen pitää olla jo tallennettuna tietokannassa, jotta voidaan lisätä relaatio kaavamääräykseen
@@ -188,7 +197,10 @@ class CopySourceDataToDatabaseTask(QgsTask):
                                 attrNames.append(sourceAttrDataItem["name"])
                                 attrValues.append(attrValue)
                             else:
-                                self.exceptions.append('Lähderivin sarakkeen ' + sourceAttrDataItem["name"] + ' arvoa ei voitu kopioida kohderiville')
+                                CopySourceDataToDatabaseTask.yleiskaava_exceptions.append({
+                                    'messageLevel': Qgis.Critical,
+                                    'message':  'Lähderivin sarakkeen ' + sourceAttrDataItem["name"] + ' arvoa ei voitu kopioida kohderiville'
+                                })
                                 return False
                             sourceHadValue = True
                         # foundFieldMatch = True
@@ -208,7 +220,10 @@ class CopySourceDataToDatabaseTask(QgsTask):
                             if attrValue is not None:
                                 targetFeature.setAttribute(targetFieldDataItem["name"], attrValue)
                             else:
-                                self.exceptions.append('Oletusarvoa ei voitu kopioida kohderiville ' + targetFieldDataItem["name"])
+                                CopySourceDataToDatabaseTask.yleiskaava_exceptions.append({
+                                    'messageLevel': Qgis.Critical,
+                                    'message': 'Oletusarvoa ei voitu kopioida kohderiville ' + targetFieldDataItem["name"]
+                                })
                                 return False
                         break
             elif foundFieldMatchForTarget and sourceHadValue:
@@ -253,7 +268,10 @@ class CopySourceDataToDatabaseTask(QgsTask):
                             if attrValue is not None:
                                 targetFeature.setAttribute(targetFieldDataItem["name"], attrValue)
                             else:
-                                self.exceptions.append('Oletusarvoa ei voitu kopioida kohderiville ' + targetFieldDataItem["name"])
+                                CopySourceDataToDatabaseTask.yleiskaava_exceptions.append({
+                                    'messageLevel': Qgis.Critical,
+                                    'message': 'Oletusarvoa ei voitu kopioida kohderiville ' + targetFieldDataItem["name"]
+                                })
                                 return False
                         break
 

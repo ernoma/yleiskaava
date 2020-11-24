@@ -2170,8 +2170,12 @@ class YleiskaavaDatabase:
         self.getThemes()
 
 
-    def createTargetFeature(self, targetSchemaTableName, targetLayerFeature, targetCRS, shouldRetry=True):
-        success = True
+    def createTargetFeature(self, targetSchemaTableName, sourceFeature, targetLayerFeature, targetCRS, shouldRetry=True):
+
+        return_data = {
+            'success': True,
+            'messages': []
+        }
         
         # QgsMessageLog.logMessage("createTargetFeature - targetCRS: " + targetCRS.authid(), 'Yleiskaava-työkalu', Qgis.Info)
 
@@ -2186,7 +2190,52 @@ class YleiskaavaDatabase:
                 query = ""
                 attrTuple = None
 
-                if not geom.isNull():
+                if geom.isNull() or geom.isEmpty():
+                    sourceFeatureInfo = ""
+                    targetFeatureInfo = ""
+                    for field in sourceFeature.fields().toList():
+                        fieldName = field.name()
+                        value = ''
+                        # fieldTypeName = None
+                        value = sourceFeature[field.name()]
+                        fieldTypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
+                        if value is not None and not QVariant(value).isNull():
+                            if (fieldTypeName == "Date" or fieldTypeName == "DateTime"):
+                                value = QDateTime(QVariant(value).value()).toString("yyyy-MM-dd")
+                        if QVariant(value).isNull():
+                            value = ''
+                        sourceFeatureInfo += fieldName + ": " + str(value) + "; "
+
+                    for field in targetLayerFeature.fields().toList():
+                        fieldName = field.name()
+                        value = ''
+                        # fieldTypeName = None
+                        value = targetLayerFeature[field.name()]
+                        fieldTypeName = self.yleiskaavaUtils.getStringTypeForFeatureField(field)
+                        if value is not None and not QVariant(value).isNull():
+                            if (fieldTypeName == "Date" or fieldTypeName == "DateTime"):
+                                value = QDateTime(QVariant(value).value()).toString("yyyy-MM-dd")
+                        if QVariant(value).isNull():
+                            value = ''
+                        targetFeatureInfo += fieldName + ": " + str(value) + "; "
+
+                    geom_lack_type = None
+                    if geom.isNull():
+                        geom_lack_type = 'NULL'
+                    else:
+                        geom_lack_type = 'tyhjä'
+
+                    message = 'Tuotavan kohteen geometria oli ' + geom_lack_type + '. Tuotavan kohteen muiden tietojen arvot: {}. Tuodun kohteen tietojen arvot tietokannassa: {}'.format(sourceFeatureInfo, targetFeatureInfo)
+
+                    return_data['messages'].append({
+                        'messageLevel': Qgis.Warning,
+                        'message': message
+                    })
+                    QgsMessageLog.logMessage(message, 'Yleiskaava-työkalu', Qgis.Warning)
+                    # self.iface.messageBar().pushMessage(, Qgis.Warning, duration=0)
+
+
+                if not geom.isNull() and not geom.isEmpty():
                     query = "INSERT INTO {} (id, geom".format(targetSchemaTableName)
                     attrTuple = (targetLayerFeature["id"], )
                 else:
@@ -2208,7 +2257,7 @@ class YleiskaavaDatabase:
 
                         query += ", {}".format(field.name())
 
-                if not geom.isNull():
+                if not geom.isNull() and not geom.isEmpty():
                     wkt = geom.asWkt().replace('nan', '0')
 
                     if geom.isMultipart():
@@ -2238,9 +2287,24 @@ class YleiskaavaDatabase:
             if shouldRetry:
                 success = self.reconnectToDB()
                 if success:
-                    return self.createTargetFeature(targetSchemaTableName, targetLayerFeature, targetCRS, shouldRetry = False)
+                    return self.createTargetFeature(targetSchemaTableName, sourceFeature, targetLayerFeature, targetCRS, shouldRetry = False)
+                else:
+                    message = 'Virhe: createTargetFeature - tietokantaan yhdistäminen epäonnistui'
+                    return_data['messages'].append({
+                        'messageLevel': Qgis.Critical,
+                        'message': message
+                    })
+                    QgsMessageLog.logMessage(message, 'Yleiskaava-työkalu', Qgis.Warning)
+                    # self.iface.messageBar().pushMessage('Virhe: createTargetFeature - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
+                    return_data['success'] = False
             else:
-                self.iface.messageBar().pushMessage('Virhe: createTargetFeature - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
-                success = False
+                message = 'Virhe: createTargetFeature - psycopg2.Error: {}'.format(e)
+                return_data['messages'].append({
+                    'messageLevel': Qgis.Critical,
+                    'message': message
+                })
+                QgsMessageLog.logMessage(message, 'Yleiskaava-työkalu', Qgis.Warning)
+                # self.iface.messageBar().pushMessage('Virhe: createTargetFeature - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
+                return_data['success'] = False
 
-        return success
+        return return_data
