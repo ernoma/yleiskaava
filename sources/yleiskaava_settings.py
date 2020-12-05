@@ -104,7 +104,11 @@ class YleiskaavaSettings:
 
 
     def selectDefaultCodeValues(self):
-        values = [item["koodi"] for item in self.yleiskaavaDatabase.getCodeListValuesForPlanObjectField("id_kansallinen_prosessin_vaihe")]
+
+        values = []
+        for item in self.yleiskaavaDatabase.getCodeListValuesForPlanObjectField("id_kansallinen_prosessin_vaihe"):
+            if item is not None:
+                values.append(item["koodi"])
         widget = self.dialogSettings.comboBoxKansallinenProsessinVaihe
         widget.clear()
         widget.addItem("")
@@ -112,7 +116,10 @@ class YleiskaavaSettings:
         value = QSettings().value("/yleiskaava_tyokalu/kansallinen_prosessin_vaihe", "3_1_ehdotus", type=str)
         widget.setCurrentText(value)
 
-        values = [item["koodi"] for item in self.yleiskaavaDatabase.getCodeListValuesForPlanObjectField("id_laillinen_sitovuus")]
+        values = []
+        for item in self.yleiskaavaDatabase.getCodeListValuesForPlanObjectField("id_laillinen_sitovuus"):
+            if item is not None:
+                values.append(item["koodi"])
         widget = self.dialogSettings.comboBoxLaillinenSitovuus
         widget.clear()
         widget.addItem("")
@@ -120,7 +127,10 @@ class YleiskaavaSettings:
         value = QSettings().value("/yleiskaava_tyokalu/laillinen_sitovuus", "maaritelty_lainsaadannossa", type=str)
         widget.setCurrentText(value)
 
-        values = [item["koodi"] for item in self.yleiskaavaDatabase.getCodeListValuesForPlanObjectField("id_prosessin_vaihe")]
+        values = []
+        for item in self.yleiskaavaDatabase.getCodeListValuesForPlanObjectField("id_prosessin_vaihe"):
+            if item is not None:
+                values.append(item["koodi"])
         widget = self.dialogSettings.comboBoxProsessinVaihe
         widget.clear()
         widget.addItem("")
@@ -128,7 +138,10 @@ class YleiskaavaSettings:
         value = QSettings().value("/yleiskaava_tyokalu/prosessin_vaihe", "ehdotus", type=str)
         widget.setCurrentText(value)
 
-        values = [item["koodi"] for item in self.yleiskaavaDatabase.getCodeListValuesForPlanObjectField("id_kaavoitusprosessin_tila")]
+        values = []
+        for item in self.yleiskaavaDatabase.getCodeListValuesForPlanObjectField("id_kaavoitusprosessin_tila"):
+            if item is not None:
+                values.append(item["koodi"])
         widget = self.dialogSettings.comboBoxKaavoitusprosessinTila
         widget.clear()
         widget.addItem("")

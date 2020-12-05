@@ -190,7 +190,10 @@ class YleiskaavaUtils:
             widget.addItems(values)
             #checkBox = QCheckBox("Kyllä / ei")
         elif fieldTypeName == 'uuid':
-            values = [item["koodi"] for item in self.yleiskaavaDatabase.getCodeListValuesForPlanObjectField(fieldName)]
+            values = []
+            for item in self.yleiskaavaDatabase.getCodeListValuesForPlanObjectField(fieldName):
+                if item is not None:
+                    values.append(item["koodi"])
             # for value in values:
             #     QgsMessageLog.logMessage('getWidgetForSpatialFeatureFieldType - value: ' + str(value), 'Yleiskaava-työkalu', Qgis.Info)
             widget = QComboBox()

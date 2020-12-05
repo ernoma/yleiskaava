@@ -1510,8 +1510,11 @@ class YleiskaavaDatabase:
 
         if name not in self.codeTableCodes:
             self.readCodeTableCodesFromDatabase(name)
-                        
-        return self.codeTableCodes[name]
+
+        if name in self.codeTableCodes:
+            return self.codeTableCodes[name]
+        else:
+            return []
 
 
     def getCodeListValueForPlanObjectFieldUUID(self, targetFieldName, value):
@@ -1546,22 +1549,23 @@ class YleiskaavaDatabase:
 
 
     def readCodeTableCodesFromDatabase(self, name, shouldRetry=True):
-        try:
-            with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
-                query = "SELECT id, koodi FROM {}".format(name)
-                cursor.execute(query)
-                rows = cursor.fetchall()
-                self.codeTableCodes[name] = []
-                for row in rows:
-                    self.codeTableCodes[name].append({'id': row['id'], 'koodi': row['koodi']})
-        except psycopg2.Error as e:
-            QgsMessageLog.logMessage('readCodeTableCodesFromDatabase - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
-            if shouldRetry:
-                success = self.reconnectToDB()
-                if success:
-                    self.readCodeTableCodesFromDatabase(name, shouldRetry = False)
-            else:
-                self.iface.messageBar().pushMessage('Virhe: readCodeTableCodesFromDatabase - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
+        if self.dbConnection is not None:
+            try:
+                with self.dbConnection.cursor(cursor_factory = psycopg2.extras.DictCursor) as cursor:
+                    query = "SELECT id, koodi FROM {}".format(name)
+                    cursor.execute(query)
+                    rows = cursor.fetchall()
+                    self.codeTableCodes[name] = []
+                    for row in rows:
+                        self.codeTableCodes[name].append({'id': row['id'], 'koodi': row['koodi']})
+            except psycopg2.Error as e:
+                QgsMessageLog.logMessage('readCodeTableCodesFromDatabase - psycopg2.Error: {}'.format(e), 'Yleiskaava-työkalu', Qgis.Warning)
+                if shouldRetry:
+                    success = self.reconnectToDB()
+                    if success:
+                        self.readCodeTableCodesFromDatabase(name, shouldRetry = False)
+                else:
+                    self.iface.messageBar().pushMessage('Virhe: readCodeTableCodesFromDatabase - psycopg2.Error: {}'.format(e), Qgis.Critical, duration=0)
 
 
     def getSchemaTableFieldInfos(self, name):
