@@ -288,6 +288,27 @@ class UpdateThemesOfGroup:
         self.hasUserSelectedLineFeaturesForUpdate = False
         self.hasUserSelectedPointFeaturesForUpdate = False
 
+        self.updateUserSelectionsBasedOnLayers()
+
+
+    def updateUserSelectionsBasedOnLayers(self):
+        layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE)[0]
+        if layer.selectedFeatureCount() > 0:
+            self.hasUserSelectedPolygonFeaturesForUpdate = True
+            self.dialogUpdateThemeOfGroup.checkBoxUpdatePolygonFeatures.setChecked(True)
+        layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_ALUE_TAYDENTAVA)[0]
+        if layer.selectedFeatureCount() > 0:
+            self.hasUserSelectedSuplementaryPolygonFeaturesForUpdate = True
+            self.dialogUpdateThemeOfGroup.checkBoxUpdateSupplementaryPolygonFeatures.setChecked(True)
+        layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_VIIVA)[0]
+        if layer.selectedFeatureCount() > 0:
+            self.hasUserSelectedLineFeaturesForUpdate = True
+            self.dialogUpdateThemeOfGroup.checkBoxUpdateLineFeatures.setChecked(True)
+        layer = QgsProject.instance().mapLayersByName(YleiskaavaDatabase.KAAVAOBJEKTI_PISTE)[0]
+        if layer.selectedFeatureCount() > 0:
+            self.hasUserSelectedPointFeaturesForUpdate = True
+            self.dialogUpdateThemeOfGroup.checkBoxUpdatePointFeatures.setChecked(True)
+
 
     def updateSpatialFeatures(self, featureType):
         if self.currentTheme != None:
